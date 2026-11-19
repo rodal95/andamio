@@ -384,6 +384,7 @@ JavaScript, sin librerías):
 | `comun.js` | utilidades compartidas: barra (con el menú desplegable de guías, `GUIAS`), colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
+| `img/compartir/`, `img/icono-*.png`, `sitemap.xml`, `site.webmanifest` | la vista previa al compartir cada página (1200x630), los íconos y el mapa del sitio: los genera `scripts/compartir_sitio.py` |
 | `ejemplos/` | el código de las combinaciones de cada guía (lo que escribe el alumno), en TypeScript y JavaScript |
 
 Cada guía tiene un índice lateral (en el celular, plegable arriba) que sigue la
@@ -417,6 +418,14 @@ la página. Lo único escrito a mano en ese archivo es:
 
 El workflow `Sitio` ejecuta `scripts/sitio.py` y publica la página cada vez que
 cambia algo en `sitio/` o en `andamio/`.
+
+**Compartir.** `scripts/compartir_sitio.py` arma, para cada página, la imagen de vista
+previa (`img/compartir/<página>.png`, con el título y comandos reales de la guía) y las
+etiquetas Open Graph y Twitter Card en un bloque marcado del `<head>`. Si cambiás un
+título o agregás una guía, ejecutalo (necesita Playwright para Python con Chromium; con
+`--etiquetas` solo actualiza el HTML) y subí lo que cambió: `test_sitio.py` falla si las
+etiquetas no están al día o falta una imagen. Para ver cómo queda: pegá el enlace en
+https://www.opengraph.xyz/ o en WhatsApp.
 
 **Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
 (API de Django con datos y panel de administración, APIs de FastAPI y de Express

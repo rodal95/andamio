@@ -5,6 +5,14 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- Sitio: al compartir un enlace (WhatsApp, Facebook, LinkedIn, X, Discord, Slack) se ve
+  una vista previa con el logo, el título y comandos de la guía. Cada página tiene su
+  imagen (1200x630), etiquetas Open Graph y Twitter Card, dirección canónica, íconos
+  PNG del logo (también para la pantalla de inicio del celular), `site.webmanifest`,
+  `sitemap.xml` y, en la portada, datos estructurados para buscadores. Los genera
+  `scripts/compartir_sitio.py`.
+
 ## [1.3.0] - 2026-11-19
 
 ### Agregado
