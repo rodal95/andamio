@@ -1,0 +1,44 @@
+name: Sitio
+
+# Publica la página de andamio en GitHub Pages: https://rodal95.github.io/andamio/
+# Las demostraciones (sitio/datos.js) se generan ejecutando andamio en este paso,
+# así la página siempre muestra lo que genera la versión actual.
+on:
+  push:
+    branches: [main]
+    paths: ["sitio/**", "andamio/**", "scripts/sitio.py", ".github/workflows/sitio.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  armar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Generar las demostraciones
+        run: python scripts/sitio.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sitio
+
+  publicar:
+    needs: armar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacion.outputs.page_url }}
+    steps:
+      - id: publicacion
+        uses: actions/deploy-pages@v4

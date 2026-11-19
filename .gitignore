@@ -8,3 +8,6 @@
 /*.egg-info/
 __pycache__/
 *.pyc
+
+# Se genera con python scripts/sitio.py (el workflow del sitio lo hace al publicar).
+/sitio/datos.js

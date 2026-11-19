@@ -139,6 +139,7 @@ en [Releases](https://github.com/rodal95/andamio/releases).
 
 ---
 
+Página con demostraciones: https://rodal95.github.io/andamio/
 Para docentes: cómo agregar piezas o tipos de proyecto en [docs/docente.md](docs/docente.md).
 Cambios de cada versión en [CHANGELOG.md](CHANGELOG.md).
 Licencia [MIT](LICENSE): podés usarlo, modificarlo y compartirlo libremente.

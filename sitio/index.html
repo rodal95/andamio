@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>andamio · generador de código para tus proyectos</title>
+    <meta
+      name="description"
+      content="andamio crea proyectos y genera el código repetitivo para Python, Django, React y React Native. En español y sin configurar nada."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="estilos.css" />
+  </head>
+  <body>
+    <a class="saltar" href="#contenido">Ir al contenido</a>
+
+    <header class="barra">
+      <div class="contenedor barra__interior">
+        <a class="marca" href="#" aria-label="andamio, inicio">
+          <svg class="marca__icono" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M7 3v26M25 3v26M7 9h18M7 18h18M7 27h18M7 9l18 9M25 18 7 27" />
+          </svg>
+          andamio
+        </a>
+        <nav class="barra__nav" aria-label="Secciones">
+          <a href="#como-funciona">Cómo funciona</a>
+          <a href="#demo">Probalo</a>
+          <a href="#instalar">Instalar</a>
+          <a href="#preguntas">Preguntas</a>
+        </nav>
+        <a class="boton boton--chico boton--borde" href="https://github.com/rodal95/andamio">GitHub</a>
+      </div>
+    </header>
+
+    <main id="contenido">
+      <!-- Portada -->
+      <section class="portada">
+        <div class="contenedor portada__grilla">
+          <div class="portada__texto">
+            <p class="etiqueta">Generador de código en español · v<span data-version>1.0.0</span></p>
+            <h1>Armá la estructura.<br /><span class="resaltado">Programá la lógica.</span></h1>
+            <p class="portada__bajada">
+              <strong>andamio</strong> crea tus proyectos y genera el código repetitivo (tablas, menús, APIs,
+              componentes y pantallas) para que te concentres en lo que importa.
+            </p>
+            <ul class="pildoras" aria-label="Tecnologías">
+              <li>Python + SQLite</li>
+              <li>Django REST</li>
+              <li>React + Vite</li>
+              <li>React Native + Expo</li>
+            </ul>
+            <div class="portada__acciones">
+              <a class="boton" href="#instalar">Instalar</a>
+              <a class="boton boton--borde" href="#demo">Ver qué genera</a>
+            </div>
+          </div>
+
+          <figure class="terminal terminal--portada" aria-label="Sesión del menú interactivo de andamio">
+            <div class="terminal__barra">
+              <span class="terminal__puntos" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal__titulo">C:\Users\alumno\mi-api&gt; andamio</span>
+              <button class="terminal__boton" type="button" id="repetir-menu" aria-label="Repetir la animación">
+                Repetir
+              </button>
+            </div>
+            <pre class="terminal__cuerpo" id="terminal-menu" aria-live="off"></pre>
+            <figcaption class="terminal__pie">
+              Escribiendo solo <code>andamio</code>, un menú te pregunta todo paso a paso.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Cómo funciona -->
+      <section class="seccion" id="como-funciona">
+        <div class="contenedor">
+          <h2>Cómo funciona</h2>
+          <p class="seccion__bajada">Tres comandos. Lo demás lo escribís vos.</p>
+          <ol class="pasos">
+            <li class="paso">
+              <span class="paso__numero">1</span>
+              <h3>Instalalo una vez</h3>
+              <p>Un solo comando, sin configurar nada. Funciona en las PC del laboratorio sin permisos de administrador.</p>
+              <code class="paso__comando">py -m pip install …andamio.whl</code>
+            </li>
+            <li class="paso">
+              <span class="paso__numero">2</span>
+              <h3>Creá el proyecto</h3>
+              <p>Carpetas, configuración y archivos base listos para ejecutar, con el siguiente paso exacto.</p>
+              <code class="paso__comando">andamio crear django mi-api</code>
+            </li>
+            <li class="paso">
+              <span class="paso__numero">3</span>
+              <h3>Generá las piezas</h3>
+              <p>Adentro del proyecto, andamio detecta qué tipo es y genera el código que corresponde.</p>
+              <code class="paso__comando">andamio nuevo recurso producto nombre:str precio:decimal</code>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Demo -->
+      <section class="seccion seccion--oscura" id="demo">
+        <div class="contenedor">
+          <h2>Mirá lo que genera</h2>
+          <p class="seccion__bajada">
+            Estos son comandos y archivos reales: la página se arma ejecutando andamio. Tocá un archivo para ver
+            su código.
+          </p>
+          <div class="pestanas" role="tablist" aria-label="Tipo de proyecto" id="pestanas-stack"></div>
+          <div class="demo" id="demo-panel" role="tabpanel">
+            <pre class="terminal terminal__cuerpo demo__terminal" id="demo-terminal" aria-label="Comandos y salida"></pre>
+            <div class="explorador">
+              <div class="explorador__arbol">
+                <p class="explorador__titulo" id="demo-carpeta">mi-proyecto</p>
+                <ul class="arbol" id="demo-arbol"></ul>
+                <ul class="leyenda" aria-label="Referencias">
+                  <li><i class="estado estado--nuevo"></i>nuevo</li>
+                  <li><i class="estado estado--modificado"></i>modificado</li>
+                  <li><i class="estado estado--proyecto"></i>del proyecto</li>
+                </ul>
+              </div>
+              <div class="codigo">
+                <div class="codigo__barra">
+                  <span class="codigo__nombre" id="codigo-nombre"></span>
+                  <button class="terminal__boton" type="button" id="codigo-copiar">Copiar</button>
+                </div>
+                <pre class="codigo__cuerpo"><code id="codigo-contenido"></code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ventajas -->
+      <section class="seccion" id="ventajas">
+        <div class="contenedor">
+          <h2>Pensado para aprender</h2>
+          <div class="ventajas">
+            <article class="ventaja">
+              <h3>Nunca rompe lo que hiciste</h3>
+              <p>
+                No sobrescribe archivos. Valida todo antes de escribir y, si algo falla a mitad de camino, deshace los
+                cambios.
+              </p>
+            </article>
+            <article class="ventaja">
+              <h3>Errores que se entienden</h3>
+              <p>
+                En español, diciendo qué pasó y cómo seguir. Si un dato no sirve, te explica por qué y te lo vuelve a
+                pedir.
+              </p>
+            </article>
+            <article class="ventaja">
+              <h3>Escribí los nombres como quieras</h3>
+              <p>
+                <code>Línea Venta</code>, <code>linea-venta</code> o <code>LineaVenta</code>: andamio los adapta a
+                cada lenguaje y arma el plural en castellano.
+              </p>
+            </article>
+            <article class="ventaja">
+              <h3>Código comentado</h3>
+              <p>
+                El código generado explica qué hace cada parte, con consultas parametrizadas, tests y buenas prácticas
+                desde el principio.
+              </p>
+            </article>
+            <article class="ventaja">
+              <h3>Plantillas modificables</h3>
+              <p>
+                <code>andamio plantillas exportar</code> copia las plantillas a tu proyecto para que generen el código
+                a tu manera.
+              </p>
+            </article>
+            <article class="ventaja">
+              <h3>Sin internet, sin instalar</h3>
+              <p>
+                <code>andamio.pyz</code> es un solo archivo: llevalo en un pendrive y ejecutalo con
+                <code>py andamio.pyz</code>.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Punta a punta -->
+      <section class="seccion seccion--suave" id="punta-a-punta">
+        <div class="contenedor">
+          <h2>Del servidor al celular, con el mismo comando</h2>
+          <p class="seccion__bajada">
+            Generá un recurso en Django y el servicio en React o React Native con los mismos campos: se conectan sin
+            tocar nada.
+          </p>
+          <div class="flujo">
+            <div class="flujo__caja">
+              <span class="flujo__etiqueta">Django REST</span>
+              <code>andamio nuevo recurso producto nombre:str precio:decimal</code>
+              <span class="flujo__detalle">API en <code>/api/productos/</code></span>
+            </div>
+            <div class="flujo__flecha" aria-hidden="true">→</div>
+            <div class="flujo__caja">
+              <span class="flujo__etiqueta">React · React Native</span>
+              <code>andamio nuevo servicio producto nombre:str precio:decimal</code>
+              <span class="flujo__detalle"><code>productoService.listar()</code>, <code>crear()</code>, …</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Instalar -->
+      <section class="seccion" id="instalar">
+        <div class="contenedor contenedor--angosto">
+          <h2>Instalar</h2>
+          <p class="seccion__bajada">Necesitás Python 3.10 o más nuevo.</p>
+          <div class="pestanas pestanas--claras" role="tablist" aria-label="Forma de instalar" id="pestanas-instalar">
+            <button role="tab" aria-selected="true" data-panel="instalar-windows">Windows</button>
+            <button role="tab" aria-selected="false" data-panel="instalar-unix">Linux o Mac</button>
+            <button role="tab" aria-selected="false" data-panel="instalar-pyz">Sin instalar</button>
+          </div>
+          <div class="instalar__panel" id="instalar-windows" role="tabpanel">
+            <p>En CMD o PowerShell:</p>
+            <div class="comando"><code data-instalar="py"></code><button type="button" class="comando__copiar">Copiar</button></div>
+            <p>Después, adentro de la carpeta donde trabajás:</p>
+            <div class="comando"><code>andamio</code><button type="button" class="comando__copiar">Copiar</button></div>
+          </div>
+          <div class="instalar__panel" id="instalar-unix" role="tabpanel" hidden>
+            <p>En la terminal:</p>
+            <div class="comando"><code data-instalar="python3"></code><button type="button" class="comando__copiar">Copiar</button></div>
+            <div class="comando"><code>andamio</code><button type="button" class="comando__copiar">Copiar</button></div>
+          </div>
+          <div class="instalar__panel" id="instalar-pyz" role="tabpanel" hidden>
+            <p>
+              Descargá
+              <a href="https://github.com/rodal95/andamio/releases/latest/download/andamio.pyz">andamio.pyz</a>, guardalo
+              donde quieras (sirve un pendrive) y usalo en lugar de <code>andamio</code>:
+            </p>
+            <div class="comando"><code>py C:\ruta\andamio.pyz crear python mi-tienda</code><button type="button" class="comando__copiar">Copiar</button></div>
+            <p>No necesita instalación, ni permisos, ni internet.</p>
+          </div>
+          <p class="nota">
+            Para los proyectos de React necesitás Node.js 20.19 o más nuevo; para React Native (Expo), 22.13 o más nuevo.
+          </p>
+        </div>
+      </section>
+
+      <!-- Preguntas -->
+      <section class="seccion seccion--suave" id="preguntas">
+        <div class="contenedor contenedor--angosto">
+          <h2>Preguntas frecuentes</h2>
+          <details>
+            <summary>Dice que "andamio" no se reconoce como un comando.</summary>
+            <p>
+              La carpeta donde se instaló no está en el PATH de Windows. Usá <code>py -m andamio</code> en su lugar: hace
+              exactamente lo mismo.
+            </p>
+          </details>
+          <details>
+            <summary>Dice "No encontré un proyecto".</summary>
+            <p>
+              Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con <code>cd mi-proyecto</code>,
+              o creá uno con <code>andamio crear</code>.
+            </p>
+          </details>
+          <details>
+            <summary>¿Puedo ver qué va a hacer antes de que lo haga?</summary>
+            <p>Sí: agregá <code>--simular</code> a cualquier comando y te muestra los archivos que crearía o modificaría, sin tocar nada.</p>
+          </details>
+          <details>
+            <summary>Borré una línea que decía "no borrar esta línea".</summary>
+            <p>
+              No pasa nada grave: andamio genera igual los archivos y te muestra exactamente qué línea pegar y en qué archivo.
+            </p>
+          </details>
+          <details>
+            <summary>La app de React Native no se conecta a Django.</summary>
+            <p>
+              En el emulador de Android tu PC es <code>10.0.2.2</code> (ya viene configurado). En un celular real, poné la
+              IP de tu PC en <code>EXPO_PUBLIC_API_URL</code> y ejecutá <code>python manage.py runserver 0.0.0.0:8000</code>.
+            </p>
+          </details>
+          <p class="nota">
+            Más preguntas en el <a href="https://github.com/rodal95/andamio#preguntas-frecuentes">README del proyecto</a>.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pie">
+      <div class="contenedor pie__interior">
+        <span>andamio v<span data-version>1.0.0</span> · Licencia MIT</span>
+        <span>
+          <a href="https://github.com/rodal95/andamio">Código</a> ·
+          <a href="https://github.com/rodal95/andamio/releases">Versiones</a> ·
+          <a href="https://github.com/rodal95/andamio/blob/main/docs/docente.md">Guía para docentes</a>
+        </span>
+      </div>
+    </footer>
+
+    <script src="datos.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -33,6 +33,8 @@ andamio/
 tests/unit/             núcleo, CLI, menú, control de plantillas
 tests/integracion/      un archivo por stack, exportación, empaquetado, coherencia
 scripts/empaquetar.py   arma andamio.pyz y el .zip de la Release
+scripts/sitio.py        genera las demostraciones de la página (sitio/datos.js)
+sitio/                  página web (HTML, CSS y JS sin librerías) para GitHub Pages
 ```
 
 ## Cómo se genera una pieza
@@ -260,3 +262,23 @@ tests, arma el `.whl`, `andamio.pyz` y el `.zip`, los prueba y publica la
 Release con las notas del `CHANGELOG.md`. El enlace
 `https://github.com/rodal95/andamio/releases/latest/download/andamio.pyz`
 siempre apunta a la última versión.
+
+## Página web
+
+La página `https://rodal95.github.io/andamio/` está en `sitio/` (HTML, CSS y
+JavaScript, sin librerías). Las terminales y los archivos de ejemplo no se
+escriben a mano: `scripts/sitio.py` ejecuta andamio de verdad (crea un proyecto
+de cada tipo, genera piezas y simula una sesión del menú) y guarda el resultado
+en `sitio/datos.js`. El workflow `Sitio` lo ejecuta y publica la página cada vez
+que cambia algo en `sitio/` o en `andamio/`.
+
+Para verla en tu PC:
+
+```
+python scripts/sitio.py
+cd sitio
+python -m http.server
+```
+
+y abrí http://localhost:8000. Para cambiar qué comandos muestra cada demo,
+editá la lista `DEMOS` de `scripts/sitio.py`.
