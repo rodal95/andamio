@@ -23,7 +23,7 @@ python -m andamio nuevo hook contador
 python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
 
-El servicio usa la API (Django o FastAPI) definida en `EXPO_PUBLIC_API_URL` (archivo `.env`).
+El servicio usa la API (Django, FastAPI o Express) definida en `EXPO_PUBLIC_API_URL` (archivo `.env`).
 
 ## Estructura
 

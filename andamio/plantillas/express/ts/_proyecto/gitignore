@@ -1,0 +1,14 @@
+# Dependencias (se instalan con npm install)
+node_modules/
+
+# Configuración local con datos privados
+.env
+
+# Bases de datos de desarrollo y de los tests
+datos.db
+datos.db-journal
+test.db
+test.db-journal
+
+# Cliente de Prisma (se genera con npx prisma generate)
+src/generated/

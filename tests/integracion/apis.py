@@ -1,7 +1,8 @@
-"""Levanta una API generada por andamio (Django o FastAPI) para probar los frontends contra ella.
+"""Levanta una API generada por andamio (Django, FastAPI o Express) para probar los frontends.
 
-Las dos cumplen el mismo contrato, así que las mismas pruebas de React y React Native
-se ejecutan contra cada una (parametrizadas con BACKENDS).
+Las tres cumplen el mismo contrato, así que las mismas pruebas de React y React Native
+se ejecutan contra cada una (parametrizadas con BACKENDS). Express necesita Node y un
+npm install, como todas las pruebas que usan BACKENDS (--lento).
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -20,6 +22,8 @@ from pathlib import Path
 import pytest
 
 from andamio.cli import main
+
+from .node import NPX, ejecutar, npm_install
 
 DEPENDENCIAS = {
     "django": ["django", "rest_framework", "django_filters", "corsheaders", "drf_spectacular", "drf_spectacular_sidecar", "dotenv", "dj_database_url"],
@@ -36,8 +40,12 @@ def requiere(backend: str) -> pytest.MarkDecorator:
     return pytest.mark.skipif(bool(faltantes), reason=f"faltan dependencias de {backend}: {INSTALAR[backend]}")
 
 
+NODE = shutil.which("node")
+requiere_express = pytest.mark.skipif(NODE is None or NPX is None, reason="no hay Node/npm instalado")
+
 # Para parametrizar: @pytest.mark.parametrize("backend", BACKENDS)
 BACKENDS = [pytest.param(b, marks=[requiere(b), getattr(pytest.mark, b)], id=b) for b in DEPENDENCIAS]
+BACKENDS.append(pytest.param("express", marks=[requiere_express, pytest.mark.express], id="express"))
 
 
 def puerto_libre() -> int:
@@ -46,9 +54,13 @@ def puerto_libre() -> int:
         return s.getsockname()[1]
 
 
-def _comando_servidor(backend: str, puerto: int) -> list[str]:
+def _comando_servidor(backend: str, puerto: int, raiz: Path) -> list[str]:
     if backend == "django":
         return [sys.executable, "manage.py", "runserver", f"127.0.0.1:{puerto}", "--noreload"]
+    if backend == "express":
+        # Como npm start, pero en un solo proceso (así terminate() lo cierra).
+        servidor = next(raiz.glob("src/servidor.*")).relative_to(raiz).as_posix()
+        return [NODE, "--import", "tsx", servidor]
     return [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(puerto)]
 
 
@@ -66,13 +78,16 @@ def api_en_marcha(backend: str, carpeta: Path, monkeypatch, recursos: list[list[
     for argumentos in recursos:
         assert main(["nuevo", "recurso", *argumentos, *migrar]) == 0
     monkeypatch.chdir(carpeta)
+    if backend == "express":
+        npm_install(raiz)
+        ejecutar([NPX, "prisma", "migrate", "dev", "--name", "inicial"], raiz)
 
     puerto = puerto_libre()
-    entorno = dict(os.environ)
+    entorno = {**os.environ, "PORT": str(puerto)}
     if cors:
         entorno["CORS_ALLOWED_ORIGINS"] = cors
     servidor = subprocess.Popen(
-        _comando_servidor(backend, puerto), cwd=raiz, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=entorno
+        _comando_servidor(backend, puerto, raiz), cwd=raiz, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=entorno
     )
     url = f"http://127.0.0.1:{puerto}/api"
     try:

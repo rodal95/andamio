@@ -16,9 +16,16 @@ Todos los cambios importantes de andamio. El proyecto usa
   React y React Native funcionan igual con las dos. Las fechas con hora sin
   zona horaria se toman como hora local (`ZONA_HORARIA` en el `.env`), como
   en Django.
+- Stack `express`: API REST con Express 5 + Prisma 7 (SQLite) + Zod, en
+  TypeScript o JavaScript (`python -m andamio crear express mi-api --js`), y
+  pieza `recurso` con el modelo en `prisma/schema.prisma`, la validación (con
+  los mensajes en español de Django), las rutas y 5 tests (`npm test`, con su
+  propia base `test.db`). Mismo contrato y mismo puerto (8000) que Django y
+  FastAPI; Swagger en `/docs` sin internet. `--migrar` ejecuta
+  `npx prisma migrate dev`.
 - Pieza `crud` para React: `python -m andamio nuevo crud producto <campos>`
   genera la lista, el detalle (con eliminar) y el formulario para crear y
-  editar (con los errores de validación de Django en cada campo), el
+  editar (con los errores de validación de la API en cada campo), el
   componente `ProductoDetalle` (muestra y avisa, no llama a la API), el hook
   genérico `useConsulta` y el servicio, y registra las rutas y el enlace en
   `App`. Funciona en TypeScript y JavaScript.
@@ -27,7 +34,8 @@ Todos los cambios importantes de andamio. El proyecto usa
   `src/pages/InicioPage/`. `nuevo pagina` registra también su ruta y su enlace.
 - Se rechaza una página o un CRUD si su ruta ya existe en `App`. En proyectos
   sin router, andamio genera igual e indica el `npm install` y qué pegar.
-- Test en el navegador (Playwright) del CRUD generado contra las APIs de Django y FastAPI.
+- Test en el navegador (Playwright) del CRUD generado contra las APIs de Django,
+  FastAPI y Express.
 - `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
   usuario (sin permisos de administrador) para poder escribir solo `andamio`.
   En Linux y Mac explica qué línea agregar. Es opcional.
@@ -35,7 +43,7 @@ Todos los cambios importantes de andamio. El proyecto usa
 ### Cambiado
 - Los servicios y el `crud` de React y React Native ya no hablan solo de
   Django: los comentarios y los `.env` explican cómo usarlos con cualquiera
-  de las dos APIs.
+  de las tres APIs.
 - Todos los mensajes, la ayuda y los README de los proyectos generados
   muestran los comandos con Python adelante (`python -m andamio ...`, o
   `python andamio.pyz ...` si se usa el .pyz), que funciona en cualquier PC.

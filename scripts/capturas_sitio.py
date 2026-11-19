@@ -2,10 +2,11 @@
 
     python scripts/capturas_sitio.py
 
-Genera con andamio un proyecto de Django, uno de FastAPI, uno de React y uno de
-React Native, los pone en marcha de verdad (APIs con datos, web compilada, app de
-Expo exportada para web) y les saca fotos con Chromium (Playwright). Se ejecuta a
-mano cuando cambian las plantillas, y las imágenes se suben al repositorio.
+Genera con andamio un proyecto de Django, uno de FastAPI, uno de Express, uno de
+React y uno de React Native, los pone en marcha de verdad (APIs con datos, web
+compilada, app de Expo exportada para web) y les saca fotos con Chromium
+(Playwright). Se ejecuta a mano cuando cambian las plantillas, y las imágenes se
+suben al repositorio.
 
 Necesita: las dependencias de Django y de FastAPI instaladas en este Python
 (pip install -r andamio/plantillas/django/_proyecto/requirements.txt y lo mismo con
@@ -196,29 +197,61 @@ def fastapi(base: Path) -> None:
     )
     try:
         esperar_url("http://127.0.0.1:8001/api/productos/")
-        for nombre, precio, stock in PRODUCTOS:
-            datos = json.dumps({"nombre": nombre, "precio": precio, "stock": stock}).encode()
-            pedido = urllib.request.Request(
-                "http://127.0.0.1:8001/api/productos/", data=datos, headers={"Content-Type": "application/json"}
-            )
-            urllib.request.urlopen(pedido, timeout=10)
-        fotos(
-            [
-                {"url": "http://127.0.0.1:8001/docs", "archivo": str(IMAGENES / "fastapi-swagger.jpg"), "ancho": 1200, "alto": 760, "esperar": ".opblock"},
-                {
-                    # En Swagger: GET /api/productos/ → Try it out → Execute, y se ve la respuesta.
-                    "url": "http://127.0.0.1:8001/docs",
-                    "archivo": str(IMAGENES / "fastapi-api.jpg"),
-                    "ancho": 1200,
-                    "alto": 760,
-                    "esperar": ".opblock",
-                    "clics": [".opblock-get .opblock-summary", "button.try-out__btn", "button.execute"],
-                    "esperar_despues": ".live-responses-table .highlight-code",
-                    "mostrar": ".live-responses-table",
-                },
-            ],
-            base,
-        )
+        _cargar_productos("http://127.0.0.1:8001/api/productos/")
+        _fotos_swagger(8001, "fastapi", base)
+    finally:
+        servidor.terminate()
+        servidor.wait(timeout=30)
+
+
+def _cargar_productos(url: str) -> None:
+    for nombre, precio, stock in PRODUCTOS:
+        datos = json.dumps({"nombre": nombre, "precio": precio, "stock": stock}).encode()
+        pedido = urllib.request.Request(url, data=datos, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(pedido, timeout=10)
+
+
+def _fotos_swagger(puerto: int, nombre: str, base: Path) -> None:
+    """La documentación, y GET /api/productos/ ejecutado desde Swagger (Try it out → Execute)."""
+    fotos(
+        [
+            {"url": f"http://127.0.0.1:{puerto}/docs", "archivo": str(IMAGENES / f"{nombre}-swagger.jpg"), "ancho": 1200, "alto": 760, "esperar": ".opblock"},
+            {
+                "url": f"http://127.0.0.1:{puerto}/docs",
+                "archivo": str(IMAGENES / f"{nombre}-api.jpg"),
+                "ancho": 1200,
+                "alto": 760,
+                "esperar": ".opblock",
+                "clics": [".opblock-get .opblock-summary", "button.try-out__btn", "button.execute"],
+                "esperar_despues": ".live-responses-table .highlight-code",
+                "mostrar": ".live-responses-table",
+            },
+        ],
+        base,
+    )
+
+
+def express(base: Path) -> None:
+    print("Express")
+    carpeta = base / "express"
+    carpeta.mkdir()
+    andamio(carpeta, "crear", "express", "mi-api")
+    api = carpeta / "mi-api"
+    andamio(api, "nuevo", "recurso", "producto", *CAMPOS)
+    ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], api)
+    ejecutar([NPX, "prisma", "migrate", "dev", "--name", "productos"], api)
+    # En el puerto 8002: el 8000 lo usa Django y el 8001 FastAPI.
+    servidor = subprocess.Popen(
+        ["node", "--import", "tsx", "src/servidor.ts"],
+        cwd=api,
+        env={**os.environ, "PORT": "8002"},
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        esperar_url("http://127.0.0.1:8002/api/productos/")
+        _cargar_productos("http://127.0.0.1:8002/api/productos/")
+        _fotos_swagger(8002, "express", base)
     finally:
         servidor.terminate()
         servidor.wait(timeout=30)
@@ -284,6 +317,7 @@ def principal() -> None:
         servidor = django(base)
         try:
             fastapi(base)
+            express(base)
             react(base)
             react_native(base)
         finally:

@@ -12,7 +12,7 @@ from andamio.nucleo.nombres import Nombre, kebab, separar_palabras
 from andamio.stacks.base import Solicitud
 from andamio.stacks.django import TIPOS as TIPOS_API
 
-# Los servicios usan los mismos tipos que el recurso de Django y de FastAPI, para que el
+# Los servicios usan los mismos tipos que el recurso de Django, FastAPI y Express, para que el
 # mismo comando sirva en los dos lados: nombre:str precio:decimal ...
 TIPOS = TIPOS_API
 

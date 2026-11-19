@@ -9,6 +9,7 @@
     { href: "python.html", texto: "Python" },
     { href: "django.html", texto: "Django" },
     { href: "fastapi.html", texto: "FastAPI" },
+    { href: "express.html", texto: "Express" },
     { href: "react.html", texto: "React" },
     { href: "react-native.html", texto: "React Native" },
   ];

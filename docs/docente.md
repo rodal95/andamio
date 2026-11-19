@@ -25,12 +25,12 @@ andamio/
 ├── stacks/
 │   ├── __init__.py     REGISTRO (orden de detección) y ORDEN_MENU
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
-│   ├── python.py  django.py  fastapi.py  react.py  react_native.py
-│   └── _js.py          ayudas compartidas por react y react-native
+│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py
+│   └── _js.py          ayudas compartidas por express, react y react-native
 └── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
     └── <pieza>/        lo que genera "andamio nuevo <pieza>"
-                        (react y react-native tienen las variantes ts/ y js/)
+                        (express, react y react-native tienen las variantes ts/ y js/)
 tests/unit/             núcleo, CLI, menú, control de plantillas
 tests/integracion/      un archivo por stack, exportación, empaquetado, coherencia
 scripts/empaquetar.py   arma andamio.pyz y el .zip de la Release
@@ -267,13 +267,16 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   con `andamio/plantillas/fastapi/_proyecto/requirements.txt`).
 - `--lento` necesita Node (22.13 o más nuevo, por Expo): `npm install` + `npm run build`
   en React, `tsc` y `expo install --check` en React Native, y los servicios de
-  ambos y el `crud` en Chromium ejecutados contra la API generada en Django **y**
-  en FastAPI (`tests/integracion/apis.py` levanta cualquiera de las dos).
-- Las dos APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
+  ambos y el `crud` en Chromium ejecutados contra la API generada en Django, en
+  FastAPI **y** en Express (`tests/integracion/apis.py` levanta cualquiera de las
+  tres). En Express, además, `npm install`, la migración de Prisma, `npm test` y
+  `tsc` del proyecto generado, en TypeScript y en JavaScript.
+- Las tres APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
   lista sin paginación, decimales como número, fechas con hora en hora local con su
   zona, errores 400 `{campo: [mensajes]}` en español, 404 `{"detail": ...}`, 204 al
-  eliminar, y `?search=`, `?ordering=` y `?campo=valor`. Si cambiás una, cambiá la
-  otra: `test_coherencia.py` y `test_crud_navegador.py` lo controlan.
+  eliminar, y `?search=`, `?ordering=` y `?campo=valor`, en el puerto 8000. Si
+  cambiás una, cambiá las otras: `test_coherencia.py` y `test_crud_navegador.py` lo
+  controlan.
 - El CI (GitHub Actions) corre los tests en Ubuntu y Windows con Python 3.10 y
   3.13, y un trabajo aparte con `--lento`.
 
@@ -283,6 +286,13 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   funcionar con Python 3.10 (Django 6 ya pide 3.12).
 - FastAPI: `andamio/plantillas/fastapi/_proyecto/requirements.txt`, también con
   Python 3.10. `fastapi-offline` sirve la documentación (`/docs`) sin internet.
+- Express: `andamio/plantillas/express/{ts,js}/_proyecto/package.json` (versiones
+  exactas). Ojo: en npm, `prisma@latest` puede apuntar a una versión candidata
+  (`8.0.0-rc...`); usá la última estable (`npm view prisma dist-tags`). Prisma 7
+  no genera el cliente al migrar: por eso los scripts `postinstall`, `predev` y
+  `pretest` ejecutan `prisma generate`. Los tests de los proyectos usan `test.db`,
+  que `npm test` borra y vuelve a crear con `prisma db push` (sin `--force-reset`,
+  que Prisma bloquea cuando lo ejecuta un asistente de IA).
 - React: `andamio/plantillas/react/_proyecto/package.json` (versiones exactas;
   guiarse por la plantilla oficial `npm create vite@latest -- --template react-ts`).
 - React Native: `andamio/plantillas/react-native/_proyecto/package.json`, todas
@@ -323,7 +333,7 @@ JavaScript, sin librerías):
 | Archivo | Qué es |
 |---|---|
 | `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
-| `python.html`, `django.html`, `fastapi.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
 | `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
@@ -349,9 +359,9 @@ El workflow `Sitio` ejecuta `scripts/sitio.py` y publica la página cada vez que
 cambia algo en `sitio/` o en `andamio/`.
 
 **Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
-(API de Django con datos y panel de administración, API de FastAPI con su Swagger,
-web de React compilada, app de Expo exportada para web) y les saca fotos con
-Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
+(API de Django con datos y panel de administración, APIs de FastAPI y de Express
+con su Swagger, web de React compilada, app de Expo exportada para web) y les saca
+fotos con Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
 se suben al repositorio. Necesita las dependencias de Django y de FastAPI en ese
 Python, Node 22.13+ y Playwright para Node.
 

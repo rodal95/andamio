@@ -9,7 +9,7 @@ qué sirve cada uno. Así la página nunca muestra algo distinto de lo que hace 
 herramienta. El workflow del sitio lo ejecuta antes de publicar.
 
 Las capturas de pantalla de los proyectos funcionando (sitio/img/) las genera
-scripts/capturas_sitio.py, que necesita Django, FastAPI, Node y Chromium.
+scripts/capturas_sitio.py, que necesita Django, FastAPI, Node y Chromium (y npm para Express).
 """
 
 from __future__ import annotations
@@ -111,9 +111,30 @@ TECNOLOGIAS = {
             ("python -m pytest", "Ejecuta los tests de todos los recursos (con una base de datos en memoria)."),
         ],
     },
+    "express": {
+        "carpeta": "mi-api",
+        "resumen": "API REST con Express y Prisma, en TypeScript o JavaScript, con validación (Zod), documentación interactiva (Swagger) y tests. Responde igual que Django y FastAPI y en el mismo puerto (8000): React y React Native la usan sin cambios.",
+        "requisitos": ["Node.js 22.12 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
+        "piezas": {
+            "recurso": {
+                "comando": "nuevo recurso producto nombre:str precio:decimal stock:int",
+                "explicacion": "Un recurso es una tabla publicada como API: con un solo comando tenés /api/productos/ para listar, crear, ver, modificar y eliminar, con filtros, búsqueda y orden. Agrega el modelo a prisma/schema.prisma, la validación de los datos (con mensajes en español), las rutas y 5 tests. Después, una migración crea la tabla (o usá --migrar para que andamio la cree).",
+                "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena\nGET    /api/productos/?stock=10         filtra",
+                "uso_lenguaje": "texto",
+            },
+        },
+        "extra": [
+            ("npm install", "Instala las dependencias (una vez, o cuando cambia package.json) y genera el cliente de Prisma."),
+            ("npx prisma migrate dev --name productos", "Crea la migración con los cambios de prisma/schema.prisma y la aplica a la base."),
+            ("npm run dev", "Levanta la API en http://localhost:8000 y la reinicia sola cuando guardás un cambio."),
+            ("npm test", "Ejecuta los tests de todos los recursos, con otra base (test.db): no toca tus datos."),
+            ("npx prisma studio", "Abre una página para ver y editar los datos de la base."),
+            ("npm run tipos", "Solo en TypeScript: revisa los tipos de todo el proyecto."),
+        ],
+    },
     "react": {
         "carpeta": "mi-web",
-        "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks, servicios y CRUDs completos para usar tu API (Django o FastAPI).",
+        "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks, servicios y CRUDs completos para usar tu API (Django, FastAPI o Express).",
         "requisitos": ["Node.js 20.19 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
         "piezas": {
             "componente": {
@@ -136,13 +157,13 @@ TECNOLOGIAS = {
             },
             "servicio": {
                 "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
-                "explicacion": "Un servicio conecta la aplicación con un recurso de la API (Django o FastAPI): funciones para listar, obtener, crear, modificar y eliminar. Generalo con los mismos campos que el recurso de la API.",
+                "explicacion": "Un servicio conecta la aplicación con un recurso de la API (Django, FastAPI o Express): funciones para listar, obtener, crear, modificar y eliminar. Generalo con los mismos campos que el recurso de la API.",
                 "uso": "import { productoService } from './services/productoService';\n\nconst productos = await productoService.listar();\nawait productoService.crear({ nombre: 'Yerba', precio: 1500, stock: 10 });\nawait productoService.actualizar(1, { stock: 7 });",
                 "uso_lenguaje": "ts",
             },
             "crud": {
                 "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
-                "explicacion": "Genera de una vez la interfaz completa de un recurso de la API (Django o FastAPI): la lista, el detalle con eliminar y el formulario para crear y editar (que muestra los errores de validación de la API en cada campo), con sus rutas y el enlace en el menú. Las páginas hablan con el servicio; el componente de detalle solo muestra los datos y avisa. Generalo con los mismos campos que el recurso de la API.",
+                "explicacion": "Genera de una vez la interfaz completa de un recurso de la API (Django, FastAPI o Express): la lista, el detalle con eliminar y el formulario para crear y editar (que muestra los errores de validación de la API en cada campo), con sus rutas y el enlace en el menú. Las páginas hablan con el servicio; el componente de detalle solo muestra los datos y avisa. Generalo con los mismos campos que el recurso de la API.",
                 "uso": "/productos              lista           listar()\n/productos/nuevo        agregar         crear()\n/productos/3            detalle         obtener(3), eliminar(3)\n/productos/3/editar     editar          obtener(3), actualizar(3)",
                 "uso_lenguaje": "texto",
             },
@@ -178,7 +199,7 @@ TECNOLOGIAS = {
             },
             "servicio": {
                 "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
-                "explicacion": "Conecta la app con un recurso de la API (Django o FastAPI). http explica qué dirección usar en el emulador (10.0.2.2), en el navegador (localhost) o en un celular real (la IP de tu PC).",
+                "explicacion": "Conecta la app con un recurso de la API (Django, FastAPI o Express). http explica qué dirección usar en el emulador (10.0.2.2), en el navegador (localhost) o en un celular real (la IP de tu PC).",
                 "uso": "import { productoService } from '@/services/productoService';\n\nconst productos = await productoService.listar();",
                 "uso_lenguaje": "ts",
             },
@@ -253,6 +274,24 @@ DESCRIPCIONES = {
         ("*/__init__.py", "Convierte la carpeta en un paquete de Python, para poder hacer import desde ella."),
         ("tests/conftest.py", "Prepara los tests: un cliente de la API con una base de datos en memoria (no toca tus datos)."),
         ("tests/test_*.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python -m pytest."),
+    ],
+    "express": [
+        ("package.json", "Dependencias (Express, Prisma, Zod) con versiones fijas, y los comandos npm run dev y npm test."),
+        ("tsconfig.json", "Configuración de TypeScript (modo estricto). npm run tipos revisa los tipos."),
+        ("prisma.config.*", "Configuración de Prisma: dónde están el esquema, las migraciones y la base de datos (DATABASE_URL del .env)."),
+        ("prisma/schema.prisma", "Las tablas de la base de datos: un model por tabla (andamio agrega uno por recurso). Después de cambiarlo: npx prisma migrate dev."),
+        ("src/servidor.*", "Arranca la API en el puerto 8000 (npm run dev)."),
+        ("src/app.*", "La aplicación: CORS, una línea por recurso con sus rutas, la documentación en /docs y el manejo de errores."),
+        ("src/config.*", "Configuración leída del .env: puerto, base de datos, páginas que pueden usar la API (CORS) y zona horaria."),
+        ("src/db.*", "Conexión a la base de datos con Prisma: prisma.producto.findMany(), create(), update(), delete()."),
+        ("src/docs.*", "Arma la documentación de Swagger (/docs) con los esquemas de cada recurso. Funciona sin internet."),
+        ("src/errores.*", "Errores con el formato de Django REST: 400 con {campo: [mensaje]} en español y 404 con {detail}."),
+        ("src/fechas.*", "Cómo salen las fechas en el JSON: \"2026-11-19\", y las fechas con hora en hora local con su zona, igual que Django."),
+        ("src/validacion.*", "Funciones para validar los datos con Zod (texto, entero, decimal, fecha...), con los mensajes en español de Django."),
+        ("src/*/esquema.*", "Qué datos acepta el recurso (validación con Zod) y cómo se ve cada registro en el JSON."),
+        ("src/*/router.*", "Las rutas del recurso: listar (con búsqueda, orden y filtros), crear, ver, reemplazar, modificar y eliminar."),
+        ("tests/api.*", "Ayuda para los tests: arranca la API con otra base de datos (test.db), para no tocar tus datos."),
+        ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
     ],
     "react": [
         ("package.json", "Dependencias (React, Vite) con versiones fijas, y los comandos npm run dev y npm run build."),

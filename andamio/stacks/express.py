@@ -1,0 +1,283 @@
+"""Stack `express`: API REST con Express + Prisma (SQLite) + Zod, en TypeScript o JavaScript.
+
+La API cumple el mismo "contrato" que las de Django y FastAPI (rutas /api/<plural>/,
+lista como array, decimales como número, errores 400 {campo: [mensajes]}, 404,
+204, ?search, ?ordering y filtros), así los servicios y el CRUD de React y React
+Native funcionan igual con las tres. Escucha en el puerto 8000, como las otras.
+"""
+
+from __future__ import annotations
+
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+from andamio.nucleo import consola
+from andamio.nucleo.errores import AndamioError
+from andamio.nucleo.nombres import Nombre
+from andamio.stacks import _js
+from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
+from andamio.stacks.django import _VALORES_PRUEBA, TIPOS
+
+# Tipo de cada campo en prisma/schema.prisma.
+_PRISMA = {
+    "str": "String",
+    "text": "String",
+    "int": "Int",
+    "decimal": "Decimal",
+    "float": "Float",
+    "bool": "Boolean",
+    "date": "DateTime",
+    "datetime": "DateTime",
+    "email": "String",
+}
+
+# Función de src/validacion con la que se valida cada tipo.
+_ZOD = {
+    "str": "texto",
+    "text": "textoLargo",
+    "int": "entero",
+    "decimal": "decimal",
+    "float": "numero",
+    "bool": "booleano",
+    "date": "fecha",
+    "datetime": "fechaHora",
+    "email": "correo",
+}
+
+_TEXTO = ("str", "text", "email")
+
+
+def _literal(valor: object) -> str:
+    """Un valor como se escribe en JavaScript: 'texto', 10.5, true."""
+    if isinstance(valor, bool):
+        return "true" if valor else "false"
+    if isinstance(valor, str):
+        return "'" + valor.replace("\\", "\\\\").replace("'", "\\'") + "'"
+    return repr(valor)
+
+
+def _valor_prueba(tipo: str, indice: int) -> str:
+    valor = _VALORES_PRUEBA[tipo][indice]
+    return _literal(float(valor)) if tipo == "decimal" else _literal(valor)
+
+
+def _modelo_prisma(sol: Solicitud) -> str:
+    filas = [("id", "Int", "@id @default(autoincrement())")]
+    filas += [(c.nombre, _PRISMA[c.tipo], "@default(false)" if c.tipo == "bool" else "") for c in sol.campos]
+    filas += [("creado", "DateTime", "@default(now())"), ("actualizado", "DateTime", "@updatedAt")]
+    ancho_nombre = max(len(n) for n, _, _ in filas)
+    ancho_tipo = max(len(t) for _, t, _ in filas)
+    lineas = [f"  {n:<{ancho_nombre}} {t:<{ancho_tipo}} {a}".rstrip() for n, t, a in filas]
+    return "\n".join(
+        [f"model {sol.nombre.pascal} {{", *lineas, "", f'  @@map("{sol.nombre.plural}")', "}", ""]
+    )
+
+
+def _busqueda(sol: Solicitud) -> str:
+    campos = [c.nombre for c in sol.campos if c.tipo in _TEXTO]
+    if not campos:
+        return ""
+    nota = "// Busca en los campos de texto (en SQLite no distingue mayúsculas, salvo en letras con tilde o ñ)."
+    if len(campos) == 1:
+        return f"{nota}\n...(search ? {{ {campos[0]}: {{ contains: search }} }} : {{}}),"
+    opciones = "\n".join(f"        {{ {c}: {{ contains: search }} }}," for c in campos)
+    return f"{nota}\n...(search\n  ? {{\n      OR: [\n{opciones}\n      ],\n    }}\n  : {{}}),"
+
+
+def _json_campo(variable: str, nombre: str, tipo: str) -> str:
+    valor = f"{variable}.{nombre}"
+    if tipo == "decimal":
+        valor += ".toNumber()"
+    elif tipo == "date":
+        valor = f"jsonFecha({valor})"
+    elif tipo == "datetime":
+        valor = f"jsonFechaHora({valor})"
+    return f"{nombre}: {valor},"
+
+
+def _verificacion(sol: Solicitud) -> str:
+    campo = sol.campos[0]
+    actual = f"respuesta.datos.{campo.nombre}"
+    if campo.tipo == "datetime":
+        # Vuelve en hora local ("2025-02-20T15:45:00-03:00"): se compara el instante, no el texto.
+        esperado = _literal(_VALORES_PRUEBA["datetime"][1])
+        return f"assert.equal(new Date({actual}).getTime(), new Date({esperado}).getTime());"
+    return f"assert.equal({actual}, {_valor_prueba(campo.tipo, 1)});"
+
+
+def _contexto_recurso(sol: Solicitud) -> dict[str, str]:
+    campos = sol.campos
+    variable = sol.nombre.camel
+    tipos = {c.tipo for c in campos}
+    booleanos = [c.nombre for c in campos if c.tipo == "bool"]
+    if booleanos:
+        # Como en Django: si no se envía un sí/no, se guarda "no" (false).
+        por_defecto = ", ".join(f"{n}: campos.{n}.default(false)" for n in booleanos)
+        esquema_crear = f"z.object({{ ...campos, {por_defecto} }})"
+    else:
+        esquema_crear = "z.object(campos)"
+    return {
+        "modelo_prisma": _modelo_prisma(sol),
+        "import_fechas": "jsonFecha, jsonFechaHora" if "date" in tipos else "jsonFechaHora",
+        "import_validacion": ", ".join(sorted({_ZOD[t] for t in tipos})),
+        "campos_zod": "\n".join(f"{c.nombre}: {_ZOD[c.tipo]}()," for c in campos),
+        "esquema_crear": esquema_crear,
+        "filtros_zod": "\n".join(f"{c.nombre}: campos.{c.nombre}.optional()," for c in campos if c.tipo != "text"),
+        "campos_orden": ", ".join(f"'{n}'" for n in ["id", *(c.nombre for c in campos), "creado", "actualizado"]),
+        "campos_json": "\n".join(_json_campo(variable, c.nombre, c.tipo) for c in campos),
+        "busqueda": _busqueda(sol),
+        "datos_prueba": "\n".join(f"{c.nombre}: {_valor_prueba(c.tipo, 0)}," for c in campos),
+        "datos_modificados": "\n".join(f"{c.nombre}: {_valor_prueba(c.tipo, 1)}," for c in campos),
+        "verificacion": _verificacion(sol),
+    }
+
+
+# --- Validación de nombres -------------------------------------------------------------
+
+
+def _leer(ruta: Path) -> str:
+    try:
+        return ruta.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return ""
+
+
+def _validar_nombre(raiz: Path, nombre: Nombre) -> None:
+    motivo = None
+    if nombre.plural == "generated":
+        motivo = "es la carpeta del cliente de Prisma (src/generated)"
+    elif re.search(rf"^\s*model\s+{re.escape(nombre.pascal)}\s*\{{", _leer(raiz / "prisma" / "schema.prisma"), re.M):
+        motivo = f"ya existe el modelo {nombre.pascal} en prisma/schema.prisma"
+    else:
+        for app in ("app.ts", "app.js"):
+            if f"./{nombre.plural}/router" in _leer(raiz / "src" / app):
+                motivo = f"ya está registrado en src/{app}"
+    if motivo:
+        raise AndamioError(f"No se puede crear el recurso '{nombre.plural}': {motivo}.", "Elegí otro nombre, o indicá otro plural con --plural.")
+
+
+def _campos_reservados(nombre: Nombre) -> dict[str, str]:
+    return {
+        "search": "lo usa la API para buscar (?search=)",
+        "ordering": "lo usa la API para ordenar (?ordering=)",
+    }
+
+
+# --- Migración (--migrar) ----------------------------------------------------------------
+
+
+def _migrar(sol: Solicitud) -> None:
+    if not sol.opciones.get("migrar"):
+        return
+    comando = f"npx prisma migrate dev --name {sol.nombre.plural}"
+    npx = shutil.which("npx")
+    if npx is None:
+        raise AndamioError(
+            "Los archivos se generaron, pero no se pudo migrar: no encontré Node.js (el comando npx).",
+            f"Instalá Node.js 22.12 o más nuevo, ejecutá npm install y después: {comando}",
+        )
+    if not (sol.raiz / "node_modules" / "prisma").is_dir():
+        raise AndamioError(
+            "Los archivos se generaron, pero no se pudo migrar: faltan las dependencias del proyecto.",
+            f"Ejecutá npm install y después: {comando}",
+        )
+    consola.escribir()
+    consola.titulo(f"Ejecutando: {comando}")
+    resultado = subprocess.run([npx, "prisma", "migrate", "dev", "--name", sol.nombre.plural], cwd=sol.raiz)
+    if resultado.returncode != 0:
+        raise AndamioError(
+            f"Falló '{comando}'. Los archivos del recurso se generaron igual.",
+            f"Leé el error de arriba, corregilo y ejecutá de nuevo: {comando}",
+        )
+    sol.opciones["migrado"] = True
+
+
+def _pasos_recurso(sol: Solicitud) -> list[str]:
+    pasos = [] if sol.opciones.get("migrado") else ["npx prisma migrate dev --name @@plural@@"]
+    return [*pasos, "npm run dev", "http://localhost:8000/docs", "# Los tests del recurso se ejecutan con: npm test"]
+
+
+RECURSO = Pieza(
+    clave="recurso",
+    titulo="Recurso REST",
+    descripcion="modelo de Prisma, validación, API (CRUD) y tests",
+    ejemplo="producto nombre:str precio:decimal stock:int",
+    formas=("@@Nombre@@", "ruta /api/@@plural@@/"),
+    usa_campos=True,
+    usa_plural=True,
+    opciones=frozenset({"migrar"}),
+    contexto=_contexto_recurso,
+    campos_reservados=_campos_reservados,
+    marcadores={
+        **_js.MARCADORES_EXTENSION,
+        "modelo_prisma": "el model completo para prisma/schema.prisma",
+        "import_fechas": "funciones de src/fechas que usa el JSON (jsonFecha solo si hay fechas)",
+        "import_validacion": "funciones de src/validacion que usan los campos",
+        "campos_zod": "una línea por campo: nombre: texto(),",
+        "esquema_crear": "el esquema de creación (los sí/no tienen false por defecto)",
+        "filtros_zod": "un filtro opcional por campo, para ?campo=valor",
+        "campos_orden": "campos para ?ordering=",
+        "campos_json": "una línea por campo de aJson (los decimales y las fechas se convierten)",
+        "busqueda": "la búsqueda en los campos de texto (?search=)",
+        "datos_prueba": "datos de ejemplo para los tests: nombre: 'Texto de prueba',",
+        "datos_modificados": "datos de ejemplo para el test de modificación",
+        "verificacion": "lo que controla el test de modificación",
+    },
+    existe_si=("src/@@plural@@",),
+    validar_nombre=_validar_nombre,
+    inserciones=(
+        Insercion(
+            "prisma/schema.prisma",
+            "@@modelo_prisma@@",
+            marcador="modelos",
+            descripcion="modelo @@Nombre@@ (tabla @@plural@@)",
+            ubicacion="al final del archivo",
+            comentario="//",
+        ),
+        Insercion(
+            "src/app.@@ext@@",
+            "import { @@pluralCamel@@Docs, @@pluralCamel@@Router } from './@@plural@@/router.@@ext@@';",
+            marcador="imports",
+            descripcion="import del router",
+            ubicacion="arriba, junto a los otros import",
+            comentario="//",
+        ),
+        Insercion(
+            "src/app.@@ext@@",
+            "app.use('/api/@@plural@@', @@pluralCamel@@Router);",
+            marcador="rutas",
+            descripcion="rutas /api/@@plural@@/",
+            ubicacion="después de app.use(express.json())",
+            comentario="//",
+        ),
+        Insercion(
+            "src/app.@@ext@@",
+            "@@pluralCamel@@Docs,",
+            marcador="docs",
+            descripcion="documentación en /docs",
+            ubicacion="dentro de la lista recursos",
+            comentario="//",
+        ),
+    ),
+    siguiente_paso=_pasos_recurso,
+    despues=_migrar,
+    confirmaciones={"migrar": "¿Crear ahora la migración de la base de datos (npx prisma migrate dev)?"},
+)
+
+
+STACK = Stack(
+    clave="express",
+    titulo="Express + Prisma",
+    senal="package.json con express",
+    detectar=_js.detectar_dependencias("express"),
+    tipos=TIPOS,
+    piezas={"recurso": RECURSO},
+    ejemplo_proyecto="mi-api",
+    siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:8000/docs"],
+    contexto_env=lambda: {},
+    variantes=_js.VARIANTES,
+    detectar_variante=_js.detectar_variante,
+    marcadores_variante=_js.MARCADORES_VARIANTE,
+)

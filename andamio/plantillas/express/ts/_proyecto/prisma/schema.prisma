@@ -1,0 +1,14 @@
+// Las tablas de la base de datos: un "model" por tabla (andamio agrega uno por recurso).
+// Cada vez que cambies este archivo, creá una migración y aplicala con:
+//   npx prisma migrate dev --name <qué cambió>
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// --- andamio:modelos (no borrar esta línea) ---

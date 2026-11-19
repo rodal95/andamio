@@ -1,4 +1,4 @@
-/* andamio · sitio: guía de una tecnología (python.html, django.html, fastapi.html, react.html, react-native.html). */
+/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react y react-native .html). */
 (function () {
   "use strict";
 
@@ -29,11 +29,21 @@
         ],
       },
     },
+    express: {
+      marcha: [
+        { src: "img/express-swagger.jpg", url: "http://localhost:8000/docs", titulo: "Documentación interactiva (Swagger)", texto: "Ahí podés probar cada operación de la API desde el navegador, sin internet." },
+      ],
+      piezas: {
+        recurso: [
+          { src: "img/express-api.jpg", url: "http://localhost:8000/docs", titulo: "Probar el recurso en Swagger", texto: "GET /api/productos/ → Try it out → Execute: la lista en JSON, con la misma forma que las APIs de Django y FastAPI." },
+        ],
+      },
+    },
     react: {
       marcha: [{ src: "img/react-inicio.jpg", url: "http://localhost:5173", titulo: "La app recién creada", texto: "El menú y la página de inicio, al abrir el navegador después de npm run dev." }],
       piezas: {
         crud: [
-          { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API (Django o FastAPI). Cada uno enlaza a su detalle." },
+          { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API (Django, FastAPI o Express). Cada uno enlaza a su detalle." },
           { src: "img/react-crud-detalle.jpg", url: "http://localhost:5173/productos/1", titulo: "El detalle", texto: "Con los botones Editar y Eliminar." },
           { src: "img/react-crud-formulario.jpg", url: "http://localhost:5173/productos/nuevo", titulo: "El formulario", texto: "Si la API rechaza un dato, el error aparece debajo del campo." },
         ],
@@ -74,9 +84,16 @@
       ["Desde el celular no conecta", "Arrancá la API escuchando en la red: python -m uvicorn app.main:app --reload --host 0.0.0.0, y poné la IP de tu PC en la app."],
       ["La hora vuelve distinta de la que mandé", "Sin zona horaria se toma como hora local (ZONA_HORARIA del .env, por defecto Argentina) y vuelve con su zona: 10:30 sale como 10:30:00-03:00."],
     ],
+    express: [
+      ["npm install falla", "Revisá la versión de Node con node --version: Express con Prisma necesita 22.12 o más nueva."],
+      ["The table `main.productos` does not exist", "Falta la migración: npx prisma migrate dev --name productos (o generá el recurso con --migrar)."],
+      ["Cambié prisma/schema.prisma y la API no lo ve", "Creá una migración (npx prisma migrate dev --name <qué cambió>) y volvé a ejecutar npm run dev, que genera el cliente de Prisma de nuevo."],
+      ["React no puede leer la API (error de CORS)", "La dirección de la web tiene que estar en CORS_ALLOWED_ORIGINS del .env (ya vienen localhost:5173 y localhost:8081)."],
+      ["EADDRINUSE: el puerto 8000 está ocupado", "Ya hay otra API andando en el 8000 (quizás Django o FastAPI). Cerrala, o cambiá PORT en el .env (y la dirección en la app)."],
+    ],
     react: [
       ["npm install falla", "Revisá la versión de Node con node --version: necesitás 20.19 o más nueva."],
-      ["El servicio no trae datos", "La API (Django o FastAPI) tiene que estar andando y VITE_API_URL del .env tiene que apuntar a ella."],
+      ["El servicio no trae datos", "La API (Django, FastAPI o Express) tiene que estar andando y VITE_API_URL del .env tiene que apuntar a ella."],
       ["Cambié el .env y no toma el valor nuevo", "Cortá npm run dev con Ctrl+C y volvé a ejecutarlo: el .env se lee al arrancar."],
       ["Error 400 al crear", "Los campos del servicio no coinciden con los del recurso de la API: el error dice qué campo falta o está mal."],
       ["Mi proyecto lo creé con npm create vite", "andamio lo reconoce igual: si tiene tsconfig.json genera TypeScript; si no, JavaScript."],

@@ -6,10 +6,10 @@
     <title>andamio · generador de código para tus proyectos</title>
     <meta
       name="description"
-      content="andamio crea proyectos y genera el código repetitivo para Python, Django, FastAPI, React y React Native. En español y sin configurar nada."
+      content="andamio crea proyectos y genera el código repetitivo para Python, Django, FastAPI, Express, React y React Native. En español y sin configurar nada."
     />
     <meta property="og:title" content="andamio · generador de código para tus proyectos" />
-    <meta property="og:description" content="Creá proyectos de Python, Django, FastAPI, React y React Native y generá tablas, APIs, componentes y pantallas con un comando." />
+    <meta property="og:description" content="Creá proyectos de Python, Django, FastAPI, Express, React y React Native y generá tablas, APIs, componentes y pantallas con un comando." />
     <meta name="theme-color" content="#1b2430" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="estilos.css" />
@@ -144,7 +144,7 @@
           </div>
           <ul class="lista-explicada">
             <li><code>python -m andamio</code><p>Sin nada más, abre un menú que te pregunta todo paso a paso. Es la forma más fácil de empezar.</p></li>
-            <li><code>python -m andamio crear &lt;tipo&gt; &lt;nombre&gt;</code><p>Crea un proyecto nuevo: <code>python</code>, <code>django</code>, <code>fastapi</code>, <code>react</code> o <code>react-native</code>. Con <code>--js</code>, React y React Native se crean en JavaScript.</p></li>
+            <li><code>python -m andamio crear &lt;tipo&gt; &lt;nombre&gt;</code><p>Crea un proyecto nuevo: <code>python</code>, <code>django</code>, <code>fastapi</code>, <code>express</code>, <code>react</code> o <code>react-native</code>. Con <code>--js</code>, Express, React y React Native se crean en JavaScript.</p></li>
             <li><code>python -m andamio nuevo &lt;pieza&gt; &lt;nombre&gt;</code><p>Adentro de un proyecto, genera una pieza. Funciona desde cualquier subcarpeta.</p></li>
             <li><code>python -m andamio info</code><p>Muestra qué tipo de proyecto detectó y qué piezas podés generar ahí.</p></li>
             <li><code>--simular</code><p>Muestra qué archivos crearía o modificaría, sin tocar nada.</p></li>
@@ -165,12 +165,12 @@
         <div class="contenedor">
           <h2>Del servidor al celular, con el mismo comando</h2>
           <p class="seccion__bajada">
-            Generá un recurso en Django o FastAPI y el servicio (o el CRUD) en React o React Native con los mismos
-            campos: se conectan sin tocar nada. Las dos APIs responden igual, así que podés cambiar una por otra.
+            Generá un recurso en Django, FastAPI o Express y el servicio (o el CRUD) en React o React Native con los mismos
+            campos: se conectan sin tocar nada. Las tres APIs responden igual, así que podés cambiar una por otra.
           </p>
           <div class="flujo">
             <div class="flujo__caja">
-              <span class="flujo__etiqueta">Django · FastAPI</span>
+              <span class="flujo__etiqueta">Django · FastAPI · Express</span>
               <code>python -m andamio nuevo recurso producto nombre:str precio:decimal</code>
               <span class="flujo__detalle">API en <code>/api/productos/</code></span>
             </div>
@@ -191,7 +191,7 @@
           <div class="ventajas">
             <article class="ventaja"><h3>Nunca rompe lo que hiciste</h3><p>No sobrescribe archivos. Valida todo antes de escribir y, si algo falla a mitad de camino, deshace los cambios.</p></article>
             <article class="ventaja"><h3>Errores que se entienden</h3><p>En español, diciendo qué pasó y cómo seguir. Si un dato no sirve, te explica por qué y te lo vuelve a pedir.</p></article>
-            <article class="ventaja"><h3>TypeScript o JavaScript</h3><p>React y React Native en el lenguaje que uses. En un proyecto que ya existe, andamio se da cuenta solo.</p></article>
+            <article class="ventaja"><h3>TypeScript o JavaScript</h3><p>Express, React y React Native en el lenguaje que uses. En un proyecto que ya existe, andamio se da cuenta solo.</p></article>
             <article class="ventaja"><h3>Código comentado</h3><p>El código generado explica qué hace cada parte, con consultas parametrizadas, tests y buenas prácticas.</p></article>
             <article class="ventaja"><h3>Plantillas modificables</h3><p><code>python -m andamio plantillas exportar</code> copia las plantillas a tu proyecto para que generen el código a tu manera.</p></article>
             <article class="ventaja"><h3>Sin internet, sin instalar</h3><p><code>andamio.pyz</code> es un solo archivo: llevalo en un pendrive y ejecutalo con <code>python andamio.pyz</code>.</p></article>

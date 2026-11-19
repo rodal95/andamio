@@ -2,7 +2,7 @@
 
 Genera el código repetitivo de tus proyectos (carpetas, tablas, menús, APIs,
 componentes, pantallas) para que te concentres en la lógica. Funciona con
-**Python + SQLite**, **Django REST**, **FastAPI**, **React** y **React Native (Expo)**.
+**Python + SQLite**, **Django REST**, **FastAPI**, **Express**, **React** y **React Native (Expo)**.
 
 **Instalar** (en Windows, en CMD o PowerShell):
 
@@ -37,18 +37,19 @@ en tu proyecto, escribí `python -m andamio info`.
 | Python + SQLite (consola) | `python` | `entidad` |
 | Django REST | `django` | `recurso` |
 | FastAPI + SQLModel | `fastapi` | `recurso` |
+| Express + Prisma (TS o JS) | `express` | `recurso` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
 
 **`crud` (React):** con un comando genera la lista, el detalle (con eliminar) y el
-formulario para crear y editar, conectados a la API (Django o FastAPI) y con sus rutas
+formulario para crear y editar, conectados a la API (Django, FastAPI o Express) y con sus rutas
 (`/productos`, `/productos/nuevo`, `/productos/3`, `/productos/3/editar`). Las
 páginas usan el servicio; el componente `ProductoDetalle` solo muestra los datos y
 avisa con `onEditar` / `onEliminar`. Cada `pagina` también queda con su ruta y su
 enlace en el menú.
 
-React y React Native se crean en **TypeScript** (por defecto) o en **JavaScript**
-con `--js`: `python -m andamio crear react mi-web --js`. En un proyecto que ya existe (por
+React, React Native y Express se crean en **TypeScript** (por defecto) o en
+**JavaScript** con `--js`: `python -m andamio crear react mi-web --js`. En un proyecto que ya existe (por
 ejemplo, uno creado con `npm create vite`), andamio se da cuenta solo: si tiene
 `tsconfig.json` genera `.tsx`; si no, `.jsx`.
 
@@ -66,7 +67,8 @@ Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
 - `--plural`: indica el plural cuando el automático no sirve (`--plural paises`).
-- `--migrar` (Django): ejecuta `makemigrations` y `migrate` después de generar el recurso.
+- `--migrar` (Django y Express): después de generar el recurso, crea y aplica la migración
+  (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en Express).
 - `--carpeta` (React Native): crea la pantalla dentro de una carpeta de `app/`.
 
 Los nombres se escriben como quieras (`Línea Venta`, `linea-venta`) y andamio
@@ -76,7 +78,7 @@ los adapta (`LineaVenta`, `linea_venta`). Van **en singular**: `producto`, no `p
 
 Los campos se escriben `nombre:tipo`. Si no ponés el tipo, se usa `str`.
 
-| Tipo | Python + SQLite | Django, FastAPI, React y React Native |
+| Tipo | Python + SQLite | Django, FastAPI, Express, React y React Native |
 |---|---|---|
 | `str` | texto | texto corto (hasta 200 caracteres) |
 | `text` | — | texto largo |
@@ -92,13 +94,13 @@ Los campos se escriben `nombre:tipo`. Si no ponés el tipo, se usa `str`.
 **los mismos campos** que el recurso:
 
 ```
-python -m andamio nuevo recurso producto nombre:str precio:decimal     (en el proyecto Django o FastAPI)
+python -m andamio nuevo recurso producto nombre:str precio:decimal     (en la API: Django, FastAPI o Express)
 python -m andamio nuevo servicio producto nombre:str precio:decimal    (en el proyecto React)
 ```
 
-Las APIs de Django y de FastAPI que genera andamio responden igual (mismas rutas
-`/api/productos/`, mismos errores en español), así que el frontend funciona con
-cualquiera de las dos sin cambiar nada.
+Las APIs de Django, FastAPI y Express que genera andamio responden igual (mismas
+rutas `/api/productos/` en el puerto 8000, mismos errores en español), así que el
+frontend funciona con cualquiera de las tres sin cambiar nada.
 
 ## Modificar el código que se genera
 
@@ -132,6 +134,10 @@ No necesita instalación ni internet.
 Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con
 `cd mi-proyecto`. Si todavía no lo creaste: `python -m andamio crear <tipo> <nombre>`.
 
+**Cambié `prisma/schema.prisma` (Express) y la API no ve el cambio.**
+Creá una migración con `npx prisma migrate dev --name <qué cambió>` y volvé a
+ejecutar `npm run dev` (genera el cliente de Prisma de nuevo).
+
 **Cambié un modelo de FastAPI y la tabla no tiene el campo nuevo.**
 El proyecto de FastAPI no tiene migraciones: las tablas se crean al arrancar, pero
 no se modifican. Mientras desarrollás, borrá `datos.db` y volvé a arrancar la API
@@ -149,7 +155,8 @@ línea pegar y en qué archivo. Si querés, volvé a escribir la línea marcador
 En el emulador de Android, tu PC es `10.0.2.2` (ya viene configurado en `.env`).
 En un celular real, poné la IP de tu PC en `EXPO_PUBLIC_API_URL` y hacé que la API
 escuche en la red: en Django, agregá la IP a `ALLOWED_HOSTS` en su `.env` y ejecutá
-`python manage.py runserver 0.0.0.0:8000`; en FastAPI, `python -m uvicorn app.main:app --reload --host 0.0.0.0`.
+`python manage.py runserver 0.0.0.0:8000`; en FastAPI, `python -m uvicorn app.main:app --reload --host 0.0.0.0`;
+Express ya escucha en la red.
 
 **El servicio da error 400.**
 Los campos del servicio no coinciden con los del recurso de la API. El error
@@ -157,7 +164,7 @@ dice qué campo falta o está mal.
 
 **`npm install` falla.**
 Revisá la versión de Node con `node --version`: React necesita 20.19 o más
-nueva, y React Native (Expo) necesita 22.13 o más nueva.
+nueva, Express 22.12 o más nueva, y React Native (Expo) 22.13 o más nueva.
 
 **¿Cómo actualizo andamio?**
 Repetí el comando de instalación con la dirección de la versión nueva, que está

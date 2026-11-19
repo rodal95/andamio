@@ -62,6 +62,8 @@ jobs:
           test -f api/.env.example
           python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear fastapi api-rapida
           test -f api-rapida/app/main.py && test -f api-rapida/.gitignore
+          python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear express api-node --js
+          test -f api-node/src/app.js && test -f api-node/prisma/schema.prisma && test -f api-node/.gitignore
 
       - name: Crear la Release
         env:

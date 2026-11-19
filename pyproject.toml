@@ -43,5 +43,6 @@ addopts = "-ra"
 markers = [
     "django: necesita Django instalado (se saltea si no está)",
     "fastapi: necesita FastAPI instalado (se saltea si no está)",
+    "express: necesita Node (se saltea si no está)",
     "lento: ejecuta npm install / build (solo con --lento)",
 ]

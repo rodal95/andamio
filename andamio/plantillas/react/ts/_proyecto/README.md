@@ -24,7 +24,7 @@ python -m andamio nuevo crud producto nombre:str precio:decimal stock:int
 ```
 
 `pagina` y `crud` agregan sus rutas y sus enlaces en `src/App` (el menú). El servicio
-y el CRUD usan la API (Django o FastAPI) definida en `VITE_API_URL` (archivo `.env`).
+y el CRUD usan la API (Django, FastAPI o Express) definida en `VITE_API_URL` (archivo `.env`).
 
 ## Estructura
 
