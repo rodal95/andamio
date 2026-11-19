@@ -463,8 +463,10 @@ def generar() -> dict:
     # Con los códigos de color ANSI que ve el alumno; la página los convierte a HTML.
     consola._usar_color = True
     cwd = os.getcwd()
-    try:
-        with tempfile.TemporaryDirectory() as temporal:
+    with tempfile.TemporaryDirectory() as temporal:
+        # En Windows no se puede borrar la carpeta en la que está parado el proceso:
+        # hay que volver a la original antes de que se borre la temporal.
+        try:
             menu = Path(temporal) / "menu"
             proyectos = Path(temporal) / "proyectos"
             menu.mkdir()
@@ -475,10 +477,10 @@ def generar() -> dict:
             tecnologias = [demo_tecnologia(proyectos, stack) for stack in stacks.ORDEN_MENU]
             tecnologias[0]["ejecucion"] = ejecucion_python(proyectos)
             return {"version": andamio.__version__, "menu": sesion, "tecnologias": tecnologias, "ejemplos": _ejemplos()}
-    finally:
-        _base_actual = ""
-        consola._usar_color = None
-        os.chdir(cwd)
+        finally:
+            _base_actual = ""
+            consola._usar_color = None
+            os.chdir(cwd)
 
 
 def main_sitio() -> None:
