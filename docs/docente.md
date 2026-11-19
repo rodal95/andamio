@@ -243,12 +243,17 @@ Después, `python -m pytest --lento` confirma que todo instala y compila.
 2. En `CHANGELOG.md`, pasá lo de "Sin publicar" a una sección `## [X.Y.Z] - fecha`.
 3. En `README.md`, actualizá la dirección de instalación (`.../vX.Y.Z/andamio-X.Y.Z-py3-none-any.whl`).
    Un test falla si te olvidás.
-4. Subí los cambios, y después el tag:
+4. Subí los cambios y creá el tag, de una de estas dos formas:
+   - Con git:
 
-   ```
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   ```
+     ```
+     git tag vX.Y.Z
+     git push origin vX.Y.Z
+     ```
+
+   - Desde la web: en el repositorio, **Releases → Draft a new release →
+     Choose a tag**, escribí `vX.Y.Z`, elegí "Create new tag", dejá el título y
+     la descripción vacíos y tocá **Publish release**.
 
 El workflow `Release` verifica que el tag coincida con `__version__`, corre los
 tests, arma el `.whl`, `andamio.pyz` y el `.zip`, los prueba y publica la

@@ -1,13 +1,22 @@
 name: Release
 
-# Se ejecuta al subir un tag de versión, por ejemplo:
-#   git tag v1.0.0 && git push origin v1.0.0
+# Se ejecuta de cualquiera de estas dos formas:
+# - subiendo un tag de versión:  git tag v1.0.0 && git push origin v1.0.0
+# - publicando una Release desde la web de GitHub con un tag nuevo (v1.0.0):
+#   el workflow le agrega los archivos y las notas del CHANGELOG.
 on:
   push:
     tags: ["v*"]
+  release:
+    types: [published]
 
 permissions:
   contents: write
+
+# Si se disparan los dos eventos para el mismo tag, se ejecutan uno después del otro.
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -56,4 +65,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/empaquetar.py notas "$VERSION" > notas.md
-          gh release create "$GITHUB_REF_NAME" dist/* --title "andamio $GITHUB_REF_NAME" --notes-file notas.md
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            # La Release ya existe (creada desde la web): se completan archivos y notas.
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "andamio $GITHUB_REF_NAME" --notes-file notas.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "andamio $GITHUB_REF_NAME" --notes-file notas.md
+          fi
