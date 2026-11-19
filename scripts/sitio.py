@@ -1405,6 +1405,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
     comandos += [
         (PROGRAMA, "Abre el menú: te pregunta qué generar y te pide cada dato."),
         (f"{PROGRAMA} info", "Muestra qué tipo de proyecto detectó y qué piezas podés generar."),
+        (f"{PROGRAMA} comandos", "Muestra el árbol de todos los comandos, con sus opciones y las piezas de cada tecnología (en inglés: commands)."),
         (f"{piezas[0]['comando']} --simular", "Muestra qué archivos crearía o modificaría, sin tocar nada."),
         (f"{PROGRAMA} plantillas exportar", "Copia las plantillas al proyecto para modificar el código que se genera."),
         (f"{PROGRAMA} configurar", "Opcional: hace que funcione escribiendo solo andamio (una vez por PC)."),

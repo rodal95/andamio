@@ -12,6 +12,13 @@ Todos los cambios importantes de andamio. El proyecto usa
   `borrarToken()` y `leerToken()` (la misma clave `token` en `localStorage` que la web
   HTML). Receta con la página de ingreso en `docs/guias/combinaciones.md`.
 
+- Comandos, piezas y opciones en inglés: `create`, `new` (también `generate` y
+  `g`), `commands`, `templates export`, `configure`; `entity`, `resource`,
+  `component`, `page`, `screen`, `service`, `state`; `--dry-run`, `--variant`,
+  `--migrate`, `--protected`, `--folder`. Hacen lo mismo que en español.
+- `python -m andamio comandos` (`commands`): el árbol de todos los comandos con sus
+  opciones y las piezas de cada tecnología, armado a partir del código.
+
 ### Cambiado
 - Los errores de la API muestran su explicación (`detail`) en lugar de "La API
   respondió con el error 401": por ejemplo, "Las credenciales de autenticación no se

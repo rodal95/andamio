@@ -4,6 +4,73 @@ Cada sección tiene: cómo crear el proyecto, cómo ponerlo en marcha, y cada pi
 su comando, qué genera y un ejemplo de uso. Los comandos empiezan con
 `python -m andamio` (en Linux o Mac, `python3 -m andamio`).
 
+## El árbol de comandos
+
+`python -m andamio comandos` (o `commands`) muestra este árbol en la terminal, con las
+piezas de cada tecnología. Entre paréntesis, el mismo comando en inglés.
+
+```
+python -m andamio                                   menú interactivo: te pregunta todo
+python -m andamio --version                         la versión instalada
+python -m andamio --help                            la ayuda (también: <comando> --help)
+│
+├── crear <tipo> <nombre>                (create)   crea un proyecto en una carpeta nueva
+│     --simular            (--dry-run)              muestra qué crearía, sin tocar nada
+│     --variante ts|js     (--variant)              lenguaje (Express, React, React Native, Next.js)
+│     --js / --ts                                   atajos de --variante
+│
+├── nuevo <pieza> [nombre] [campos...]   (new, generate, g)   agrega una pieza al proyecto actual
+│     --plural <plural>                             el plural, si el automático no sirve
+│     --simular            (--dry-run)              muestra qué crearía o modificaría
+│     --migrar             (--migrate)              crea y aplica la migración
+│     --protegido          (--protected)            crear, modificar y eliminar piden login
+│     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
+│
+├── info                                            qué proyecto detectó y qué piezas acepta
+├── comandos                             (commands) este árbol
+├── plantillas exportar [pieza]          (templates export)   copia las plantillas para editarlas
+└── configurar                           (configure, setup)   permite escribir solo "andamio"
+      --simular            (--dry-run)
+```
+
+Qué opciones acepta cada pieza:
+
+| Opción | Piezas |
+|---|---|
+| `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
+| `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
+| `--carpeta` | `pantalla` (React Native) |
+| `--plural`, `--simular` | todas (`--plural` solo en las que usan plural) |
+
+## En inglés
+
+Los comandos, las piezas y las opciones se pueden escribir en inglés: hacen exactamente
+lo mismo. Los mensajes de andamio siguen en español.
+
+| Español | Inglés |
+|---|---|
+| `crear` | `create` |
+| `nuevo` | `new`, `generate`, `g` |
+| `comandos` | `commands` |
+| `plantillas exportar` | `templates export` |
+| `configurar` | `configure`, `setup` |
+| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder` |
+
+`crud`, `crud-api`, `login`, `hook`, `composable` e `info` son iguales en los dos idiomas.
+
+```
+python -m andamio create django my-api
+python -m andamio new resource product name:str price:decimal --plural products --migrate --protected
+python -m andamio new page About
+```
+
+Los alias traducen los **comandos**, no tus nombres: el plural se arma con las reglas
+del español (`product` → `productes`). Si nombrás en inglés, indicá el plural con
+`--plural products`.
+
+---
+
 Opciones que sirven en todas las piezas:
 
 | Opción | Qué hace |
@@ -295,6 +362,7 @@ reflex run                                       http://localhost:3000
 |---|---|
 | `python -m andamio` | Menú interactivo: te pregunta todo, paso a paso. |
 | `python -m andamio info` | Qué proyecto detectó, qué piezas y qué tipos de campo hay. |
+| `python -m andamio comandos` | El árbol de todos los comandos, opciones y piezas (en inglés: `commands`). |
 | `python -m andamio plantillas exportar [pieza]` | Copia las plantillas a `.andamio/plantillas/` para modificar el código que se genera. |
 | `python -m andamio configurar` | Opcional: permite escribir solo `andamio` (agrega la carpeta al PATH). |
 | `python -m andamio --version` | La versión instalada. |
