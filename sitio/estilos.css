@@ -1790,3 +1790,7 @@ section[id] {
     overflow-wrap: anywhere;
   }
 }
+
+.paso-guia.seccion--oscura > .contenedor > p {
+  color: #b4bec9;
+}
