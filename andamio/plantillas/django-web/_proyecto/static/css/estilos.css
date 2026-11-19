@@ -30,7 +30,7 @@ a {
   align-items: center;
   gap: 1rem 1.5rem;
   padding: 0.75rem 1.5rem;
-  background: #fff;
+  background: var(--superficie, #fff);
   border-bottom: 1px solid var(--borde);
 }
 
@@ -69,7 +69,7 @@ a {
   border: 1px solid var(--acento);
   border-radius: 6px;
   background: var(--acento);
-  color: #fff;
+  color: var(--acento-texto, #fff);
   font: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -96,7 +96,7 @@ a {
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--superficie, #fff);
 }
 
 .tabla th,
@@ -142,11 +142,11 @@ a {
 .mensaje {
   padding: 0.6rem 0.9rem;
   border-radius: 6px;
-  background: #e6f4f1;
+  background: color-mix(in srgb, var(--acento) 12%, var(--superficie, #fff));
 }
 
 .mensaje--error {
-  background: #fdecea;
+  background: color-mix(in srgb, var(--peligro) 12%, var(--superficie, #fff));
 }
 
 .detalle dt {
@@ -162,7 +162,7 @@ a {
   padding: 1rem;
   border: 1px solid var(--borde);
   border-radius: 8px;
-  background: #fff;
+  background: var(--superficie, #fff);
 }
 
 .tarjeta h3 {

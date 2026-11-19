@@ -1,0 +1,43 @@
+/* Paginación: los números de página de una lista larga.
+
+   <nav class="paginacion" aria-label="Páginas">
+     <a href="?page=1">Anterior</a>
+     <a href="?page=1">1</a>
+     <a href="?page=2" aria-current="page">2</a>
+     <a href="?page=3">3</a>
+     <a href="?page=3">Siguiente</a>
+   </nav>
+
+   En Django con plantillas, los datos están en page_obj (ListView con paginate_by). */
+
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: var(--espacio, 1rem) 0;
+}
+
+.paginacion a,
+.paginacion span {
+  min-width: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--borde, #d9dee5);
+  border-radius: var(--radio, 8px);
+  background: var(--superficie, #fff);
+  color: var(--texto, #1b2430);
+  text-align: center;
+  text-decoration: none;
+}
+
+.paginacion a:hover {
+  border-color: var(--acento, #0b7a75);
+  color: var(--acento, #0b7a75);
+}
+
+.paginacion [aria-current="page"] {
+  border-color: var(--acento, #0b7a75);
+  background: var(--acento, #0b7a75);
+  color: var(--acento-texto, #fff);
+  font-weight: 600;
+}

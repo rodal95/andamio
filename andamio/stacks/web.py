@@ -10,6 +10,7 @@ from pathlib import Path
 
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
+from andamio.estilos import piezas_de_estilos
 from andamio.stacks import _js
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
@@ -168,13 +169,26 @@ CRUD = Pieza(
     ],
 )
 
+ESTILOS = piezas_de_estilos(
+    "css",
+    lambda ruta: Insercion(
+        "css/estilos.css",
+        f'@import url("{ruta}");',
+        marcador="componentes",
+        descripcion="import del CSS",
+        ubicacion="arriba de todo (los @import van antes que cualquier otra regla)",
+        comentario="/*",
+    ),
+    'Usá las clases en tu HTML: class="...".',
+)
+
 STACK = Stack(
     clave="web",
     titulo="HTML + CSS + JavaScript",
     senal="index.html y js/menu.js",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"pagina": PAGINA, "componente": COMPONENTE, "servicio": SERVICIO, "crud": CRUD},
+    piezas={"pagina": PAGINA, "componente": COMPONENTE, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
     ejemplo_proyecto="mi-pagina",
     siguiente_paso_proyecto=["cd @@carpeta@@", *_SERVIR, "http://localhost:5173"],
 )

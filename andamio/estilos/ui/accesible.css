@@ -1,0 +1,58 @@
+/* Accesibilidad: que la página se pueda usar con teclado, lector de pantalla y sin animaciones.
+
+   - Foco visible: al navegar con Tab se ve dónde estás.
+   - .solo-lectores: texto que no se ve pero el lector de pantalla lee.
+       <button class="boton"><span aria-hidden="true">✕</span><span class="solo-lectores">Cerrar</span></button>
+   - .saltar: enlace para saltear el menú (primer elemento del <body>):
+       <a class="saltar" href="#contenido">Ir al contenido</a>   ...   <main id="contenido">
+   - Enlaces dentro de un texto, siempre subrayados (no solo por el color).
+   - Si la persona pidió menos movimiento, se apagan animaciones y transiciones. */
+
+:focus-visible {
+  outline: 3px solid var(--acento, #0b7a75);
+  outline-offset: 2px;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.saltar {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radio, 8px);
+  background: var(--acento, #0b7a75);
+  color: var(--acento-texto, #fff);
+}
+
+.saltar:focus {
+  top: 1rem;
+}
+
+p a,
+li a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

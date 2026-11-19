@@ -5,6 +5,29 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- Piezas de estilos en web, Django con plantillas, Vue, React y Next.js:
+  - `nuevo tema [<color>] [--modo auto|claro|oscuro]`: variables CSS (colores, letra,
+    bordes, sombras) con modo oscuro y estilos base de botones, formularios y tablas,
+    cargadas en todo el proyecto. Lo generado por `crud` y `pagina` cambia de look sin
+    tocarlo. Nueve colores; `--modo` (`--mode`) elige claro, oscuro o el del sistema.
+  - `nuevo ui <parte>`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion,
+    cargando, responsive y accesible, en CSS sin librerías, con el ejemplo de uso en el
+    archivo.
+  - `nuevo estilo <nombre>`: el CSS de tu componente o página, con las variables del
+    tema y ya conectado.
+- `tema` también en React Native (colores claro y oscuro y `useTema()`) y en Reflex
+  (`rx.theme` con el color y el modo).
+- `andamio comandos` muestra la forma general de cada pieza (`nuevo crud <nombre>
+  <campo:tipo>...`) además del ejemplo. Guía nueva: `docs/guias/estilos.md`.
+
+### Cambiado
+- El CSS base de la web HTML, Django con plantillas y Vue usa las variables del tema
+  (`--superficie`, `--acento-texto`), así el modo oscuro también cambia botones y fondos.
+- Las líneas marcador `andamio:estilos` en `templates/base.html` (Django con
+  plantillas), `src/main` (React y Vue) y `app/layout` (Next.js). En proyectos creados
+  antes, andamio indica qué línea pegar.
+
 ## [1.3.0] - 2026-11-19
 
 ### Agregado

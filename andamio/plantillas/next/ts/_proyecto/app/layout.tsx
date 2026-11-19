@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import './globals.css';
+// --- andamio:estilos (no borrar esta línea) ---
 import styles from './layout.module.css';
 
 export const metadata: Metadata = {

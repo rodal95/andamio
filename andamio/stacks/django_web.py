@@ -12,6 +12,7 @@ from pathlib import Path
 
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
+from andamio.estilos import piezas_de_estilos
 from andamio.stacks import django
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
@@ -231,13 +232,26 @@ PAGINA = Pieza(
     siguiente_paso=["python manage.py runserver", "http://127.0.0.1:8000/@@nombreKebab@@/"],
 )
 
+ESTILOS = piezas_de_estilos(
+    "static/css",
+    lambda ruta: Insercion(
+        "templates/base.html",
+        f"<link rel=\"stylesheet\" href=\"{{% static 'css/{ruta}' %}}\" />",
+        marcador="estilos",
+        descripcion="CSS cargado en base.html",
+        ubicacion="en el <head>, después de estilos.css",
+        comentario="{#",
+    ),
+    'Usá las clases en tus plantillas: class="...".',
+)
+
 STACK = Stack(
     clave="django-web",
     titulo="Django con plantillas",
     senal="manage.py, config/settings.py y templates/base.html",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"crud": CRUD, "pagina": PAGINA},
+    piezas={"crud": CRUD, "pagina": PAGINA, **ESTILOS},
     ejemplo_proyecto="mi-sitio",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

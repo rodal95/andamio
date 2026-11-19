@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from andamio.estilos import contexto_tema_js, pieza_tema
 from andamio.stacks import _js
 from andamio.stacks.base import Insercion, Pieza, Stack
 
@@ -78,13 +79,30 @@ SERVICIO = Pieza(
     ],
 )
 
+TEMA = pieza_tema(
+    descripcion="colores claro y oscuro de la app y el hook useTema()",
+    contexto=contexto_tema_js,
+    marcadores={
+        **_js.MARCADORES_EXTENSION,
+        "colores_claro": "los colores del modo claro: acento: '#2563eb',",
+        "colores_oscuro": "los colores del modo oscuro",
+        "modo": "auto, claro u oscuro (--modo)",
+    },
+    existe_si=("constants/tema.@@ext@@",),
+    siguiente_paso=[
+        "# Usalo en una pantalla o componente:",
+        "import { useTema } from '@/constants/tema';",
+        "const tema = useTema();   // tema.acento, tema.fondo, tema.texto, tema.superficie...",
+    ],
+)
+
 STACK = Stack(
     clave="react-native",
     titulo="React Native + Expo",
     senal="package.json con expo",
     detectar=_js.detectar_dependencias("expo"),
     tipos=_js.TIPOS,
-    piezas={"pantalla": PANTALLA, "componente": COMPONENTE, "hook": HOOK, "servicio": SERVICIO},
+    piezas={"pantalla": PANTALLA, "componente": COMPONENTE, "hook": HOOK, "servicio": SERVICIO, "tema": TEMA},
     ejemplo_proyecto="mi-app",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

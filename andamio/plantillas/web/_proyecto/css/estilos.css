@@ -29,7 +29,7 @@ a {
 
 .barra {
   padding: 0.75rem 1.5rem;
-  background: #fff;
+  background: var(--superficie, #fff);
   border-bottom: 1px solid var(--borde);
 }
 
@@ -56,7 +56,7 @@ a {
   border: 1px solid var(--acento);
   border-radius: 6px;
   background: var(--acento);
-  color: #fff;
+  color: var(--acento-texto, #fff);
   font: inherit;
   cursor: pointer;
 }
@@ -74,7 +74,7 @@ a {
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--superficie, #fff);
 }
 
 .tabla th,

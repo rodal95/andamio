@@ -16,6 +16,7 @@ _OPCIONES_PIEZA = {
     "migrar": "--migrar",
     "protegido": "--protegido",
     "carpeta": "--carpeta <carpeta>",
+    "modo": "--modo auto|claro|oscuro",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 
@@ -60,6 +61,22 @@ def _opciones(parser: argparse.ArgumentParser) -> list[tuple[str, str]]:
     return filas
 
 
+# El nombre de cada pieza en la forma general: qué se escribe en lugar del ejemplo.
+_MARCADOR_NOMBRE = {"tema": "<color>", "ui": "<parte>"}
+
+
+def forma_general(clave: str, pieza) -> str:
+    """nuevo crud <nombre> <campo:tipo>... : lo que se escribe, sin el ejemplo."""
+    if pieza.nombre_defecto and clave != "tema":
+        nombre = ""
+    else:
+        nombre = _MARCADOR_NOMBRE.get(clave, "<Nombre>" if pieza.ejemplo[:1].isupper() else "<nombre>")
+        if pieza.nombre_defecto:
+            nombre = f"[{nombre}]"
+    partes = ["nuevo", clave, nombre, "<campo:tipo>..." if pieza.usa_campos else ""]
+    return " ".join(p for p in partes if p)
+
+
 def _con_alias(nombre: str, alias: list[str]) -> str:
     return nombre + (f"  ({', '.join(alias)})" if alias else "")
 
@@ -98,17 +115,20 @@ def arbol(parser: argparse.ArgumentParser) -> str:
         for clave, pieza in stack.piezas.items():
             nombre = _con_alias(clave, [_PIEZAS_EN_INGLES[clave]] if clave in _PIEZAS_EN_INGLES else [])
             ejemplo = pieza.ejemplo or "(sin nombre)"
-            opciones = " ".join(_OPCIONES_PIEZA[o] for o in sorted(pieza.opciones))
-            filas.append((nombre, f"{ejemplo}  {opciones}".rstrip(), pieza.descripcion))
+            opciones = " ".join(_OPCIONES_PIEZA[o] for o in sorted(pieza.opciones) if _OPCIONES_PIEZA[o].split()[0] not in ejemplo)
+            filas.append((nombre, forma_general(clave, pieza), f"{ejemplo}  {opciones}".rstrip(), pieza.descripcion))
         ancho = max(len(f[0]) for f in filas)
-        for nombre, ejemplo, descripcion in filas:
+        for nombre, forma, ejemplo, descripcion in filas:
             lineas.append(f"    {nombre.ljust(ancho)}  {descripcion}")
+            lineas.append(f"    {' ' * ancho}  {forma}")
             lineas.append(f"    {' ' * ancho}  " + consola.color(f"ej.: nuevo {nombre.split()[0]} {ejemplo}", "gris"))
         lineas.append("")
 
     tipos = ", ".join(stacks.por_clave("django").tipos)
     lineas += [
         consola.color("Campos", "negrita"),
+        "    Los nombres son tuyos: <Nombre> y <nombre> son cualquier nombre (en singular),",
+        "    y los campos, los que necesites. Los ejemplos usan producto, pero sirve cualquiera.",
         "    nombre:tipo  (sin tipo es str). Tipos: " + tipos,
         "    En el tipo python (consola): str, int, float.",
         "",

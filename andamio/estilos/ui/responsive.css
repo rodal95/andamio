@@ -1,0 +1,79 @@
+/* Mejoras para el celular: se suman a lo que ya tenés, sin cambiar el HTML.
+
+   - Imágenes y videos nunca más anchos que la pantalla.
+   - Formularios y botones a todo el ancho; los grupos de botones se apilan.
+   - Tablas: en el celular, cada fila se ve como una tarjeta. Para que cada dato tenga
+     su título, agregá data-label a las celdas:  <td data-label="Precio">1500</td>
+     Sin data-label, la tabla se puede deslizar de costado. */
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .contenido,
+  main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .formulario,
+  form {
+    max-width: none;
+  }
+
+  .formulario input:not([type="checkbox"]):not([type="radio"]),
+  .formulario textarea,
+  .formulario select {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acciones > .boton,
+  .acciones > button {
+    width: 100%;
+    text-align: center;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  table:has(td[data-label]) {
+    display: table;
+  }
+
+  table:has(td[data-label]) thead {
+    display: none;
+  }
+
+  table:has(td[data-label]) tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--borde, #d9dee5);
+    border-radius: var(--radio, 8px);
+    background: var(--superficie, #fff);
+  }
+
+  table:has(td[data-label]) td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+  }
+
+  table:has(td[data-label]) td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+  }
+}

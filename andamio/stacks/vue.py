@@ -7,6 +7,7 @@ from typing import Callable
 
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre, titulo
+from andamio.estilos import piezas_de_estilos
 from andamio.stacks import _js
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
@@ -197,13 +198,26 @@ CRUD = Pieza(
     ],
 )
 
+ESTILOS = piezas_de_estilos(
+    "src",
+    lambda ruta: Insercion(
+        "src/main.js",
+        f"import './{ruta}';",
+        marcador="estilos",
+        descripcion="import del CSS",
+        ubicacion="junto a import './estilos.css'",
+        comentario="//",
+    ),
+    'Usá las clases en tus componentes: class="...".',
+)
+
 STACK = Stack(
     clave="vue",
     titulo="Vue + Vite",
     senal="package.json con vite y vue",
     detectar=_js.detectar_dependencias("vite", "vue"),
     tipos=_js.TIPOS,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "composable": COMPOSABLE, "servicio": SERVICIO, "crud": CRUD},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "composable": COMPOSABLE, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},

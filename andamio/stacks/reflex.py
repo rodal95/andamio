@@ -16,6 +16,7 @@ from pathlib import Path
 from andamio.nucleo import consola
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
+from andamio.estilos import contexto_tema_reflex, pieza_tema
 from andamio.stacks import _js
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 from andamio.stacks.django import TIPOS, python_del_proyecto
@@ -346,6 +347,29 @@ def _contexto_proyecto(nombre: Nombre) -> dict[str, str]:
     return {"activar": r".venv\Scripts\activate" if os.name == "nt" else "source .venv/bin/activate"}
 
 
+TEMA = pieza_tema(
+    descripcion="color de acento y modo claro u oscuro de toda la aplicación (rx.theme)",
+    contexto=_con_app(contexto_tema_reflex),
+    marcadores={
+        "app": _MARCADORES_PANTALLA["app"],
+        "acento_radix": "el color de acento de Radix: violet, green, blue...",
+        "apariencia": "inherit (el del sistema), light o dark",
+        "modo": "auto, claro u oscuro (--modo)",
+    },
+    existe_si=("@@app@@/tema.py",),
+    inserciones=(
+        Insercion("@@app@@/@@app@@.py", "from @@app@@.tema import TEMA", marcador="imports", descripcion="import", ubicacion="arriba, junto a los otros import"),
+        Insercion(
+            "@@app@@/@@app@@.py",
+            "app.theme = TEMA  # el tema de @@app@@/tema.py (nuevo tema)",
+            marcador="paginas",
+            descripcion="app.theme = TEMA",
+            ubicacion="después de app = rx.App(...)",
+        ),
+    ),
+    siguiente_paso=["reflex run", "# Para cambiar el color o el modo, editá @@app@@/tema.py."],
+)
+
 STACK = Stack(
     clave="reflex",
     titulo="Reflex (Python)",
@@ -359,6 +383,7 @@ STACK = Stack(
         "componente": COMPONENTE,
         "estado": ESTADO,
         "servicio": SERVICIO,
+        "tema": TEMA,
     },
     ejemplo_proyecto="mi-app",
     siguiente_paso_proyecto=[

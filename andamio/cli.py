@@ -106,6 +106,7 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--carpeta", "--folder", dest="carpeta", help="subcarpeta de app/ (pantallas de React Native)")
     nuevo.add_argument("--migrar", "--migrate", dest="migrar", action="store_true", help="crea y aplica la migración (Django, Express, Next.js full stack, Reflex)")
     nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
+    nuevo.add_argument("--modo", "--mode", dest="modo", help="modo del tema: auto (sigue al sistema), claro u oscuro")
     nuevo.add_argument("--simular", "--dry-run", **simular)
 
     comando("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
@@ -137,7 +138,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         stack = acciones.stack_por_clave(args.stack)
         return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante)
     if args.comando == "nuevo":
-        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido}
+        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)
     if args.comando == "info":
         return acciones.info(cwd)

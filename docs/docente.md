@@ -12,6 +12,7 @@ andamio/
 ├── menu.py             menú interactivo (andamio sin argumentos)
 ├── acciones.py         crear / nuevo / info: lo que comparten la CLI y el menú (y ALIAS_PIEZAS, en inglés)
 ├── comandos.py         andamio comandos: el árbol de comandos, opciones y piezas
+├── estilos/            piezas tema, ui y estilo: la paleta, el CSS del tema y ui/*.css (compartidos por todos los stacks web)
 ├── exportar.py         andamio plantillas exportar + LEEME.md de cada pieza
 ├── nucleo/             no depende de ningún stack
 │   ├── nombres.py      normalización, plural, palabras reservadas
@@ -210,6 +211,24 @@ def test_contexto(proyecto):
 
 Si la pieza genera TypeScript, sumala a `APP_QUE_USA_TODO` en ese archivo para
 que `pytest --lento` la compile.
+
+## Estilos (tema, ui y estilo)
+
+Las tres piezas están en `andamio/estilos/`, una sola vez para todos los stacks web:
+
+- `PALETA` (colores), `MODOS` y `css_tema()` arman el CSS del tema; `ui/<parte>.css` son
+  las partes de interfaz (`PARTES` las describe); `css_estilo()` el estilo propio.
+- `piezas_de_estilos(carpeta, conectar, nota_uso)` devuelve las tres piezas para un
+  stack: `carpeta` es dónde van los CSS y `conectar(ruta)` la `Insercion` que los carga
+  (un `@import`, un `<link>` o un `import`). En cada stack, su plantilla es un archivo
+  con un solo marcador, `@@css@@`.
+- React Native y Reflex no usan CSS: tienen su propia pieza `tema` (`pieza_tema()`),
+  con su plantilla (`constants/tema`, `<app>/tema.py`).
+
+Para agregar una parte de interfaz: escribí `andamio/estilos/ui/<parte>.css` (con el
+ejemplo de uso en el comentario de arriba y las variables del tema, con su valor por
+defecto: `var(--acento, #0b7a75)`) y sumala a `PARTES`. Para un color, sumalo a
+`PALETA` (claro con contraste para texto blanco, oscuro para texto negro) y a `RADIX`.
 
 ## Comandos en inglés
 
