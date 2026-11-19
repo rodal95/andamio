@@ -1,0 +1,4 @@
+-- Estructura de la base de datos.
+-- Se ejecuta cada vez que arranca el programa: por eso cada tabla usa
+-- CREATE TABLE IF NOT EXISTS (si la tabla ya existe, no hace nada).
+-- andamio agrega acá una tabla por cada entidad que generes.

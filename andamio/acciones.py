@@ -40,7 +40,7 @@ def _cerrar(plan: Plan, simular: bool, confirmar: bool, pregunta: str) -> bool:
     if simular:
         plan.mostrar()
         consola.escribir()
-        consola.aviso("Simulación: no se creó ni modificó ningún archivo.")
+        consola.escribir(consola.color("Simulación: no se creó ni modificó ningún archivo.", "amarillo", "negrita"))
         return False
     if confirmar:
         consola.escribir()
@@ -114,8 +114,13 @@ def preparar_nombre(stack: Stack, pieza: Pieza, raiz: Path, texto: str, plural: 
     return nombre
 
 
-def preparar_campos(stack: Stack, pieza: Pieza, textos: list[str]) -> list[Campo]:
-    campos = [parsear_campo(t, stack.tipos) for t in textos]
+def campos_reservados(pieza: Pieza, nombre: Nombre) -> dict[str, str]:
+    return pieza.campos_reservados(nombre) if pieza.campos_reservados else {}
+
+
+def preparar_campos(stack: Stack, pieza: Pieza, nombre: Nombre, textos: list[str]) -> list[Campo]:
+    reservados = campos_reservados(pieza, nombre)
+    campos = [parsear_campo(t, stack.tipos, reservados) for t in textos]
     validar_campos(campos)
     if pieza.usa_campos and not campos:
         raise AndamioError(
@@ -170,7 +175,7 @@ def nuevo(
             f"'{texto_nombre}' parece estar en plural. Los nombres van en singular (ej: 'producto', no 'productos').",
             f"Si de verdad es singular (como 'país'), indicá el plural: --plural {nombre.snake}es",
         )
-    campos = preparar_campos(stack, pieza, textos_campos)
+    campos = preparar_campos(stack, pieza, nombre, textos_campos)
     sol = Solicitud(stack, pieza, raiz, nombre, campos, {k: v for k, v in opciones.items() if v not in (None, False)})
     return generar_pieza(sol, simular=simular)
 

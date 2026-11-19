@@ -60,6 +60,8 @@ class Pieza:
     usa_plural: bool = False
     opciones: frozenset[str] = frozenset()  # opciones extra que acepta: "carpeta", "migrar"
     ajustar_palabras: Callable[[list[str]], list[str]] | None = None
+    # Nombres de campo prohibidos para esta pieza (ej.: chocan con variables de la plantilla).
+    campos_reservados: Callable[[Nombre], dict[str, str]] | None = None
     contexto: Callable[[Solicitud], dict[str, str]] | None = None
     marcadores: dict[str, str] = field(default_factory=dict)  # marcadores propios (para el LEEME)
     existe_si: tuple[str, ...] = ()  # si alguna de estas rutas existe, la pieza ya fue generada

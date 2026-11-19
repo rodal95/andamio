@@ -59,7 +59,7 @@ def _menu_piezas(stack: Stack, raiz: Path) -> int:
     consola.escribir()
     nombre = _pedir_nombre(stack, pieza, raiz)
     extras = _pedir_opciones(pieza)
-    campos = _pedir_campos(stack) if pieza.usa_campos else []
+    campos = _pedir_campos(stack, acciones.campos_reservados(pieza, nombre)) if pieza.usa_campos else []
     consola.escribir()
     sol = Solicitud(stack, pieza, raiz, nombre, campos, extras)
     return acciones.generar_pieza(sol, confirmar=True)
@@ -102,7 +102,7 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
     return extras
 
 
-def _pedir_campos(stack: Stack) -> list[Campo]:
+def _pedir_campos(stack: Stack, reservados: dict[str, str]) -> list[Campo]:
     consola.escribir()
     consola.titulo("Campos")
     consola.escribir(consola.color("Escribí un campo por vez. Cuando termines, apretá Enter sin escribir nada.", "gris"))
@@ -111,7 +111,7 @@ def _pedir_campos(stack: Stack) -> list[Campo]:
 
     def validar(texto: str) -> tuple[str, str | None]:
         nombre, _, tipo = texto.partition(":")
-        nombre = validar_nombre_campo(nombre)
+        nombre = validar_nombre_campo(nombre, reservados)
         if nombre in {c.nombre for c in campos}:
             raise AndamioError(f"El campo '{nombre}' ya está en la lista.")
         return nombre, validar_tipo(tipo, stack.tipos) if tipo else None
