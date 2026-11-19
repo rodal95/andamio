@@ -31,7 +31,10 @@ def mostrar_pasos(pasos: list[str]) -> None:
     consola.escribir()
     consola.titulo("Siguiente paso:" if len(pasos) == 1 else "Siguientes pasos:")
     for paso in pasos:
-        consola.escribir("    " + consola.comando(paso))
+        if paso.startswith(("http://", "https://")):
+            consola.escribir("    Abrí en el navegador: " + consola.comando(paso))
+        else:
+            consola.escribir("    " + consola.comando(paso))
 
 
 def _cerrar(plan: Plan, simular: bool, confirmar: bool, pregunta: str) -> bool:

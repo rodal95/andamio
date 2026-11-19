@@ -10,3 +10,6 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/).
   (valida antes de escribir, nunca sobrescribe, deshace si algo falla).
 - Comandos `crear`, `nuevo`, `info`, `--simular`, `--version` y menú interactivo.
 - Stack `python`: aplicación de consola con SQLite y pieza `entidad`.
+- Stack `django`: API REST con Django 5.2 LTS + DRF, configuración por `.env`,
+  Swagger en `/api/docs/` (funciona sin internet) y pieza `recurso` con modelo,
+  serializer, ViewSet, rutas, admin y 5 tests. Opción `--migrar`.

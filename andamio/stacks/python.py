@@ -5,6 +5,7 @@ from __future__ import annotations
 import builtins
 from pathlib import Path
 
+from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
@@ -54,6 +55,19 @@ def _campos_reservados(nombre: Nombre) -> dict[str, str]:
     reservados[nombre.snake] = "tiene el mismo nombre que la entidad"
     reservados[f"id_{nombre.snake}"] = "es el nombre que se usa para el id"
     return reservados
+
+
+_MODULOS_DEL_PROYECTO = {
+    "db": "ya existe el archivo db.py",
+    "main": "ya existe el archivo main.py",
+    "entrada": "ya existe el archivo menus/entrada.py",
+}
+
+
+def _validar_nombre(raiz: Path, nombre: Nombre) -> None:
+    motivo = _MODULOS_DEL_PROYECTO.get(nombre.snake)
+    if motivo:
+        raise AndamioError(f"No se puede usar '{nombre.snake}': {motivo}.", "Elegí otro nombre.")
 
 
 ENTIDAD = Pieza(
@@ -112,9 +126,5 @@ STACK = Stack(
     piezas={"entidad": ENTIDAD},
     ejemplo_proyecto="mi-tienda",
     siguiente_paso_proyecto=["cd @@carpeta@@", "python main.py"],
-    reservados=lambda raiz: {
-        "db": "ya existe el archivo db.py",
-        "main": "ya existe el archivo main.py",
-        "entrada": "ya existe menus/entrada.py",
-    },
+    validar_nombre=_validar_nombre,
 )

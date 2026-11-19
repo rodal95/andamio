@@ -40,8 +40,9 @@ def nombre_para_pieza(pieza: Pieza, texto: str, plural: str | None = None) -> No
 
 
 def validar_nombre_pieza(stack: Stack, raiz: Path, nombre: Nombre) -> None:
-    reservados = stack.reservados(raiz) if stack.reservados else {}
-    validar_nombre(nombre, reservados)
+    validar_nombre(nombre)
+    if stack.validar_nombre:
+        stack.validar_nombre(raiz, nombre)
 
 
 def describir_nombre(pieza: Pieza, nombre: Nombre) -> str:

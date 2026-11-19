@@ -86,7 +86,8 @@ class Stack:
     contexto_proyecto: Callable[[Nombre], dict[str, str]] | None = None
     # Si está definido, el `.env` se genera a partir de `.env.example` con estos valores.
     contexto_env: Callable[[], dict[str, str]] | None = None
-    # Nombres prohibidos según el proyecto (ej.: apps de Django que ya existen).
-    reservados: Callable[[Path], dict[str, str]] | None = None
+    # Validación extra del nombre según el proyecto (ej.: apps de Django que ya existen).
+    # Recibe la raíz del proyecto y el nombre; lanza AndamioError si no sirve.
+    validar_nombre: Callable[[Path, Nombre], None] | None = None
     # Solo para tests: carpeta de plantillas alternativa a la incorporada.
     plantillas: Traversable | None = None

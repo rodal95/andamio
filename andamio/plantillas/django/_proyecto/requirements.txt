@@ -1,0 +1,11 @@
+# Dependencias del proyecto. Instalalas con:  pip install -r requirements.txt
+# Versiones elegidas para funcionar con Python 3.10 o más nuevo.
+Django~=5.2.19
+djangorestframework~=3.18.3
+django-filter~=26.1.0
+django-cors-headers~=4.9.0
+drf-spectacular~=0.30.0
+# Archivos de Swagger incluidos: /api/docs/ funciona sin conexión a internet.
+drf-spectacular-sidecar==2026.10.1
+python-dotenv~=1.2.4
+dj-database-url~=3.1.2
