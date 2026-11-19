@@ -299,13 +299,47 @@ siempre apunta a la última versión.
 ## Página web
 
 La página `https://rodal95.github.io/andamio/` está en `sitio/` (HTML, CSS y
-JavaScript, sin librerías). Las terminales y los archivos de ejemplo no se
-escriben a mano: `scripts/sitio.py` ejecuta andamio de verdad (crea un proyecto
-de cada tipo, genera piezas y simula una sesión del menú) y guarda el resultado
-en `sitio/datos.js`. El workflow `Sitio` lo ejecuta y publica la página cada vez
-que cambia algo en `sitio/` o en `andamio/`.
+JavaScript, sin librerías):
 
-Para verla en tu PC:
+| Archivo | Qué es |
+|---|---|
+| `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
+| `python.html`, `django.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
+| `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
+| `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
+| `ejemplos/` | el código "que escribe el alumno" en las capturas finales |
+
+Cada guía tiene los mismos pasos: instalar, crear el proyecto (con lo que
+muestra la terminal y para qué sirve cada archivo), ponerlo en marcha, generar
+cada pieza (qué crea, qué modifica, cómo se usa y una captura), el proyecto
+completo, todos los comandos y problemas comunes. React y React Native tienen un
+selector TypeScript / JavaScript.
+
+**Nada se escribe a mano.** `scripts/sitio.py` ejecuta andamio de verdad: crea un
+proyecto de cada tipo y variante, genera cada pieza, simula una sesión del menú y
+ejecuta la app de consola generada. Lo que cambia en las plantillas aparece solo en
+la página. Lo único escrito a mano en ese archivo es:
+
+- `TECNOLOGIAS`: el comando de ejemplo de cada pieza, para qué sirve y cómo se usa.
+- `DESCRIPCIONES` y `CARPETAS`: para qué sirve cada archivo generado. **Si agregás
+  un archivo a una plantilla, agregale su descripción**: hay un test que falla si
+  algún archivo generado queda sin explicación.
+
+El workflow `Sitio` ejecuta `scripts/sitio.py` y publica la página cada vez que
+cambia algo en `sitio/` o en `andamio/`.
+
+**Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
+(API de Django con datos y panel de administración, web de React compilada, app de
+Expo exportada para web) y les saca fotos con Chromium. Se ejecuta a mano cuando
+cambia cómo se ven los proyectos, y las imágenes se suben al repositorio. Necesita
+las dependencias de Django en ese Python, Node 22.13+ y Playwright para Node.
+
+```
+python scripts/capturas_sitio.py
+```
+
+Para ver la página en tu PC:
 
 ```
 python scripts/sitio.py
@@ -313,5 +347,4 @@ cd sitio
 python -m http.server
 ```
 
-y abrí http://localhost:8000. Para cambiar qué comandos muestra cada demo,
-editá la lista `DEMOS` de `scripts/sitio.py`.
+y abrí http://localhost:8000.

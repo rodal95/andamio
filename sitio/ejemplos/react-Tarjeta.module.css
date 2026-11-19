@@ -1,0 +1,9 @@
+/* Estilos de Tarjeta. Las clases de un .module.css solo afectan a este componente. */
+.root {
+  display: block;
+  max-width: 420px;
+  margin: 12px 16px;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
