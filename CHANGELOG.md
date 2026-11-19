@@ -5,6 +5,8 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.3.0] - 2026-11-19
+
 ### Agregado
 - React, Vue y Next.js: el `http` que generan `servicio` y `crud` manda el token del
   login JWT si hay uno guardado (`Authorization: Bearer <token>`), así el `crud`
