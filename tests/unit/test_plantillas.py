@@ -42,3 +42,10 @@ def test_cada_stack_tiene_plantilla_de_proyecto(stack):
 def test_cada_pieza_tiene_carpeta(stack):
     for pieza in stack.piezas:
         assert (plantillas.carpeta_incorporada(stack.clave) / pieza).is_dir(), pieza
+
+
+def test_el_servicio_es_igual_en_react_y_react_native():
+    """Coherencia: el mismo servicio en los dos stacks (solo cambia http.ts)."""
+    react = plantillas.carpeta_incorporada("react") / "servicio" / "src" / "services" / "@@nombreCamel@@Service.ts"
+    nativo = plantillas.carpeta_incorporada("react-native") / "servicio" / "services" / "@@nombreCamel@@Service.ts"
+    assert react.read_text(encoding="utf-8") == nativo.read_text(encoding="utf-8")

@@ -31,7 +31,9 @@ def mostrar_pasos(pasos: list[str]) -> None:
     consola.escribir()
     consola.titulo("Siguiente paso:" if len(pasos) == 1 else "Siguientes pasos:")
     for paso in pasos:
-        if paso.startswith(("http://", "https://")):
+        if paso.startswith("# "):
+            consola.escribir("    " + consola.color(paso[2:], "gris"))
+        elif paso.startswith(("http://", "https://")):
             consola.escribir("    Abrí en el navegador: " + consola.comando(paso))
         else:
             consola.escribir("    " + consola.comando(paso))
@@ -113,8 +115,18 @@ def validar_opciones(pieza: Pieza, opciones: dict[str, Any]) -> None:
 
 def preparar_nombre(stack: Stack, pieza: Pieza, raiz: Path, texto: str, plural: str | None) -> Nombre:
     nombre = nombre_para_pieza(pieza, texto, plural)
-    validar_nombre_pieza(stack, raiz, nombre)
+    validar_nombre_pieza(stack, raiz, nombre, pieza)
     return nombre
+
+
+def preparar_opciones(pieza: Pieza, opciones: dict[str, Any]) -> dict[str, Any]:
+    """Valida las opciones y normaliza las de texto (ej.: --carpeta "(Tabs)" -> "(tabs)")."""
+    validar_opciones(pieza, opciones)
+    resultado = {k: v for k, v in opciones.items() if v not in (None, False, "")}
+    for clave, normalizar in pieza.normalizar_opcion.items():
+        if clave in resultado:
+            resultado[clave] = normalizar(resultado[clave])
+    return resultado
 
 
 def campos_reservados(pieza: Pieza, nombre: Nombre) -> dict[str, str]:
@@ -168,8 +180,7 @@ def nuevo(
 ) -> int:
     stack, raiz = proyecto_actual(cwd)
     pieza = pieza_por_clave(stack, clave_pieza)
-    opciones = opciones or {}
-    validar_opciones(pieza, opciones)
+    opciones = preparar_opciones(pieza, opciones or {})
     if plural and not pieza.usa_plural:
         raise AndamioError(f"La pieza '{pieza.clave}' no usa plural; sacá la opción --plural.")
     nombre = preparar_nombre(stack, pieza, raiz, texto_nombre, plural)
@@ -179,7 +190,7 @@ def nuevo(
             "Si de verdad es singular (como 'país'), indicá el plural con --plural. Ejemplo: --plural paises",
         )
     campos = preparar_campos(stack, pieza, nombre, textos_campos)
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, {k: v for k, v in opciones.items() if v not in (None, False)})
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones)
     return generar_pieza(sol, simular=simular)
 
 

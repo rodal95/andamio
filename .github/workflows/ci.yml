@@ -25,3 +25,23 @@ jobs:
         run: python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
       - name: Tests
         run: python -m pytest
+
+  # Instala las dependencias de los proyectos generados y los compila:
+  # npm install + build (React), tsc (React Native) y servicios contra la API de Django.
+  lento:
+    name: Proyectos generados (--lento)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar andamio, pytest y las dependencias de Django
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
+      - name: Tests lentos
+        run: python -m pytest --lento

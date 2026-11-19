@@ -6,12 +6,12 @@ ORDEN_MENU es el orden en que se ofrecen al crear un proyecto.
 
 from __future__ import annotations
 
-from andamio.stacks import django, python
+from andamio.stacks import django, python, react, react_native
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
 # Orden de detección de la especificación: django, react-native, react, python.
-REGISTRO: list[Stack] = [django.STACK, python.STACK]
-ORDEN_MENU: list[Stack] = [python.STACK, django.STACK]
+REGISTRO: list[Stack] = [django.STACK, react_native.STACK, react.STACK, python.STACK]
+ORDEN_MENU: list[Stack] = [python.STACK, django.STACK, react.STACK, react_native.STACK]
 
 
 def por_clave(clave: str) -> Stack | None:

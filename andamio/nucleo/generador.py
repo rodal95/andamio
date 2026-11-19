@@ -39,16 +39,18 @@ def nombre_para_pieza(pieza: Pieza, texto: str, plural: str | None = None) -> No
     return Nombre.desde_palabras(palabras, plural_palabras)
 
 
-def validar_nombre_pieza(stack: Stack, raiz: Path, nombre: Nombre) -> None:
+def validar_nombre_pieza(stack: Stack, raiz: Path, nombre: Nombre, pieza: Pieza | None = None) -> None:
     validar_nombre(nombre)
     if stack.validar_nombre:
         stack.validar_nombre(raiz, nombre)
+    if pieza is not None and pieza.validar_nombre:
+        pieza.validar_nombre(raiz, nombre)
 
 
 def describir_nombre(pieza: Pieza, nombre: Nombre) -> str:
     formas: list[str] = []
     for forma in pieza.formas:
-        valor = nombre.forma(forma)
+        valor = renderizar(forma, nombre.marcadores()) if "@@" in forma else nombre.forma(forma)
         if valor not in formas:
             formas.append(valor)
     texto = " / ".join(formas)

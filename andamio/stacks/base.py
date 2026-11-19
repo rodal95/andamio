@@ -33,6 +33,7 @@ class Solicitud:
 
 
 # Lista de comandos (con marcadores) o función que la calcula según la solicitud.
+# Un paso que empieza con "# " se muestra como nota; uno que empieza con http, como enlace.
 Pasos = Union[list[str], Callable[[Solicitud], list[str]]]
 
 
@@ -55,13 +56,19 @@ class Pieza:
     titulo: str
     descripcion: str
     ejemplo: str  # ejemplo de uso: "producto nombre:str precio:float"
-    formas: tuple[str, ...] = ("snake",)  # formas del nombre que se muestran: "Se usará: ..."
+    # Formas del nombre que se muestran en "Se usará: ...": "snake", "pascal", ... o un
+    # texto con marcadores, como "use@@Nombre@@".
+    formas: tuple[str, ...] = ("snake",)
     usa_campos: bool = False
     usa_plural: bool = False
     opciones: frozenset[str] = frozenset()  # opciones extra que acepta: "carpeta", "migrar"
     ajustar_palabras: Callable[[list[str]], list[str]] | None = None
     # Nombres de campo prohibidos para esta pieza (ej.: chocan con variables de la plantilla).
     campos_reservados: Callable[[Nombre], dict[str, str]] | None = None
+    # Validación extra del nombre para esta pieza; lanza AndamioError si no sirve.
+    validar_nombre: Callable[[Path, Nombre], None] | None = None
+    # Normaliza el valor de una opción de texto ("carpeta"); lanza AndamioError si no sirve.
+    normalizar_opcion: dict[str, Callable[[str], str]] = field(default_factory=dict)
     contexto: Callable[[Solicitud], dict[str, str]] | None = None
     marcadores: dict[str, str] = field(default_factory=dict)  # marcadores propios (para el LEEME)
     existe_si: tuple[str, ...] = ()  # si alguna de estas rutas existe, la pieza ya fue generada

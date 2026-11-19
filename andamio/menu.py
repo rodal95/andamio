@@ -83,7 +83,7 @@ def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
 
         def validar_plural(texto: str) -> Nombre:
             con_plural = nombre.con_plural(texto)
-            validar_nombre_pieza(stack, raiz, con_plural)
+            validar_nombre_pieza(stack, raiz, con_plural, pieza)
             return con_plural
 
         nombre = consola.preguntar("Escribí el plural", validar=validar_plural)
@@ -94,8 +94,12 @@ def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
 def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
     extras: dict[str, Any] = {}
     if "carpeta" in pieza.opciones:
+        normalizar = pieza.normalizar_opcion.get("carpeta")
         carpeta = consola.preguntar(
-            "Carpeta dentro de app/ (Enter para ninguna)", permitir_vacio=True, ejemplo="productos o (tabs)"
+            "Carpeta dentro de app/ (Enter para ninguna)",
+            validar=normalizar,
+            permitir_vacio=True,
+            ejemplo="productos o (tabs)",
         )
         if carpeta:
             extras["carpeta"] = carpeta

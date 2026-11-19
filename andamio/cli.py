@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -112,6 +113,13 @@ def main(argv: list[str] | None = None) -> int:
         return _ejecutar(args, Path.cwd())
     except AndamioError as e:
         consola.error(e.mensaje, e.sugerencia)
+        return 1
+    except BrokenPipeError:
+        # La salida se cerró antes de tiempo (ej.: andamio info | more). No es un error de andamio.
+        try:
+            sys.stdout = open(os.devnull, "w")
+        except OSError:
+            pass
         return 1
     except (Cancelado, KeyboardInterrupt) as e:
         detalle = f" {e}" if isinstance(e, Cancelado) and str(e) else ""
