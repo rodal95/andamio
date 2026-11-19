@@ -72,3 +72,16 @@ def test_los_enlaces_de_las_guias_existen():
     for archivo in [RAIZ / "README.md", *guias.glob("*.md")]:
         for destino in re.findall(r"\]\(([^)#:]+\.md)", archivo.read_text(encoding="utf-8")):
             assert (archivo.parent / destino).is_file(), f"{archivo.name} enlaza a {destino}, que no existe"
+
+
+def test_la_guia_de_comandos_tiene_los_alias_en_ingles():
+    """Si falla: agregá el alias a las tablas "El árbol de comandos" y "En inglés" de docs/guias/comandos.md."""
+    from andamio.acciones import ALIAS_PIEZAS
+    from andamio.cli import ALIAS_ACCIONES, ALIAS_COMANDOS, construir_parser
+
+    comandos = (RAIZ / "docs" / "guias" / "comandos.md").read_text(encoding="utf-8")
+    for alias in [a for lista in {**ALIAS_COMANDOS, **ALIAS_ACCIONES}.values() for a in lista] + list(ALIAS_PIEZAS):
+        assert re.search(rf"[`(, ]{re.escape(alias)}[`), ]", comandos), alias
+    opciones = {o for a in construir_parser()._subparsers._group_actions[0].choices["nuevo"]._actions for o in a.option_strings}
+    for opcion in opciones - {"-h", "--help"}:
+        assert opcion in comandos, opcion

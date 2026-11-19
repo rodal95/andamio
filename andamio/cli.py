@@ -46,11 +46,27 @@ def _ejemplos() -> str:
         (f"{p} crear react mi-web --js", "crea un proyecto React en JavaScript"),
         (f"{p} nuevo recurso producto nombre:str", "genera un recurso con un campo"),
         (f"{p} info", "qué se puede generar acá"),
+        (f"{p} comandos", "todos los comandos, opciones y piezas"),
+        (f"{p} new resource producto nombre:str", "lo mismo que 'nuevo recurso', en inglés"),
         (f"{p} plantillas exportar", "copia las plantillas para modificarlas"),
         (f"{p} configurar", "hace que funcione escribiendo solo: andamio"),
     ]
     ancho = max(len(c) for c, _ in filas) + 3
     return "ejemplos:\n" + "\n".join(f"  {c.ljust(ancho)}{d}" for c, d in filas) + "\n"
+
+
+# Alias en inglés de cada comando: "create" es lo mismo que "crear". Los mensajes siguen
+# en español; los alias son para quien está acostumbrado a escribir los comandos en inglés.
+ALIAS_COMANDOS = {
+    "crear": ["create"],
+    "nuevo": ["new", "generate", "g"],
+    "info": [],
+    "comandos": ["commands"],
+    "plantillas": ["templates"],
+    "configurar": ["configure", "setup"],
+}
+ALIAS_ACCIONES = {"exportar": ["export"]}
+_A_ESPANOL = {alias: clave for clave, alias in {**ALIAS_COMANDOS, **ALIAS_ACCIONES}.items() for alias in alias}
 
 
 def construir_parser() -> argparse.ArgumentParser:
@@ -63,48 +79,58 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"andamio {__version__}")
     sub = parser.add_subparsers(dest="comando", metavar="comando", parser_class=_Parser)
 
+    def comando(nombre: str, **kwargs) -> argparse.ArgumentParser:
+        return sub.add_parser(nombre, aliases=ALIAS_COMANDOS[nombre], **kwargs)
+
     claves = ", ".join(s.clave for s in stacks.ORDEN_MENU)
-    crear = sub.add_parser("crear", help="crea un proyecto nuevo", description="Crea un proyecto nuevo en una carpeta.")
+    simular = {"action": "store_true", "dest": "simular", "help": "muestra qué se crearía, sin tocar nada"}
+
+    crear = comando("crear", help="crea un proyecto nuevo", description="Crea un proyecto nuevo en una carpeta.")
     crear.add_argument("stack", metavar="tipo", help=f"tipo de proyecto: {claves}")
     crear.add_argument("nombre", help="nombre del proyecto (ej: mi-tienda)")
-    crear.add_argument("--simular", action="store_true", help="muestra qué se crearía, sin tocar nada")
-    crear.add_argument("--variante", help="variante del proyecto (ej.: ts o js en React y React Native)")
+    crear.add_argument("--simular", "--dry-run", **simular)
+    crear.add_argument("--variante", "--variant", dest="variante", help="variante del proyecto: ts o js (Express, React, React Native, Next.js)")
     crear.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js (JavaScript)")
     crear.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts (TypeScript)")
 
-    nuevo = sub.add_parser(
+    nuevo = comando(
         "nuevo",
         help="genera una pieza en el proyecto actual",
         description="Genera una pieza (recurso, componente, etc.) en el proyecto actual.",
-        epilog=f"Los campos se escriben nombre:tipo (ej: precio:decimal). Usá '{consola.programa()} info' para ver piezas y tipos.",
+        epilog=f"Los campos se escriben nombre:tipo (ej: precio:decimal). Usá '{consola.programa()} comandos' para ver todas las piezas.",
     )
-    nuevo.add_argument("pieza", help="qué generar (ver la lista con: info)")
+    nuevo.add_argument("pieza", help="qué generar: recurso, crud, pagina... (en inglés: resource, page...; ver: comandos)")
     nuevo.add_argument("nombre", nargs="?", help="nombre en singular (ej: producto); algunas piezas, como login, no lo necesitan")
     nuevo.add_argument("campos", nargs="*", help="campos con la forma nombre:tipo")
     nuevo.add_argument("--plural", help="plural del nombre, si el automático no es correcto")
-    nuevo.add_argument("--carpeta", help="subcarpeta (pantallas de React Native)")
-    nuevo.add_argument("--migrar", action="store_true", help="ejecuta makemigrations y migrate (Django)")
-    nuevo.add_argument("--protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
-    nuevo.add_argument("--simular", action="store_true", help="muestra qué se crearía, sin tocar nada")
+    nuevo.add_argument("--carpeta", "--folder", dest="carpeta", help="subcarpeta de app/ (pantallas de React Native)")
+    nuevo.add_argument("--migrar", "--migrate", dest="migrar", action="store_true", help="crea y aplica la migración (Django, Express, Next.js full stack, Reflex)")
+    nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
+    nuevo.add_argument("--simular", "--dry-run", **simular)
 
-    sub.add_parser("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
+    comando("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
+    comando("comandos", help="muestra todos los comandos, sus opciones y las piezas de cada tecnología")
 
-    plantillas = sub.add_parser("plantillas", help="exporta las plantillas para modificarlas")
+    plantillas = comando("plantillas", help="exporta las plantillas para modificarlas")
     plantillas_sub = plantillas.add_subparsers(dest="accion", metavar="accion", parser_class=_Parser)
-    exportar = plantillas_sub.add_parser("exportar", help="copia las plantillas a .andamio/plantillas/")
+    exportar = plantillas_sub.add_parser("exportar", aliases=ALIAS_ACCIONES["exportar"], help="copia las plantillas a .andamio/plantillas/")
     exportar.add_argument("pieza", nargs="?", help="solo esta pieza (por defecto, todas)")
 
-    configurar = sub.add_parser(
+    configurar = comando(
         "configurar",
         help="hace que funcione escribiendo solo: andamio",
         description="Agrega la carpeta de andamio al PATH de tu usuario (sin permisos de administrador), "
         "para poder escribir 'andamio' en lugar de 'python -m andamio'. Es opcional.",
     )
-    configurar.add_argument("--simular", action="store_true", help="muestra qué cambiaría, sin tocar nada")
+    configurar.add_argument("--simular", "--dry-run", action="store_true", dest="simular", help="muestra qué cambiaría, sin tocar nada")
     return parser
 
 
 def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
+    # Los alias en inglés ("create", "new"...) hacen lo mismo que el comando en español.
+    args.comando = _A_ESPANOL.get(args.comando, args.comando)
+    if getattr(args, "accion", None):
+        args.accion = _A_ESPANOL.get(args.accion, args.accion)
     if args.comando is None:
         return menu.ejecutar(cwd)
     if args.comando == "crear":
@@ -115,6 +141,11 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)
     if args.comando == "info":
         return acciones.info(cwd)
+    if args.comando == "comandos":
+        from andamio import comandos
+
+        consola.escribir(comandos.arbol(construir_parser()))
+        return 0
     if args.comando == "configurar":
         from andamio import configurar
 

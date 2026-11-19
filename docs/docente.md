@@ -10,7 +10,8 @@ se toca.
 andamio/
 ├── cli.py              línea de comandos (argparse, mensajes en español)
 ├── menu.py             menú interactivo (andamio sin argumentos)
-├── acciones.py         crear / nuevo / info: lo que comparten la CLI y el menú
+├── acciones.py         crear / nuevo / info: lo que comparten la CLI y el menú (y ALIAS_PIEZAS, en inglés)
+├── comandos.py         andamio comandos: el árbol de comandos, opciones y piezas
 ├── exportar.py         andamio plantillas exportar + LEEME.md de cada pieza
 ├── nucleo/             no depende de ningún stack
 │   ├── nombres.py      normalización, plural, palabras reservadas
@@ -209,6 +210,14 @@ def test_contexto(proyecto):
 
 Si la pieza genera TypeScript, sumala a `APP_QUE_USA_TODO` en ese archivo para
 que `pytest --lento` la compile.
+
+## Comandos en inglés
+
+Los alias en inglés están en `ALIAS_COMANDOS` y `ALIAS_ACCIONES` (`andamio/cli.py`,
+comandos), `ALIAS_PIEZAS` (`andamio/acciones.py`, piezas) y en los `add_argument` de
+las opciones (`"--migrar", "--migrate"`). Una pieza nueva cuyo nombre cambia en inglés
+va en `ALIAS_PIEZAS`. `andamio comandos` y `docs/guias/comandos.md` los muestran: un
+test controla que estén todos.
 
 ## Insertar en archivos existentes
 

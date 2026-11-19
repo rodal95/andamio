@@ -23,7 +23,7 @@ from andamio.nucleo.generador import (
     validar_nombre_pieza,
     variante_del_proyecto,
 )
-from andamio.nucleo.nombres import Nombre, parece_plural
+from andamio.nucleo.nombres import Nombre, parece_plural, quitar_tildes
 from andamio.nucleo.plan import Plan
 from andamio.stacks.base import Pieza, Solicitud, Stack
 
@@ -109,8 +109,26 @@ def proyecto_actual(cwd: Path) -> tuple[Stack, Path]:
     return encontrado
 
 
+# Nombres de las piezas en inglés: "new resource" es lo mismo que "nuevo recurso".
+ALIAS_PIEZAS = {
+    "entity": "entidad",
+    "resource": "recurso",
+    "component": "componente",
+    "page": "pagina",
+    "screen": "pantalla",
+    "service": "servicio",
+    "state": "estado",
+}
+
+
+def clave_de_pieza(texto: str) -> str:
+    """"Página", "pagina" y "page" son la misma pieza."""
+    clave = quitar_tildes(texto.strip().lower())
+    return ALIAS_PIEZAS.get(clave, clave)
+
+
 def pieza_por_clave(stack: Stack, clave: str) -> Pieza:
-    pieza = stack.piezas.get(clave.strip().lower())
+    pieza = stack.piezas.get(clave_de_pieza(clave))
     if pieza is None:
         disponibles = ", ".join(stack.piezas)
         raise AndamioError(

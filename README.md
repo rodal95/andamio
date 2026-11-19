@@ -97,6 +97,12 @@ python -m andamio nuevo pantalla detalle-producto --carpeta productos
 python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
 
+**En inglés:** los comandos, las piezas y las opciones también se escriben en inglés
+(`create`, `new`, `resource`, `page`, `--dry-run`, `--migrate`...):
+`python -m andamio new resource product name:str --plural products`. Para ver el árbol
+completo de comandos, opciones y piezas: `python -m andamio comandos` (o `commands`), o
+[la guía de comandos](docs/guias/comandos.md#el-árbol-de-comandos).
+
 Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
