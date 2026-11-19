@@ -1,0 +1,10 @@
+# Las reglas están ancladas a la raíz (/) a propósito: así no excluyen archivos
+# dentro de andamio/plantillas/, que tienen que viajar dentro del paquete.
+/.venv/
+/venv/
+/build/
+/dist/
+/.pytest_cache/
+/*.egg-info/
+__pycache__/
+*.pyc

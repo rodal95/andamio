@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "andamio"
+dynamic = ["version"]
+description = "Generador de código para proyectos de alumnos (Python, Django, React, React Native)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "ISDeM - Tecnicatura Superior en Análisis de Sistemas" }]
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: Spanish",
+    "Environment :: Console",
+    "Topic :: Education",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+andamio = "andamio.cli:main"
+
+[project.urls]
+Repositorio = "https://github.com/rodal95/andamio"
+
+[tool.hatch.version]
+path = "andamio/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["andamio"]
+
+[tool.hatch.build.targets.sdist]
+include = ["andamio", "tests", "docs", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "django: necesita Django instalado (se saltea si no está)",
+    "lento: ejecuta npm install / build (solo con --lento)",
+]
