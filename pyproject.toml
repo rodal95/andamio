@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.21"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -8,6 +8,8 @@ dynamic = ["version"]
 description = "Generador de código para proyectos de alumnos (Python, Django, React, React Native)."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "ISDeM - Tecnicatura Superior en Análisis de Sistemas" }]
 dependencies = []
 classifiers = [
@@ -33,7 +35,7 @@ path = "andamio/__init__.py"
 packages = ["andamio"]
 
 [tool.hatch.build.targets.sdist]
-include = ["andamio", "tests", "docs", "README.md", "CHANGELOG.md"]
+include = ["andamio", "tests", "docs", "scripts", "README.md", "CHANGELOG.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

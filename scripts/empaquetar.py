@@ -49,7 +49,7 @@ def armar_zip(destino: Path) -> Path:
     with tempfile.TemporaryDirectory() as temporal:
         carpeta = Path(temporal) / nombre
         shutil.copytree(RAIZ / "andamio", carpeta / "andamio", ignore=IGNORAR)
-        for suelto in ("README.md", "CHANGELOG.md", "pyproject.toml"):
+        for suelto in ("README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml"):
             shutil.copy2(RAIZ / suelto, carpeta / suelto)
         with zipfile.ZipFile(archivo, "w", zipfile.ZIP_DEFLATED) as zip_:
             for ruta in sorted(carpeta.rglob("*")):

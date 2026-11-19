@@ -31,6 +31,7 @@ Primera versión.
   `LEEME.md` por pieza que lista los marcadores y sus valores de ejemplo.
 - Distribución: `.whl`, `andamio.pyz` (un solo archivo, sin instalar) y `.zip`
   en cada Release.
+- Licencia MIT.
 
 [Sin publicar]: https://github.com/rodal95/andamio/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/rodal95/andamio/releases/tag/v1.0.0

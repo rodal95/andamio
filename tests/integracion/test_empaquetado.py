@@ -59,7 +59,7 @@ def test_zip_con_python_m_andamio(dist, tmp_path):
     with zipfile.ZipFile(archivo) as zip_:
         zip_.extractall(tmp_path)
     carpeta = tmp_path / f"andamio-{andamio.__version__}"
-    for suelto in ("README.md", "CHANGELOG.md", "pyproject.toml", "andamio/__main__.py"):
+    for suelto in ("README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml", "andamio/__main__.py"):
         assert (carpeta / suelto).is_file(), suelto
     assert andamio.__version__ in ejecutar(["-m", "andamio", "--version"], carpeta)
 
