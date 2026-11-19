@@ -156,79 +156,59 @@
   const capturas = CAPTURAS[clave] || {};
   const e = A.escapar;
 
-  // Cómo se llama cada pieza en el índice (la lección).
-  const LECCIONES = {
+
+  // Las piezas de estilos van en su propia pestaña.
+  const ESTILOS = new Set(["tema", "ui", "estilo"]);
+
+  // Cómo se llama cada pieza en las pestañas.
+  const NOMBRES = {
     componente: "Componentes",
     pagina: "Páginas",
     pantalla: "Pantallas",
     hook: "Hooks",
+    composable: "Composables",
     servicio: "Servicios",
     estado: "Estados",
     entidad: "Entidades",
     recurso: "Recursos (la API)",
+    login: "Login (JWT)",
+    crud: "CRUD",
+    "crud-api": "CRUD con una API",
+    tema: "Tema",
+    ui: "Partes de interfaz",
+    estilo: "Estilo propio",
   };
 
-  // --- El índice: las lecciones de la guía, en orden --------------------------------
+  // --- Las pestañas ------------------------------------------------------------------
 
-  /** Todas las secciones de la guía, agrupadas como en el índice lateral. */
-  function indice() {
-    const grupos = [
-      {
-        titulo: "Empezar",
-        items: [
-          { id: "instalar", titulo: "Instalá andamio" },
-          { id: "crear", titulo: "Creá el proyecto" },
-          { id: "marcha", titulo: "Ponelo en marcha" },
-        ],
-      },
-      {
-        titulo: "Paso a paso",
-        items: variante.camino.map((l) => {
-          if (l.tipo === "tema") return { id: `tema-${l.id}`, titulo: l.titulo, tema: l };
-          const pieza = variante.piezas.find((p) => p.clave === l.clave);
-          return { id: `pieza-${l.clave}`, titulo: LECCIONES[l.clave] || pieza.titulo, pieza };
-        }),
-      },
+  /** Las pestañas de la guía y, adentro de algunas, sus sub-pestañas. */
+  function pestanas() {
+    const pieza = (clave) => variante.piezas.find((p) => p.clave === clave);
+    const comandos = variante.camino
+      .filter((l) => l.tipo === "tema" || !ESTILOS.has(l.clave))
+      .map((l) =>
+        l.tipo === "tema"
+          ? { id: `como-${l.id}`, titulo: `Cómo funciona: ${l.titulo}`, tema: l }
+          : { id: l.clave, titulo: NOMBRES[l.clave] || pieza(l.clave).titulo, pieza: pieza(l.clave) },
+      );
+    const estilos = variante.piezas.filter((p) => ESTILOS.has(p.clave)).map((p) => ({ id: p.clave, titulo: NOMBRES[p.clave] || p.titulo, pieza: p }));
+    const lista = [
+      { id: "empezar", titulo: "Empezar" },
+      { id: "comandos", titulo: "Comandos", sub: comandos },
     ];
+    if (tecnologia.estilos) {
+      lista.push({ id: "estilos", titulo: "Estilos", sub: [{ id: "css", titulo: "El CSS del proyecto", css: true }, ...estilos] });
+    }
+    lista.push({ id: "proyecto", titulo: "Proyecto completo" });
     if (variante.combinaciones.length) {
-      grupos.push({
+      lista.push({
+        id: "combinaciones",
         titulo: "Combinaciones",
-        letras: true,
-        items: variante.combinaciones.map((c) => ({ id: `combinacion-${c.id}`, titulo: c.titulo, combinacion: c })),
+        sub: variante.combinaciones.map((c, i) => ({ id: c.id, titulo: c.titulo, marca: String.fromCharCode(65 + i), combinacion: c })),
       });
     }
-    grupos.push({
-      titulo: "Referencia",
-      sinNumero: true,
-      items: [
-        { id: "completo", titulo: "El proyecto completo" },
-        { id: "comandos", titulo: "Todos los comandos" },
-        { id: "problemas", titulo: "Problemas comunes" },
-      ],
-    });
-    let numero = 0;
-    for (const grupo of grupos) {
-      grupo.items.forEach((item, i) => {
-        if (grupo.letras) item.marca = String.fromCharCode(65 + i);
-        else if (!grupo.sinNumero) item.marca = String(++numero);
-      });
-    }
-    return grupos;
-  }
-
-  function indiceLateral(grupos) {
-    return `<nav class="indice-lateral" aria-label="Índice de la guía">
-      <details class="indice-lateral__plegable" data-indice>
-        <summary>Índice de la guía</summary>
-        ${grupos
-          .map(
-            (g) => `<p class="indice-lateral__grupo">${e(g.titulo)}</p><ol>${g.items
-              .map((i) => `<li><a href="#${i.id}">${i.marca ? `<b>${i.marca}</b>` : ""}<span>${e(i.titulo)}</span></a></li>`)
-              .join("")}</ol>`,
-          )
-          .join("")}
-      </details>
-    </nav>`;
+    lista.push({ id: "referencia", titulo: "Todos los comandos" }, { id: "problemas", titulo: "Problemas" });
+    return lista;
   }
 
   // --- Piezas de HTML -------------------------------------------------------------
@@ -248,7 +228,6 @@
         const archivo = origen.find((a) => a.ruta === ruta) || { estado: "nuevo" };
         const desc = typeof item === "string" ? archivo.descripcion : item.que ? `Se agrega: ${item.que}.` : archivo.descripcion;
         const estado = typeof item === "string" ? (archivo.estado === "proyecto" ? "proyecto" : "nuevo") : "modificado";
-        // Una carpeta vacía (con .gitkeep) se muestra como carpeta.
         const visible = ruta.endsWith(".gitkeep") ? ruta.slice(0, -".gitkeep".length) : ruta;
         return `<li><button type="button" data-archivo="${e(ruta)}" data-origen="${origen === variante.archivos_crear ? "crear" : "final"}">
           <i class="estado estado--${estado}"></i><span class="archivos__ruta">${e(visible)}</span><span class="archivos__ver">ver código</span>
@@ -257,46 +236,64 @@
       .join("")}</ul>`;
   }
 
-  /** Una lección: antetítulo (Paso 4, Combinación A...), título, introducción y contenido. */
-  function leccion(item, antetitulo, contenido, intro = "", clase = "") {
-    return `<section class="leccion ${clase}" id="${item.id}" data-leccion>
-      <p class="leccion__ante">${item.marca ? `<b>${item.marca}</b>` : ""}${e(antetitulo)}</p>
-      <h2>${e(item.titulo)}</h2>
-      ${intro ? `<p class="leccion__intro">${intro}</p>` : ""}
-      ${contenido}
-      <nav class="leccion__nav" aria-label="Seguir la guía" data-nav="${item.id}"></nav>
-    </section>`;
+  function terminal(comando, salida, abierta = false) {
+    return `<details class="consola"${abierta ? " open" : ""}><summary>Lo que muestra la consola</summary>
+      <pre class="terminal terminal__cuerpo terminal--chica">${A.terminalHtml(comando, salida)}</pre></details>`;
   }
 
-  // --- Empezar ---------------------------------------------------------------------
-
-  function instalar(item) {
-    const contenido = `
-      ${A.comandoHtml(`python -m pip install ${A.urlWhl}`)}
-      <p class="bajada">Para comprobar que quedó instalado:</p>
-      ${A.comandoHtml("python -m andamio --version")}
-      <p class="nota">andamio es un programa de Python: por eso todos los comandos de esta guía empiezan con
-        <code>python -m andamio</code>, que funciona en cualquier PC. ¿Sin permisos o sin internet? Mirá
-        <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>`;
-    return leccion(item, "Empezar", contenido, "Una sola vez en la PC. En Windows, en CMD o PowerShell (en Linux o Mac, con python3):");
+  /** Un bloque con título dentro de un panel. */
+  function bloque(titulo, contenido, intro = "") {
+    return `<div class="bloque"><h3>${e(titulo)}</h3>${intro ? `<p class="bajada">${intro}</p>` : ""}${contenido}</div>`;
   }
 
-  function crear(item) {
-    const contenido = `
-      ${A.comandoHtml(variante.crear.comando, "comando--grande")}
-      <h3>Qué crea y para qué sirve cada archivo</h3>
-      ${listaArchivos(variante.archivos_crear.map((a) => a.ruta), variante.archivos_crear)}
-      <details><summary>Ver lo que muestra la terminal</summary>
-        <pre class="terminal terminal__cuerpo terminal--chica">${A.terminalHtml(variante.crear.comando, variante.crear.salida)}</pre></details>`;
-    return leccion(
-      item,
-      "Empezar",
-      contenido,
-      "En la carpeta donde guardás tus trabajos. andamio crea la carpeta del proyecto con todo lo necesario para ejecutarlo.",
+  /** El código que arma una pieza: una pestaña por archivo creado o modificado. */
+  let visores = 0;
+  function visorCodigo(p) {
+    const rutas = [...p.creados.map((r) => ({ ruta: r, estado: "nuevo" })), ...p.modificados.map((m) => ({ ruta: m.ruta, estado: "modificado", que: m.que }))].filter(
+      (r) => !r.ruta.endsWith(".gitkeep"),
     );
+    if (!rutas.length) return "";
+    const id = `visor-${++visores}`;
+    const botones = rutas
+      .map(
+        (r, i) =>
+          `<button type="button" role="tab" class="visor-pestana" data-visor="${id}" data-ruta="${e(r.ruta)}" aria-selected="${i === 0}"><i class="estado estado--${r.estado}"></i>${e(r.ruta.split("/").pop())}</button>`,
+      )
+      .join("");
+    return `<div class="visor-codigo" id="${id}">
+      <div class="visor-codigo__pestanas" role="tablist" aria-label="Archivos">${botones}</div>
+      <div class="visor-codigo__info"><code data-visor-ruta></code><span data-visor-desc></span>
+        <button class="terminal__boton" type="button" data-visor-copiar>Copiar</button></div>
+      <pre class="codigo__cuerpo visor-codigo__cuerpo"><code data-visor-codigo></code></pre>
+    </div>`;
   }
 
-  function marcha(item) {
+  function mostrarEnVisor(visor, ruta) {
+    const archivo = variante.archivos.find((a) => a.ruta === ruta);
+    if (!archivo) return;
+    const boton = visor.querySelector(`[data-ruta="${CSS.escape(ruta)}"]`);
+    visor.querySelectorAll(".visor-pestana").forEach((b) => b.setAttribute("aria-selected", String(b === boton)));
+    const modificado = boton && boton.querySelector(".estado--modificado");
+    visor.querySelector("[data-visor-ruta]").textContent = ruta;
+    visor.querySelector("[data-visor-desc]").textContent = archivo.descripcion || "";
+    if (modificado) visor.querySelector("[data-visor-desc]").textContent = "Archivo que ya existía: andamio le agregó líneas. " + (archivo.descripcion || "");
+    visor.querySelector("[data-visor-codigo]").innerHTML =
+      archivo.lenguaje === "imagen" ? `<img class="visor__imagen" src="${archivo.contenido}" alt="${e(ruta)}">` : A.resaltar(archivo.contenido, archivo.lenguaje);
+    visor.querySelector("[data-visor-copiar]").dataset.copiar = archivo.lenguaje === "imagen" ? "" : archivo.contenido;
+  }
+
+  function tablaComandos(comandos, encabezado = "Para qué sirve") {
+    return `<div class="tabla-desliza"><table class="tabla-comandos"><thead><tr><th>Comando</th><th>${e(encabezado)}</th></tr></thead><tbody>${comandos
+      .map(
+        (c) =>
+          `<tr><td><code>${e(c.comando)}</code><button type="button" class="copiar-chico" data-copiar="${e(c.comando)}">Copiar</button></td><td>${e(c.descripcion)}</td></tr>`,
+      )
+      .join("")}</tbody></table></div>`;
+  }
+
+  // --- Paneles ---------------------------------------------------------------------
+
+  function panelEmpezar() {
     const descripciones = Object.fromEntries(tecnologia.comandos_proyecto.map((c) => [c.comando, c.descripcion]));
     const pasos = variante.pasos_proyecto
       .map((paso) => {
@@ -308,124 +305,166 @@
       .join("");
     let vista = "";
     if (tecnologia.ejecucion) {
-      vista = `<h3>Así se ve la aplicación (después de generar una entidad)</h3>
-        <pre class="terminal terminal__cuerpo terminal--chica">${A.terminalHtml(tecnologia.ejecucion.comando, tecnologia.ejecucion.salida)}</pre>`;
+      vista = bloque("Así se ve la aplicación (después de generar una entidad)", `<pre class="terminal terminal__cuerpo terminal--chica">${A.terminalHtml(tecnologia.ejecucion.comando, tecnologia.ejecucion.salida)}</pre>`);
     } else if (capturas.marcha) {
-      vista = `<h3>Así se ve</h3><div class="capturas">${capturas.marcha.map(captura).join("")}</div>`;
+      vista = bloque("Así se ve", `<div class="capturas">${capturas.marcha.map(captura).join("")}</div>`);
     }
-    return leccion(item, "Empezar", `<ol class="pasos-marcha">${pasos}</ol>${vista}`, "Son los mismos pasos que te muestra andamio al terminar de crear el proyecto.");
+    return `
+      ${bloque(
+        "1. Instalá andamio",
+        `${A.comandoHtml(`python -m pip install ${A.urlWhl}`)}
+        <p class="bajada">Para comprobar que quedó instalado:</p>${A.comandoHtml("python -m andamio --version")}
+        <p class="nota">Todos los comandos empiezan con <code>python -m andamio</code>, que funciona en cualquier PC (en Linux o Mac, <code>python3</code>).
+        ¿Sin permisos o sin internet? Mirá <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>`,
+        "Una sola vez en la PC. En Windows, en CMD o PowerShell:",
+      )}
+      ${bloque(
+        "2. Creá el proyecto",
+        `${A.comandoHtml(variante.crear.comando, "comando--grande")}
+        ${terminal(variante.crear.comando, variante.crear.salida)}
+        <h4>Qué crea y para qué sirve cada archivo</h4>
+        ${listaArchivos(variante.archivos_crear.map((a) => a.ruta), variante.archivos_crear)}`,
+        "En la carpeta donde guardás tus trabajos: andamio crea la carpeta del proyecto con todo lo necesario.",
+      )}
+      ${bloque("3. Ponelo en marcha", `<ol class="pasos-marcha">${pasos}</ol>`, "Son los mismos pasos que muestra andamio al terminar de crear el proyecto.")}
+      ${vista}
+      ${bloque(
+        "4. Y después",
+        `<p>Cada cosa que agregues al proyecto es una <b>pieza</b>: <code>python -m andamio nuevo &lt;pieza&gt; &lt;nombre&gt;</code>. En la pestaña
+        <a href="#comandos" data-ir="comandos">Comandos</a> está cada una con su consola, su código y sus variantes${
+          tecnologia.estilos ? '; en <a href="#estilos" data-ir="estilos">Estilos</a>, cómo darle diseño' : ""
+        }; y en <a href="#proyecto" data-ir="proyecto">Proyecto completo</a>, un proyecto entero armado de punta a punta.</p>`,
+      )}`;
   }
 
-  // --- Paso a paso -------------------------------------------------------------------
-
-  function pieza(item) {
-    const p = item.pieza;
+  function panelPieza(p) {
     const capturasPieza = (capturas.piezas || {})[p.clave] || [];
-    const modificados = p.modificados.length ? `<h3>Qué modifica</h3>${listaArchivos(p.modificados, variante.archivos)}` : "";
-    const contenido = `
-      <h3>Generalo</h3>
-      ${A.comandoHtml(p.comando)}
-      <details><summary>Ver lo que muestra la terminal</summary>
-        <pre class="terminal terminal__cuerpo terminal--chica">${A.terminalHtml(p.comando, p.salida)}</pre></details>
-      <h3>Qué crea</h3>
-      ${listaArchivos(p.creados, variante.archivos)}
-      ${modificados}
-      <h3>Cómo se usa</h3>
-      ${A.codigoHtml(p.uso, p.uso_lenguaje)}
-      ${capturasPieza.length ? `<h3>Así se ve</h3><div class="capturas">${capturasPieza.map(captura).join("")}</div>` : ""}`;
-    return leccion(item, `Paso ${item.marca} · andamio nuevo ${p.clave}`, contenido, e(p.explicacion));
+    const ingles = p.ingles ? ` En inglés: <code>new ${e(p.ingles)}</code>.` : "";
+    const opciones = p.opciones.length ? ` Opciones propias: ${p.opciones.map((o) => `<code>--${e(o)}</code>`).join(", ")}.` : "";
+    return `
+      <p class="leccion__intro">${e(p.explicacion)}</p>
+      ${bloque("La forma general", `${A.comandoHtml(p.forma)}<p class="nota">Lo que va entre <code>&lt; &gt;</code> lo elegís vos: el ejemplo de abajo usa unos nombres, pero sirve cualquiera.${ingles}${opciones}</p>`)}
+      ${bloque("Ejecutalo", `${A.comandoHtml(p.comando)}${terminal(p.comando, p.salida, true)}`, e(p.descripcion.charAt(0).toUpperCase() + p.descripcion.slice(1)) + ".")}
+      ${bloque("Lo que arma en el código", visorCodigo(p), "Cada archivo que crea (verde) o modifica (amarillo). Tocá un archivo para ver su código.")}
+      ${bloque("Todas las variantes", tablaComandos(p.variantes, "Qué cambia"))}
+      ${bloque("Cómo se usa", A.codigoHtml(p.uso, p.uso_lenguaje))}
+      ${capturasPieza.length ? bloque("Así se ve", `<div class="capturas">${capturasPieza.map(captura).join("")}</div>`) : ""}`;
   }
 
-  function tema(item) {
-    const t = item.tema;
+  function panelTema(t) {
     const archivos = t.archivos
       .map((ruta) => {
         const archivo = variante.archivos.find((a) => a.ruta === ruta);
-        return `<h3><code>${e(ruta)}</code></h3>${A.codigoHtml(archivo.contenido, archivo.lenguaje, true)}`;
+        return `<h4><code>${e(ruta)}</code></h4>${A.codigoHtml(archivo.contenido, archivo.lenguaje, true)}`;
       })
       .join("");
-    const texto = t.texto.map((p) => `<p>${e(p)}</p>`).join("");
-    return leccion(item, `Paso ${item.marca} · cómo funciona`, `<div class="leccion__texto">${texto}</div>${archivos}`, "", "leccion--tema");
+    return `<div class="leccion__texto">${t.texto.map((p) => `<p>${e(p)}</p>`).join("")}</div>${archivos}`;
   }
 
-  // --- Combinaciones -------------------------------------------------------------------
-
-  function combinacion(item) {
-    const c = item.combinacion;
-    const usa = c.usa
-      .map((clavePieza) => {
-        const enCamino = variante.camino.some((l) => l.clave === clavePieza);
-        const nombre = LECCIONES[clavePieza] || clavePieza;
-        return enCamino ? `<a href="#pieza-${clavePieza}">${e(nombre)}</a>` : `<span>${e(nombre)}</span>`;
-      })
-      .join("");
-    const pasos = c.pasos
-      .map((p) => `<li><div>${p.lugar ? `<p class="paso-lugar">${e(p.lugar)}</p>` : ""}${A.comandoHtml(p.comando)}</div></li>`)
-      .join("");
-    const archivos = c.archivos
-      .map((a) => `<p class="combinacion__archivo">En <code>${e(a.ruta)}</code>:</p>${A.codigoHtml(a.contenido, a.lenguaje, true)}`)
-      .join("");
-    const claves = c.claves.map((k) => `<li>${e(k)}</li>`).join("");
-    const foto = (capturas.combinaciones || {})[c.id];
-    const contenido = `
-      <p class="combinacion__usa">Usa: ${usa}</p>
-      <h3>${c.archivos.length ? "1. Generá las piezas" : "Pasos"}</h3>
-      <ol class="pasos-marcha">${pasos}</ol>
-      ${c.archivos.length ? `<h3>2. Escribí el código</h3>${archivos}` : ""}
-      <h3>Qué hace cada parte</h3>
-      <ul class="combinacion__claves">${claves}</ul>
-      ${foto ? `<div class="capturas">${captura(foto)}</div>` : ""}`;
-    return leccion(item, `Combinación ${item.marca}`, contenido, e(c.texto), "leccion--combinacion");
-  }
-
-  // --- Referencia ----------------------------------------------------------------------
-
-  function completo(item) {
-    const contenido = `
-      <div class="explorador">
-        <div class="explorador__arbol">
-          <p class="explorador__titulo">${e(variante.crear.comando.split(" ")[3])}/</p>
-          <ul class="arbol" data-arbol>${A.arbolHtml(A.armarArbol(variante.archivos))}</ul>
-          <ul class="leyenda" aria-label="Referencias">
-            <li><i class="estado estado--nuevo"></i>lo agregó una pieza</li>
-            <li><i class="estado estado--modificado"></i>modificado</li>
-            <li><i class="estado estado--proyecto"></i>del proyecto</li>
-          </ul>
-        </div>
-        <div class="codigo">
-          <div class="codigo__barra"><span class="codigo__nombre" data-codigo-nombre></span>
-            <button class="terminal__boton" type="button" data-codigo-copiar>Copiar</button></div>
-          <p class="codigo__descripcion" data-codigo-desc></p>
-          <pre class="codigo__cuerpo"><code data-codigo></code></pre>
-        </div>
-      </div>`;
-    return leccion(item, "Referencia", contenido, "Así queda el proyecto después de generar todas las piezas de esta guía. Recorré los archivos.");
-  }
-
-  function tablaComandos(comandos) {
-    return `<table class="tabla-comandos"><thead><tr><th>Comando</th><th>Para qué sirve</th></tr></thead><tbody>${comandos
-      .map((c) => `<tr><td><code>${e(c.comando)}</code><button type="button" class="copiar-chico" data-copiar="${e(c.comando)}">Copiar</button></td><td>${e(c.descripcion)}</td></tr>`)
-      .join("")}</tbody></table>`;
-  }
-
-  function comandos(item) {
-    const tipos = Object.keys(tecnologia.tipos).length
-      ? `<h3 id="tipos">Tipos de campo</h3><p class="bajada">Los campos se escriben <code>nombre:tipo</code>. Si no ponés el tipo, se usa <code>str</code>.</p>
-        <table class="tabla-comandos"><thead><tr><th>Tipo</th><th>Qué guarda</th></tr></thead><tbody>${Object.entries(tecnologia.tipos)
-          .map(([t, d]) => `<tr><td><code>${e(t)}</code></td><td>${e(d)}</td></tr>`)
-          .join("")}</tbody></table>`
+  function panelCss() {
+    const g = tecnologia.estilos;
+    const tiene = (clave) => variante.piezas.some((p) => p.clave === clave);
+    const pasos = [];
+    if (tiene("componente")) pasos.push(["nuevo componente Tarjeta", "Un componente con su CSS base, listo para modificar."]);
+    else if (tiene("pagina")) pasos.push(["nuevo pagina Contacto", "Una página."]);
+    if (tiene("tema")) pasos.push(["nuevo tema verde", "Los colores, la letra y el modo oscuro de todo el proyecto: lo que ya generaste cambia de look."]);
+    if (tiene("estilo")) pasos.push(["nuevo estilo contacto", "Un CSS propio (con el nombre que quieras) para tu página o componente, ya conectado."]);
+    if (tiene("ui")) pasos.push(["nuevo ui responsive", "Mejoras para el celular sobre lo que ya tenés."], ["nuevo ui accesible", "Foco visible, texto para lectores de pantalla y menos movimiento."]);
+    const receta = pasos.map(([c, d]) => `<li>${A.comandoHtml(`python -m andamio ${c}`)}<p>${e(d)}</p></li>`).join("");
+    const variables = tiene("tema") && tecnologia.clave !== "react-native" && tecnologia.clave !== "reflex"
+      ? bloque(
+          "Mejorar el CSS de un componente o página",
+          A.codigoHtml(
+            "/* Cambiá los colores fijos por las variables del tema: */\n.tarjeta {\n  background: var(--superficie);\n  color: var(--texto);\n  border: 1px solid var(--borde);\n  border-radius: var(--radio);\n  box-shadow: var(--sombra);\n}\n\n.tarjeta:hover {\n  border-color: var(--acento);\n}",
+            "css",
+          ),
+          "Con <code>nuevo tema</code>, tu CSS puede usar las mismas variables: si cambiás el tema, cambia con él.",
+        )
       : "";
-    const contenido = `<h3>De andamio</h3>${tablaComandos(variante.comandos_andamio)}<h3>Del proyecto</h3>${tablaComandos(tecnologia.comandos_proyecto)}${tipos}`;
-    return leccion(item, "Referencia", contenido, "Para tener a mano.");
+    return `
+      ${bloque("Dónde está el CSS", `<ul class="lista-css"><li><b>Base del proyecto.</b> ${e(g.base)}</li><li><b>Componentes.</b> ${e(g.componente)}</li><li><b>Páginas.</b> ${e(g.pagina)}</li></ul>`)}
+      ${bloque("Una receta: de CSS base a un diseño propio", `<ol class="pasos-marcha">${receta}</ol>`)}
+      ${variables}
+      <p class="nota">En las sub-pestañas está cada comando de estilos con su consola, su código y todas sus variantes.</p>`;
   }
 
-  function problemas(item) {
+  function panelCombinacion(c) {
+    const pasos = c.pasos.map((p) => `<li><div>${p.lugar ? `<p class="paso-lugar">${e(p.lugar)}</p>` : ""}${A.comandoHtml(p.comando)}</div></li>`).join("");
+    const archivos = c.archivos.map((a) => `<p class="combinacion__archivo">En <code>${e(a.ruta)}</code>:</p>${A.codigoHtml(a.contenido, a.lenguaje, true)}`).join("");
+    const foto = (capturas.combinaciones || {})[c.id];
+    return `
+      <p class="leccion__intro">${e(c.texto)}</p>
+      <p class="combinacion__usa">Usa: ${c.usa.map((k) => `<span>${e(NOMBRES[k] || k)}</span>`).join("")}</p>
+      ${bloque(c.archivos.length ? "1. Generá las piezas" : "Pasos", `<ol class="pasos-marcha">${pasos}</ol>`)}
+      ${c.archivos.length ? bloque("2. Escribí el código", archivos) : ""}
+      ${bloque("Qué hace cada parte", `<ul class="combinacion__claves">${c.claves.map((k) => `<li>${e(k)}</li>`).join("")}</ul>`)}
+      ${foto ? `<div class="capturas">${captura(foto)}</div>` : ""}`;
+  }
+
+  function panelProyecto() {
+    const pasos = variante.recorrido
+      .map((paso) => {
+        if (!paso.andamio) return `<li class="recorrido__paso">${A.comandoHtml(paso.comando)}<p>${e(paso.explicacion)}</p></li>`;
+        const archivos = [...(paso.creados || []).map((r) => `<li><i class="estado estado--nuevo"></i>${e(r)}</li>`), ...(paso.modificados || []).map((r) => `<li><i class="estado estado--modificado"></i>${e(r)}</li>`)].join("");
+        return `<li class="recorrido__paso recorrido__paso--andamio">${A.comandoHtml(paso.comando)}<p>${e(paso.explicacion)}</p>
+          ${terminal(paso.comando, paso.salida)}
+          ${archivos ? `<details class="consola"><summary>Archivos que crea y modifica</summary><ul class="recorrido__archivos">${archivos}</ul></details>` : ""}</li>`;
+      })
+      .join("");
+    return `
+      <p class="leccion__intro">Un proyecto entero, desde cero, solo con comandos. Los de andamio se ejecutaron de verdad para armar esta guía: lo que ves es lo que muestran.</p>
+      ${bloque("Paso a paso", `<ol class="recorrido">${pasos}</ol>`)}
+      ${bloque(
+        "El proyecto de esta guía, archivo por archivo",
+        `<div class="explorador">
+          <div class="explorador__arbol">
+            <p class="explorador__titulo">${e(variante.crear.comando.split(" ")[3])}/</p>
+            <ul class="arbol" data-arbol>${A.arbolHtml(A.armarArbol(variante.archivos))}</ul>
+            <ul class="leyenda" aria-label="Referencias">
+              <li><i class="estado estado--nuevo"></i>lo agregó una pieza</li>
+              <li><i class="estado estado--modificado"></i>modificado</li>
+              <li><i class="estado estado--proyecto"></i>del proyecto</li>
+            </ul>
+          </div>
+          <div class="codigo">
+            <div class="codigo__barra"><span class="codigo__nombre" data-codigo-nombre></span>
+              <button class="terminal__boton" type="button" data-codigo-copiar>Copiar</button></div>
+            <p class="codigo__descripcion" data-codigo-desc></p>
+            <pre class="codigo__cuerpo"><code data-codigo></code></pre>
+          </div>
+        </div>`,
+        "Así queda el proyecto de la pestaña Comandos, con todas sus piezas. Recorré los archivos.",
+      )}`;
+  }
+
+  function panelReferencia() {
+    const piezas = variante.piezas
+      .map((p) => `<h4 id="ref-${p.clave}">${e(NOMBRES[p.clave] || p.titulo)} <span class="ref-forma"><code>${e(p.forma)}</code></span></h4>${tablaComandos(p.variantes, "Qué cambia")}`)
+      .join("");
+    const tipos = Object.keys(tecnologia.tipos).length
+      ? bloque(
+          "Tipos de campo",
+          `<table class="tabla-comandos"><thead><tr><th>Tipo</th><th>Qué guarda</th></tr></thead><tbody>${Object.entries(tecnologia.tipos)
+            .map(([t, d]) => `<tr><td><code>${e(t)}</code></td><td>${e(d)}</td></tr>`)
+            .join("")}</tbody></table>`,
+          "Los campos se escriben <code>nombre:tipo</code>. Si no ponés el tipo, se usa <code>str</code>.",
+        )
+      : "";
+    return `
+      <p class="leccion__intro">Todos los comandos de ${e(tecnologia.titulo)}, para tener a mano. En la terminal: <code>python -m andamio comandos</code>.</p>
+      ${bloque("Crear el proyecto y comandos de andamio", tablaComandos(variante.comandos_andamio))}
+      ${bloque("Cada pieza, con todas sus variantes", piezas)}
+      ${bloque("Del proyecto", tablaComandos(tecnologia.comandos_proyecto))}
+      ${tipos}`;
+  }
+
+  function panelProblemas() {
     const lista = (PROBLEMAS[clave] || []).map(([p, r]) => `<details><summary>${e(p)}</summary><p>${e(r)}</p></details>`).join("");
     const otras = A.datos.tecnologias
       .filter((t) => t.clave !== clave)
       .map((t) => `<a class="boton boton--borde" href="${t.clave}.html">${e(t.titulo)} →</a>`)
       .join("");
-    return leccion(item, "Referencia", `${lista}<h3>Otras guías</h3><div class="otras-guias">${otras}</div>`);
+    return `${lista}<h3>Otras guías</h3><div class="otras-guias">${otras}</div>`;
   }
 
   // --- Dibujo ----------------------------------------------------------------------
@@ -448,49 +487,91 @@
     </div></section>`;
   }
 
-  const DIBUJAR = { instalar, crear, marcha, completo, comandos, problemas };
-
-  function seccion(item) {
-    if (item.pieza) return pieza(item);
-    if (item.tema) return tema(item);
-    if (item.combinacion) return combinacion(item);
-    return DIBUJAR[item.id](item);
+  function contenidoSub(sub) {
+    if (sub.pieza) return panelPieza(sub.pieza);
+    if (sub.tema) return panelTema(sub.tema);
+    if (sub.combinacion) return panelCombinacion(sub.combinacion);
+    if (sub.css) return panelCss();
+    return "";
   }
 
-  /** Abajo de cada lección: la anterior y la siguiente, para seguir la guía en orden. */
-  function navegacion(items) {
-    items.forEach((item, i) => {
-      const nav = main.querySelector(`[data-nav="${item.id}"]`);
-      const antes = items[i - 1];
-      const despues = items[i + 1];
-      nav.innerHTML =
-        (antes ? `<a class="leccion__anterior" href="#${antes.id}"><span>Anterior</span>${e(antes.titulo)}</a>` : "<span></span>") +
-        (despues ? `<a class="leccion__siguiente" href="#${despues.id}"><span>Siguiente</span>${e(despues.titulo)}</a>` : "");
+  const PANELES = { empezar: panelEmpezar, proyecto: panelProyecto, referencia: panelReferencia, problemas: panelProblemas };
+
+  function panel(p) {
+    if (!p.sub) return `<section class="panel" id="panel-${p.id}" role="tabpanel" aria-labelledby="pestana-${p.id}" data-panel="${p.id}" hidden>${PANELES[p.id]()}</section>`;
+    const lista = p.sub
+      .map(
+        (s, i) =>
+          `<button type="button" role="tab" class="subpestana" id="sub-${p.id}-${s.id}" data-sub="${p.id}/${s.id}" aria-selected="false" aria-controls="subpanel-${p.id}-${s.id}">${
+            s.marca ? `<b>${s.marca}</b>` : `<b>${i + 1}</b>`
+          }<span>${e(s.titulo)}</span></button>`,
+      )
+      .join("");
+    const paneles = p.sub
+      .map((s, i) => {
+        const antes = p.sub[i - 1];
+        const despues = p.sub[i + 1];
+        const nav = `<nav class="leccion__nav" aria-label="Seguir">${antes ? `<a class="leccion__anterior" href="#${p.id}/${antes.id}" data-ir="${p.id}/${antes.id}"><span>Anterior</span>${e(antes.titulo)}</a>` : "<span></span>"}${
+          despues ? `<a class="leccion__siguiente" href="#${p.id}/${despues.id}" data-ir="${p.id}/${despues.id}"><span>Siguiente</span>${e(despues.titulo)}</a>` : ""
+        }</nav>`;
+        const ante = s.pieza ? `<p class="leccion__ante">python -m andamio nuevo ${e(s.pieza.clave)}</p>` : "";
+        return `<section class="subpanel" id="subpanel-${p.id}-${s.id}" role="tabpanel" aria-labelledby="sub-${p.id}-${s.id}" data-subpanel="${p.id}/${s.id}" hidden>
+          ${ante}<h2>${e(s.titulo)}</h2>${contenidoSub(s)}${nav}</section>`;
+      })
+      .join("");
+    return `<section class="panel" id="panel-${p.id}" role="tabpanel" aria-labelledby="pestana-${p.id}" data-panel="${p.id}" hidden>
+      <div class="con-subpestanas"><div class="subpestanas" role="tablist" aria-orientation="vertical" aria-label="${e(p.titulo)}">${lista}</div>
+      <div class="subpaneles">${paneles}</div></div></section>`;
+  }
+
+  let lista = [];
+
+  /** Muestra una pestaña (y una sub-pestaña): "comandos/crud", "proyecto"... */
+  function mostrar(destino, enfocar = false) {
+    let [id, subId] = destino.split("/");
+    let pestana = lista.find((p) => p.id === id) || lista[0];
+    if (pestana.sub && !pestana.sub.some((s) => s.id === subId)) subId = pestana.sub[0].id;
+    main.querySelectorAll("[data-pestana]").forEach((b) => {
+      const activa = b.dataset.pestana === pestana.id;
+      b.setAttribute("aria-selected", String(activa));
+      b.tabIndex = activa ? 0 : -1;
     });
-  }
-
-  /** Marca en el índice la lección que se está leyendo: la última que empieza en el tercio de arriba. */
-  let pendiente = false;
-  function marcarLeccionActual() {
-    pendiente = false;
-    const secciones = Array.from(main.querySelectorAll("[data-leccion]"));
-    let actual = secciones[0];
-    for (const seccion of secciones) {
-      if (seccion.getBoundingClientRect().top <= Math.max(140, window.innerHeight / 3)) actual = seccion;
-      else break;
+    main.querySelectorAll("[data-panel]").forEach((s) => (s.hidden = s.dataset.panel !== pestana.id));
+    if (pestana.sub) {
+      const clave = `${pestana.id}/${subId}`;
+      const panelActivo = main.querySelector(`[data-panel="${pestana.id}"]`);
+      panelActivo.querySelectorAll("[data-sub]").forEach((b) => {
+        const activa = b.dataset.sub === clave;
+        b.setAttribute("aria-selected", String(activa));
+        b.tabIndex = activa ? 0 : -1;
+      });
+      panelActivo.querySelectorAll("[data-subpanel]").forEach((s) => (s.hidden = s.dataset.subpanel !== clave));
+      const visible = panelActivo.querySelector(`[data-subpanel="${clave}"]`);
+      visible.querySelectorAll(".visor-codigo").forEach((v) => {
+        if (!v.dataset.listo) {
+          v.dataset.listo = "1";
+          mostrarEnVisor(v, v.querySelector(".visor-pestana").dataset.ruta);
+        }
+      });
+      destino = clave;
+    } else {
+      destino = pestana.id;
     }
-    main.querySelectorAll(".indice-lateral a").forEach((a) => a.toggleAttribute("aria-current", actual && a.hash === `#${actual.id}`));
+    history.replaceState(null, "", `#${destino}`);
+    if (enfocar) main.querySelector(".guia-tabs").scrollIntoView({ block: "start" });
   }
 
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(marcarLeccionActual);
-    },
-    { passive: true },
-  );
+  /** Los enlaces viejos (#pieza-crud, #combinacion-x, #comandos) siguen funcionando. */
+  function traducirHash(hash) {
+    const h = decodeURIComponent(hash.replace(/^#/, ""));
+    if (h.startsWith("pieza-")) {
+      const clavePieza = h.slice(6);
+      return `${ESTILOS.has(clavePieza) ? "estilos" : "comandos"}/${clavePieza}`;
+    }
+    if (h.startsWith("combinacion-")) return `combinaciones/${h.slice(12)}`;
+    if (h.startsWith("tema-")) return `comandos/como-${h.slice(5)}`;
+    return { instalar: "empezar", crear: "empezar", marcha: "empezar", completo: "proyecto", comandos: "comandos", problemas: "problemas" }[h] || h || "empezar";
+  }
 
   function mostrarEnExplorador(ruta) {
     const archivo = variante.archivos.find((a) => a.ruta === ruta);
@@ -503,45 +584,67 @@
     main.querySelectorAll("[data-arbol] .archivo").forEach((b) => b.setAttribute("aria-current", String(b.dataset.ruta === ruta)));
   }
 
-  const ancho = window.matchMedia("(min-width: 1000px)");
-
-  function dibujar() {
+  function dibujar(destino) {
     document.title = `andamio con ${tecnologia.titulo}${variante.nombre ? ` (${variante.nombre})` : ""}`;
-    const grupos = indice();
-    const items = grupos.flatMap((g) => g.items);
-    main.innerHTML = `${portada()}<div class="contenedor guia">
-      <aside class="guia__lateral">${indiceLateral(grupos)}</aside>
-      <div class="guia__contenido">${items.map(seccion).join("")}</div>
+    lista = pestanas();
+    visores = 0;
+    const barra = lista
+      .map(
+        (p) =>
+          `<button type="button" role="tab" class="guia-tab" id="pestana-${p.id}" data-pestana="${p.id}" aria-controls="panel-${p.id}" aria-selected="false">${e(p.titulo)}</button>`,
+      )
+      .join("");
+    main.innerHTML = `${portada()}<div class="contenedor guia-pestanas">
+      <div class="guia-tabs" role="tablist" aria-label="Secciones de la guía">${barra}</div>
+      ${lista.map(panel).join("")}
     </div>`;
-    navegacion(items);
-    main.querySelector("[data-indice]").open = ancho.matches;
     const inicial = variante.piezas.find((p) => p.creados.length);
     mostrarEnExplorador(inicial ? inicial.creados[0] : variante.archivos[0].ruta);
-    marcarLeccionActual();
+    mostrar(destino);
   }
 
-  ancho.addEventListener("change", () => {
-    const plegable = main.querySelector("[data-indice]");
-    if (plegable) plegable.open = ancho.matches;
+  /** Flechas del teclado en una lista de pestañas (horizontal o vertical). */
+  main.addEventListener("keydown", (evento) => {
+    const tab = evento.target.closest('[role="tab"]');
+    if (!tab) return;
+    const teclas = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: "inicio", End: "fin" };
+    const paso = teclas[evento.key];
+    if (paso === undefined) return;
+    const hermanas = Array.from(tab.parentElement.querySelectorAll('[role="tab"]'));
+    let i = hermanas.indexOf(tab);
+    i = paso === "inicio" ? 0 : paso === "fin" ? hermanas.length - 1 : (i + paso + hermanas.length) % hermanas.length;
+    evento.preventDefault();
+    hermanas[i].click();
+    hermanas[i].focus();
   });
 
   main.addEventListener("click", (evento) => {
-    // En el celular, el índice se cierra al elegir una lección.
-    if (evento.target.closest(".indice-lateral a") && !ancho.matches) main.querySelector("[data-indice]").open = false;
+    const ir = evento.target.closest("[data-ir]");
+    if (ir) {
+      evento.preventDefault();
+      mostrar(ir.dataset.ir, true);
+      return;
+    }
     const boton = evento.target.closest("button");
     if (!boton) return;
-    if (boton.dataset.variante) {
+    if (boton.dataset.pestana) {
+      mostrar(boton.dataset.pestana);
+    } else if (boton.dataset.sub) {
+      mostrar(boton.dataset.sub);
+    } else if (boton.dataset.visor) {
+      mostrarEnVisor(document.getElementById(boton.dataset.visor), boton.dataset.ruta);
+    } else if (boton.dataset.variante) {
       variante = tecnologia.variantes.find((v) => v.clave === boton.dataset.variante);
       const url = new URL(location.href);
       url.searchParams.set("v", variante.clave);
       history.replaceState(null, "", url);
       const y = window.scrollY;
-      dibujar();
+      dibujar(location.hash.slice(1) || "empezar");
       window.scrollTo(0, y);
       main.querySelector(`[data-variante="${variante.clave}"]`).focus();
     } else if (boton.dataset.archivo) {
-      const lista = boton.dataset.origen === "crear" ? variante.archivos_crear : variante.archivos;
-      const archivo = lista.find((a) => a.ruta === boton.dataset.archivo);
+      const listaArch = boton.dataset.origen === "crear" ? variante.archivos_crear : variante.archivos;
+      const archivo = listaArch.find((a) => a.ruta === boton.dataset.archivo);
       if (archivo) A.abrirArchivo(archivo);
     } else if (boton.classList.contains("carpeta")) {
       const abierta = boton.getAttribute("aria-expanded") === "true";
@@ -552,6 +655,7 @@
     }
   });
 
-  dibujar();
-  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  window.addEventListener("hashchange", () => mostrar(traducirHash(location.hash)));
+
+  dibujar(traducirHash(location.hash));
 })();
