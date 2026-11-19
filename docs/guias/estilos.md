@@ -33,7 +33,7 @@ Genera un archivo de **variables CSS** y lo carga en todo el proyecto:
 | React | `src/tema.css` | `import` en `src/main` |
 | Next.js | `app/tema.css` | `import` en `app/layout` |
 | React Native | `constants/tema` | se usa con `useTema()` (no hay CSS) |
-| Reflex | `mi_app/tema.py` | `app.theme = TEMA` en `mi_app/mi_app.py` |
+| Reflex | `mi_app/tema.py` | `RadixThemesPlugin(theme=TEMA)` en `rxconfig.py` |
 
 Las variables:
 

@@ -9,7 +9,8 @@ import reflex as rx
 from @@proyecto_snake@@.paginas.inicio import inicio
 # --- andamio:imports (no borrar esta línea) ---
 
-app = rx.App(theme=rx.theme(accent_color="amber"))
+# El tema (colores) está en rxconfig.py.
+app = rx.App()
 
 app.add_page(inicio, route="/", title="Inicio")
 # --- andamio:paginas (no borrar esta línea) ---

@@ -509,7 +509,7 @@ TECNOLOGIAS["react-native"]["piezas"]["tema"] = {
 }
 TECNOLOGIAS["reflex"]["piezas"]["tema"] = {
     "comando": "nuevo tema violeta --modo auto",
-    "explicacion": "El tema de Radix de toda la aplicación: color de acento, modo claro u oscuro (o el del sistema) y bordes, en mi_app/tema.py. andamio lo aplica con app.theme = TEMA.",
+    "explicacion": "El tema de Radix de toda la aplicación: color de acento, modo claro u oscuro (o el del sistema) y bordes, en mi_app/tema.py. andamio lo conecta en rxconfig.py (RadixThemesPlugin(theme=TEMA)).",
     "uso": 'TEMA = rx.theme(\n    accent_color="violet",\n    appearance="inherit",   # inherit (sistema), light o dark\n    radius="medium",\n)',
     "uso_lenguaje": "python",
 }
@@ -1359,7 +1359,7 @@ for _clave, _carpeta in _CARPETA_CSS.items():
     DESCRIPCIONES.setdefault(_clave, [])
     DESCRIPCIONES[_clave][:0] = [(f"{_carpeta}/{patron}", texto) for patron, texto in _DESCRIPCIONES_ESTILOS]
 DESCRIPCIONES["react-native"].insert(0, ("constants/tema.*", "El tema: los colores del modo claro y del oscuro y useTema(), que devuelve los del modo actual."))
-DESCRIPCIONES["reflex"].insert(0, ("*/tema.py", "El tema de la aplicación (rx.theme): color de acento, modo claro u oscuro y bordes. Se aplica con app.theme = TEMA."))
+DESCRIPCIONES["reflex"].insert(0, ("*/tema.py", "El tema de la aplicación (rx.theme): color de acento, modo claro u oscuro y bordes. Lo usa rxconfig.py (RadixThemesPlugin)."))
 
 LENGUAJES = {".py": "python", ".ts": "ts", ".tsx": "ts", ".js": "ts", ".jsx": "ts", ".json": "json", ".sql": "sql", ".css": "css", ".html": "html", ".md": "md"}
 

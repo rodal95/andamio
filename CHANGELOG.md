@@ -18,6 +18,8 @@ Todos los cambios importantes de andamio. El proyecto usa
     tema y ya conectado.
 - `tema` también en React Native (colores claro y oscuro y `useTema()`) y en Reflex
   (`rx.theme` con el color y el modo).
+- Reflex: el tema del proyecto pasa a `rxconfig.py` (`RadixThemesPlugin(theme=TEMA)`)
+  en lugar de `rx.App(theme=...)`, que Reflex marca como obsoleto desde la 0.9.
 - `andamio comandos` muestra la forma general de cada pieza (`nuevo crud <nombre>
   <campo:tipo>...`) además del ejemplo. Guía nueva: `docs/guias/estilos.md`.
 

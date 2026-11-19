@@ -103,8 +103,10 @@ def test_tema_reflex(crear):
     app = raiz / "proyecto"
     assert main(["nuevo", "tema", "turquesa"]) == 0
     assert 'accent_color="teal"' in leer(app / "tema.py") and 'appearance="inherit"' in leer(app / "tema.py")
-    principal = leer(app / "proyecto.py")
-    assert "from proyecto.tema import TEMA" in principal and "app.theme = TEMA" in principal
+    config = leer(raiz / "rxconfig.py")
+    assert "from proyecto.tema import TEMA" in config and "RadixThemesPlugin(theme=TEMA)" in config
+    assert config.index("from proyecto.tema import TEMA") < config.index("config = rx.Config(")
+    assert "theme=" not in leer(app / "proyecto.py")
 
 
 @pytest.mark.lento
