@@ -5,6 +5,14 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Cambiado
+- Sitio: cada guía está en pestañas (Empezar, Comandos, Estilos, Proyecto completo,
+  Combinaciones, Todos los comandos, Problemas). En Comandos y Estilos, una sub-pestaña
+  por pieza con la forma general, el comando con lo que muestra la consola, el código
+  que arma (archivo por archivo) y todas sus variantes. Proyecto completo arma un
+  proyecto entero con los comandos, ejecutados de verdad. La dirección recuerda la
+  pestaña (`vue.html#comandos/crud`) y los enlaces viejos siguen andando.
+
 ## [1.4.0] - 2026-11-19
 
 ### Agregado

@@ -2223,3 +2223,275 @@ section[id] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* --- Guía con pestañas ---------------------------------------------------------- */
+
+.guia-pestanas {
+  padding-bottom: 64px;
+}
+
+/* Las pestañas de arriba: se pegan debajo de la barra al bajar. */
+.guia-tabs {
+  position: sticky;
+  top: 60px;
+  z-index: 4;
+  display: flex;
+  gap: 4px;
+  margin: 0 -16px 28px;
+  padding: 8px 16px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  background: color-mix(in srgb, var(--fondo) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--borde);
+}
+
+.guia-tab {
+  flex: none;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--tenue);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.guia-tab:hover {
+  color: var(--texto);
+}
+
+.guia-tab[aria-selected="true"] {
+  color: var(--texto);
+  border-bottom-color: var(--acento);
+}
+
+.guia-tab:focus-visible,
+.subpestana:focus-visible,
+.visor-pestana:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: -3px;
+}
+
+/* Sub-pestañas: una columna a la izquierda (en el celular, una fila que se desliza). */
+.con-subpestanas {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.subpestanas {
+  position: sticky;
+  top: 130px;
+  display: grid;
+  gap: 2px;
+}
+
+.subpestana {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  background: none;
+  color: var(--tenue);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.subpestana b {
+  min-width: 1.4em;
+  color: var(--acento-texto);
+  font-size: 0.85em;
+}
+
+.subpestana:hover {
+  background: var(--fondo-suave);
+  color: var(--texto);
+}
+
+.subpestana[aria-selected="true"] {
+  border-left-color: var(--acento);
+  background: var(--fondo-suave);
+  color: var(--texto);
+  font-weight: 700;
+}
+
+.subpanel > h2,
+.panel > .leccion__intro:first-child {
+  margin-top: 0;
+}
+
+.subpanel > h2 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.bloque {
+  margin-top: 32px;
+}
+
+.bloque > h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.bloque h4 {
+  margin: 20px 0 8px;
+}
+
+.consola {
+  margin-top: 10px;
+}
+
+.consola > summary {
+  font-weight: 600;
+}
+
+.tabla-desliza {
+  overflow-x: auto;
+}
+
+.lista-css {
+  display: grid;
+  gap: 10px;
+  padding-left: 1.2rem;
+}
+
+.ref-forma {
+  margin-left: 8px;
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+/* El código que arma una pieza: una pestaña por archivo. */
+.visor-codigo {
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--terminal);
+}
+
+.visor-codigo__pestanas {
+  display: flex;
+  overflow-x: auto;
+  background: var(--terminal-barra);
+  scrollbar-width: thin;
+}
+
+.visor-pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--terminal-tenue);
+  font: 0.85rem var(--mono);
+  cursor: pointer;
+}
+
+.visor-pestana[aria-selected="true"] {
+  color: var(--terminal-texto);
+  border-bottom-color: var(--acento);
+  background: var(--terminal);
+}
+
+.visor-codigo__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2c3644;
+  color: var(--terminal-tenue);
+  font-size: 0.85rem;
+}
+
+.visor-codigo__info code {
+  color: var(--terminal-texto);
+}
+
+.visor-codigo__info .terminal__boton {
+  margin-left: auto;
+}
+
+.visor-codigo__cuerpo {
+  max-height: 520px;
+  margin: 0;
+  overflow: auto;
+}
+
+/* El recorrido de un proyecto completo. */
+.recorrido {
+  display: grid;
+  gap: 18px;
+  padding-left: 1.4rem;
+}
+
+.recorrido__paso p {
+  margin: 6px 0 0;
+  color: var(--tenue);
+}
+
+.recorrido__paso--andamio::marker {
+  color: var(--acento-texto);
+  font-weight: 700;
+}
+
+.recorrido__archivos {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font: 0.85rem var(--mono);
+}
+
+@media (max-width: 900px) {
+  .con-subpestanas {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .subpestanas {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+  }
+  .subpestana {
+    flex: none;
+    border-left: 0;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+    white-space: nowrap;
+  }
+  .subpestana[aria-selected="true"] {
+    border-color: var(--acento);
+  }
+  .guia-tabs {
+    top: 56px;
+  }
+}
+
+
+.visor-codigo__info code[data-visor-ruta] {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--terminal-texto);
+  font-size: 0.85rem;
+}
+
+.tabla-comandos td:first-child {
+  width: 58%;
+}

@@ -406,13 +406,26 @@ JavaScript, sin librerías):
 | `img/compartir/`, `img/icono-*.png`, `sitemap.xml`, `site.webmanifest` | la vista previa al compartir cada página (1200x630), los íconos y el mapa del sitio: los genera `scripts/compartir_sitio.py` |
 | `ejemplos/` | el código de las combinaciones de cada guía (lo que escribe el alumno), en TypeScript y JavaScript |
 
-Cada guía tiene un índice lateral (en el celular, plegable arriba) que sigue la
-línea: **Empezar** (instalar, crear el proyecto, ponerlo en marcha), **Paso a paso**
-(una lección por pieza, en el orden de `CAMINO`, con temas como el router
-intercalados), **Combinaciones** (recetas que usan varias piezas juntas, con su
-código) y **Referencia** (el proyecto completo, todos los comandos y problemas
-comunes). Cada lección termina con enlaces a la anterior y la siguiente. Las guías de
-las tecnologías con variantes tienen un selector TypeScript / JavaScript.
+Cada guía está en pestañas (y la dirección las recuerda: `vue.html#comandos/crud`):
+
+- **Empezar**: instalar, crear el proyecto y ponerlo en marcha.
+- **Comandos**: una sub-pestaña por pieza, en el orden de `CAMINO` (con los temas, como el
+  router, intercalados). Cada una muestra para qué sirve, la forma general
+  (`nuevo crud <nombre> <campo:tipo>...`), el comando con lo que muestra la consola, el
+  código que arma (una pestaña por archivo creado o modificado), todas las variantes
+  (otros nombres, opciones, `--simular`, `--plural`, en inglés) y cómo se usa.
+- **Estilos** (si el stack tiene `tema`): dónde está el CSS (`ESTILOS_GUIA`), una receta
+  para pasar del CSS base a un diseño propio, y `tema`, `ui` y `estilo`.
+- **Proyecto completo**: `RECORRIDOS`, un proyecto entero armado con los comandos. Los
+  de andamio se ejecutan de verdad (en otra carpeta) y se muestra su salida y lo que
+  crearon; los demás (instalar, migrar, arrancar) se muestran con su explicación. Abajo,
+  el explorador con todos los archivos.
+- **Combinaciones**, **Todos los comandos** (cada pieza con todas sus variantes, los
+  comandos del proyecto y los tipos de campo) y **Problemas**.
+
+Las variantes de cada pieza las arma `variantes()` en `scripts/sitio.py` a partir de la
+definición de la pieza (sus opciones, si usa plural o campos): una pieza nueva aparece
+sola. Las guías de las tecnologías con variantes tienen un selector TypeScript / JavaScript.
 
 **Nada se escribe a mano.** `scripts/sitio.py` ejecuta andamio de verdad: crea un
 proyecto de cada tipo y variante, genera cada pieza, simula una sesión del menú y
@@ -423,7 +436,9 @@ la página. Lo único escrito a mano en ese archivo es:
 - `DESCRIPCIONES` y `CARPETAS`: para qué sirve cada archivo generado. **Si agregás
   un archivo a una plantilla, agregale su descripción**: hay un test que falla si
   algún archivo generado queda sin explicación.
-- `CAMINO`: el orden de las lecciones de cada guía (el índice lateral). Tiene que
+- `RECORRIDOS`: los pasos del proyecto completo de cada guía (un test controla que cada
+  paso de andamio funcione y genere algo).
+- `CAMINO`: el orden de las sub-pestañas de Comandos. Tiene que
   tener todas las piezas del stack (hay un test); `"tema:router"` intercala una
   lección de un concepto, definida en `TEMAS`, que muestra archivos reales del
   proyecto (si un archivo deja de existir, `sitio.py` falla).

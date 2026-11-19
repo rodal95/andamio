@@ -139,3 +139,40 @@ def test_compartir_la_pagina_muestra_imagen_y_logo():
         assert (ancho, alto) == (1200, 630), imagen.name
     for icono in ("icono-32.png", "apple-touch-icon.png", "icono-192.png", "icono-512.png"):
         assert (SITIO / "img" / icono).is_file(), icono
+
+
+def test_cada_pieza_tiene_forma_general_y_variantes(datos):
+    for tecnologia in datos["tecnologias"]:
+        for variante in tecnologia["variantes"]:
+            for pieza in variante["piezas"]:
+                assert pieza["forma"].startswith(f"python -m andamio nuevo {pieza['clave']}"), (tecnologia["clave"], pieza["clave"])
+                comandos = [v["comando"] for v in pieza["variantes"]]
+                assert comandos[0] == pieza["comando"]
+                assert any(c.endswith("--simular") for c in comandos)  # la simulación
+                assert any(" new " in c for c in comandos)  # en inglés
+                assert len(set(comandos)) == len(comandos)
+                for opcion in pieza["opciones"]:
+                    if opcion != "modo":
+                        assert any(f"--{opcion}" in c for c in comandos), (tecnologia["clave"], pieza["clave"], opcion)
+
+
+def test_el_proyecto_completo_se_arma_de_verdad(datos):
+    """Si falla: revisá RECORRIDOS en scripts/sitio.py (cada paso de andamio se ejecuta)."""
+    for tecnologia in datos["tecnologias"]:
+        for variante in tecnologia["variantes"]:
+            pasos = variante["recorrido"]
+            de_andamio = [p for p in pasos if p["andamio"]]
+            assert pasos[0]["comando"].startswith(f"python -m andamio crear {tecnologia['clave']} "), tecnologia["clave"]
+            assert len(de_andamio) >= 3, tecnologia["clave"]
+            for paso in de_andamio:
+                assert "Listo." in paso["salida"] and "Error" not in paso["salida"], paso["comando"]
+            for paso in de_andamio[1:]:
+                assert paso["creados"] or paso["modificados"], paso["comando"]
+            assert all(p["explicacion"] for p in pasos)
+
+
+def test_las_tecnologias_web_tienen_la_pestana_de_estilos(datos):
+    for tecnologia in datos["tecnologias"]:
+        piezas = {p["clave"] for p in tecnologia["variantes"][0]["piezas"]}
+        if "tema" in piezas:
+            assert tecnologia["estilos"] and {"base", "componente", "pagina"} <= set(tecnologia["estilos"]), tecnologia["clave"]

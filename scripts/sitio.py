@@ -1377,6 +1377,303 @@ def descripcion(clave: str, ruta: str) -> str | None:
     return None
 
 
+# --- Variantes de cada pieza ------------------------------------------------------------
+
+from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
+from andamio.comandos import forma_general  # noqa: E402
+
+_PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
+_OPCIONES_EN_INGLES = {"--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode"}
+
+# Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
+_OTRO_NOMBRE = {
+    "pagina": "SobreNosotros",
+    "componente": "BotonFlotante",
+    "hook": "carrito",
+    "composable": "carrito",
+    "estado": "carrito",
+    "pantalla": "perfil --carpeta (tabs)",
+    "estilo": "perfil-usuario",
+}
+_OTROS_CAMPOS = "cliente nombre:str email:email telefono:str"
+
+
+def en_ingles(comando: str) -> str:
+    """El mismo comando con los alias en inglés: nuevo recurso ... --migrar -> new resource ... --migrate."""
+    partes = comando.split()
+    if len(partes) >= 2 and partes[0] == "nuevo":
+        partes[0] = "new"
+        partes[1] = _PIEZAS_EN_INGLES.get(partes[1], partes[1])
+    return " ".join(_OPCIONES_EN_INGLES.get(p, p) for p in partes)
+
+
+def variantes(clave: str, pieza, comando: str) -> list[dict]:
+    """Todas las formas de usar una pieza, con qué cambia en cada una (sin el python -m andamio)."""
+    filas = [{"comando": comando, "descripcion": "El ejemplo de esta guía."}]
+    if clave in _OTRO_NOMBRE:
+        filas.append({"comando": f"nuevo {clave} {_OTRO_NOMBRE[clave]}", "descripcion": "Con otro nombre: el nombre es el que vos elijas."})
+    elif pieza.usa_campos:
+        filas.append({"comando": f"nuevo {clave} {_OTROS_CAMPOS}", "descripcion": "Con tu propio nombre y tus campos (nombre:tipo, los que necesites)."})
+    if clave == "tema":
+        from andamio.estilos import PALETA
+
+        filas += [
+            {"comando": "nuevo tema", "descripcion": "Sin color: azul, con el modo del sistema (auto)."},
+            {"comando": "nuevo tema verde --modo claro", "descripcion": "Siempre claro. Colores: " + ", ".join(PALETA) + "."},
+            {"comando": "nuevo tema rojo --modo oscuro", "descripcion": "Siempre oscuro."},
+        ]
+    if clave == "ui":
+        from andamio.estilos import PARTES
+
+        filas += [{"comando": f"nuevo ui {parte}", "descripcion": descripcion.capitalize() + "."} for parte, descripcion in PARTES.items() if f" {parte}" not in comando]
+    base = comando.split(" --")[0]
+    for opcion in sorted(pieza.opciones):
+        if opcion == "migrar" and "--migrar" not in comando:
+            filas.append({"comando": f"{base} --migrar", "descripcion": "Además crea y aplica la migración (la tabla en la base)."})
+        elif opcion == "protegido":
+            filas.append({"comando": f"{base} --protegido", "descripcion": "Leer es libre; crear, modificar y eliminar piden iniciar sesión."})
+        elif opcion == "carpeta" and "--carpeta" not in comando:
+            filas.append({"comando": f"{base} --carpeta productos", "descripcion": "Dentro de una carpeta de app/ (la carpeta es parte de la ruta)."})
+    if pieza.usa_plural:
+        campos = " nombre:str" if pieza.usa_campos else ""
+        filas.append({"comando": f"nuevo {clave} pais{campos} --plural paises", "descripcion": "Con el plural escrito a mano, cuando el automático no sirve."})
+    filas.append({"comando": f"{comando} --simular", "descripcion": "Muestra qué archivos crearía o modificaría, sin tocar nada."})
+    filas.append({"comando": en_ingles(comando), "descripcion": "El mismo comando en inglés."})
+    vistos, unicas = set(), []
+    for fila in filas:
+        if fila["comando"] not in vistos:
+            vistos.add(fila["comando"])
+            unicas.append({**fila, "comando": f"{PROGRAMA} {fila['comando']}"})
+    return unicas
+
+
+# --- Un proyecto completo, armado con los comandos ---------------------------------------
+
+# Los pasos para armar un proyecto entero desde cero. Los de andamio se ejecutan de verdad
+# (en un proyecto aparte) y la guía muestra su salida y lo que crearon; los demás son
+# comandos del proyecto (instalar, migrar, arrancar) que se muestran con su explicación.
+# {activar} es el comando para activar el entorno virtual.
+_VENV = [
+    ("python -m venv .venv", "Crea el entorno virtual (una sola vez)."),
+    ("{activar}", "Lo activa (en Linux o Mac: source .venv/bin/activate)."),
+    ("pip install -r requirements.txt", "Instala las librerías del proyecto."),
+]
+_TIENDA = "nombre:str precio:decimal stock:int"
+RECORRIDOS = {
+    "python": [
+        ("crear python mi-kiosco", "Crea el proyecto de consola."),
+        ("nuevo entidad categoria nombre:str", "La tabla de categorías, con su menú."),
+        ("nuevo entidad producto nombre:str precio:float stock:int", "La tabla de productos."),
+        ("nuevo entidad cliente nombre:str telefono:str", "La tabla de clientes."),
+        ("python main.py", "Ejecuta el programa: el menú principal ya tiene las tres opciones."),
+    ],
+    "django": [
+        ("crear django mi-tienda", "Crea el proyecto de la API."),
+        *_VENV,
+        ("nuevo login", "Registro de usuarios y login con tokens JWT."),
+        ("pip install -r requirements.txt", "Instala SimpleJWT, que agregó nuevo login."),
+        ("nuevo recurso categoria nombre:str descripcion:text", "La API de categorías (lectura y escritura libres)."),
+        (f"nuevo recurso producto {_TIENDA} activo:bool --protegido", "La API de productos: crear, modificar y eliminar piden el token."),
+        ("python manage.py makemigrations", "Prepara las tablas de las apps nuevas."),
+        ("python manage.py migrate", "Crea las tablas en la base."),
+        ("python manage.py createsuperuser", "Un usuario para el panel /admin/ y para pedir el token."),
+        ("python manage.py test", "Ejecuta los tests de todas las apps."),
+        ("python manage.py runserver", "Levanta la API: la documentación queda en http://127.0.0.1:8000/api/docs/"),
+    ],
+    "django-web": [
+        ("crear django-web mi-tienda", "Crea el sitio (con login, registro y admin)."),
+        *_VENV,
+        ("nuevo tema verde", "Los colores y el modo oscuro de todo el sitio."),
+        ("nuevo ui alertas", "Mensajes de éxito y error con estilo."),
+        ("nuevo crud categoria nombre:str descripcion:text", "La sección de categorías: lista, detalle y formulario."),
+        (f"nuevo crud producto {_TIENDA} activo:bool --protegido", "La sección de productos: agregar, editar y eliminar piden ingresar."),
+        ("nuevo pagina Contacto", "Una página propia, con su enlace en el menú."),
+        ("nuevo estilo contacto", "El CSS de esa página, con las variables del tema."),
+        ("python manage.py makemigrations", "Prepara las tablas de las apps nuevas."),
+        ("python manage.py migrate", "Crea las tablas en la base."),
+        ("python manage.py createsuperuser", "Un usuario para ingresar al sitio y al /admin/."),
+        ("python manage.py test", "Ejecuta los tests de todas las apps."),
+        ("python manage.py runserver", "Levanta el sitio en http://127.0.0.1:8000"),
+    ],
+    "fastapi": [
+        ("crear fastapi mi-tienda", "Crea el proyecto de la API."),
+        *_VENV,
+        ("nuevo recurso categoria nombre:str descripcion:text", "La API de categorías."),
+        (f"nuevo recurso producto {_TIENDA} activo:bool", "La API de productos."),
+        ("nuevo recurso cliente nombre:str email:email", "La API de clientes."),
+        ("python -m pytest", "Ejecuta los tests de todos los recursos."),
+        ("python -m uvicorn app.main:app --reload", "Levanta la API: la documentación queda en http://127.0.0.1:8000/docs"),
+    ],
+    "express": [
+        ("crear express mi-tienda", "Crea el proyecto de la API."),
+        ("npm install", "Instala las dependencias."),
+        ("nuevo recurso categoria nombre:str descripcion:text", "La API de categorías."),
+        (f"nuevo recurso producto {_TIENDA} activo:bool", "La API de productos."),
+        ("npx prisma migrate dev --name inicial", "Crea las tablas de los dos recursos."),
+        ("npm test", "Ejecuta los tests (con otra base: no toca tus datos)."),
+        ("npm run dev", "Levanta la API: la documentación queda en http://localhost:8000/docs"),
+    ],
+    "web": [
+        ("crear web mi-tienda", "Crea la página (sin instalar nada)."),
+        ("nuevo tema verde", "Los colores y el modo oscuro de todas las páginas."),
+        ("nuevo ui tarjetas", "La grilla de tarjetas, para el catálogo."),
+        ("nuevo ui alertas", "Mensajes de éxito y error."),
+        (f"nuevo crud producto {_TIENDA}", "La página para administrar productos (usa la API)."),
+        ("nuevo pagina Catalogo", "Una página propia para el catálogo."),
+        ("nuevo componente Tarjeta", "La función que arma cada tarjeta, con su CSS."),
+        ("nuevo estilo catalogo", "El CSS de la página del catálogo."),
+        ("python -m http.server 5173", "Sirve la página en http://localhost:5173 (con la API andando en el 8000)."),
+    ],
+    "react": [
+        ("crear react mi-tienda", "Crea la aplicación."),
+        ("npm install", "Instala las dependencias."),
+        ("nuevo tema verde", "Los colores y el modo oscuro de toda la aplicación."),
+        ("nuevo ui tarjetas", "La grilla de tarjetas."),
+        (f"nuevo crud producto {_TIENDA}", "Lista, detalle y formulario de productos (usa la API)."),
+        ("nuevo crud cliente nombre:str email:email", "Lo mismo para clientes."),
+        ("nuevo pagina Catalogo", "Una página propia, con su ruta y su enlace."),
+        ("nuevo componente TarjetaProducto", "Un componente para mostrar cada producto."),
+        ("nuevo hook carrito", "La lógica del carrito, para usar en varias páginas."),
+        ("npm run dev", "Levanta la aplicación en http://localhost:5173 (con la API andando en el 8000)."),
+    ],
+    "vue": [
+        ("crear vue mi-tienda", "Crea la aplicación."),
+        ("npm install", "Instala las dependencias."),
+        ("nuevo tema verde", "Los colores y el modo oscuro de toda la aplicación."),
+        ("nuevo ui tarjetas", "La grilla de tarjetas."),
+        (f"nuevo crud producto {_TIENDA}", "Lista, detalle y formulario de productos (usa la API)."),
+        ("nuevo crud cliente nombre:str email:email", "Lo mismo para clientes."),
+        ("nuevo pagina Catalogo", "Una página propia, con su ruta y su enlace."),
+        ("nuevo componente TarjetaProducto", "Un componente .vue para mostrar cada producto."),
+        ("nuevo composable carrito", "La lógica del carrito, para usar en varias páginas."),
+        ("npm run dev", "Levanta la aplicación en http://localhost:5173 (con la API andando en el 8000)."),
+    ],
+    "next": [
+        ("crear next mi-tienda", "Crea la aplicación."),
+        ("npm install", "Instala las dependencias."),
+        ("nuevo tema verde", "Los colores y el modo oscuro de toda la aplicación."),
+        ("nuevo ui tarjetas", "La grilla de tarjetas."),
+        (f"nuevo crud producto {_TIENDA}", "Lista, detalle y formulario de productos (usa la API)."),
+        ("nuevo pagina Catalogo", "Una página propia (la carpeta app/catalogo)."),
+        ("nuevo componente TarjetaProducto", "Un componente para mostrar cada producto."),
+        ("nuevo hook carrito", "La lógica del carrito."),
+        ("npm run dev", "Levanta la aplicación en http://localhost:3000 (con la API andando en el 8000)."),
+    ],
+    "next-fullstack": [
+        ("crear next-fullstack mi-tienda", "Crea la aplicación con su propia API y base."),
+        ("npm install", "Instala las dependencias."),
+        (f"nuevo recurso producto {_TIENDA}", "La API de productos en app/api/productos/."),
+        (f"nuevo crud producto {_TIENDA}", "Las páginas que la usan (mismos campos)."),
+        ("nuevo recurso cliente nombre:str email:email", "La API de clientes."),
+        ("nuevo crud cliente nombre:str email:email", "Sus páginas."),
+        ("nuevo tema verde", "Los colores y el modo oscuro."),
+        ("npx prisma migrate dev --name inicial", "Crea las tablas."),
+        ("npm test", "Ejecuta los tests de la API."),
+        ("npm run dev", "Levanta todo en http://localhost:3000"),
+    ],
+    "react-native": [
+        ("crear react-native mi-tienda", "Crea la app."),
+        ("npm install", "Instala las dependencias."),
+        ("nuevo tema verde", "Los colores claro y oscuro de la app (useTema)."),
+        (f"nuevo servicio producto {_TIENDA}", "Las funciones para usar la API de productos."),
+        ("nuevo pantalla productos", "La pantalla con la lista."),
+        ("nuevo pantalla detalle --carpeta productos", "La pantalla de detalle, en app/productos/."),
+        ("nuevo componente TarjetaProducto", "Un componente para cada producto."),
+        ("nuevo hook productos", "La lógica para pedir los productos."),
+        ("npx expo start", "Levanta la app: a (emulador de Android), w (navegador) o el QR con Expo Go."),
+    ],
+    "reflex": [
+        ("crear reflex mi-tienda", "Crea la aplicación (todo en Python)."),
+        *_VENV,
+        ("nuevo tema verde", "El color y el modo de toda la aplicación."),
+        (f"nuevo crud producto {_TIENDA}", "La tabla y la página de productos."),
+        ("nuevo crud-api cliente nombre:str email:email", "Una página con los clientes de una API de andamio."),
+        ("nuevo pagina Contacto", "Una página propia."),
+        ("nuevo componente Tarjeta", "Una parte de la interfaz para reutilizar."),
+        ("nuevo estado carrito", "Datos y acciones del carrito."),
+        ("reflex db init", "Crea la base y aplica las migraciones."),
+        ("reflex run", "Levanta la aplicación en http://localhost:3000"),
+    ],
+}
+
+
+def recorrido(base: Path, stack, variante: str) -> list[dict]:
+    """Arma el proyecto de RECORRIDOS con andamio de verdad y devuelve cada paso con su salida."""
+    carpeta_base = base / f"recorrido-{variante or 'unica'}"
+    carpeta_base.mkdir()
+    os.chdir(carpeta_base)
+    proyecto = None
+    pasos = []
+    for comando, explicacion in RECORRIDOS[stack.clave]:
+        comando = comando.replace("{activar}", ".venv\\Scripts\\activate")
+        paso = {"comando": comando, "explicacion": explicacion, "andamio": False}
+        if comando.startswith(("crear ", "nuevo ")):
+            argumentos = shlex.split(comando)
+            if argumentos[0] == "crear" and variante:
+                argumentos += ["--variante", variante]
+            antes = _instantanea(proyecto) if proyecto else {}
+            salida = _ejecutar(argumentos)
+            if "Error" in salida:
+                raise SystemExit(f"Recorrido de {stack.clave}: falló '{comando}':\n{salida}")
+            if argumentos[0] == "crear":
+                proyecto = carpeta_base / argumentos[2]
+                os.chdir(proyecto)
+                pasos.append({**paso, "comando": f"{PROGRAMA} {comando}", "andamio": True, "salida": salida, "creados": [], "modificados": []})
+                pasos.append({"comando": f"cd {argumentos[2]}", "explicacion": "Entrá a la carpeta del proyecto.", "andamio": False})
+                continue
+            despues = _instantanea(proyecto)
+            paso.update(
+                comando=f"{PROGRAMA} {comando}",
+                andamio=True,
+                salida=salida,
+                creados=[r for r in despues if r not in antes],
+                modificados=[r for r in despues if r in antes and antes[r] != despues[r]],
+            )
+        pasos.append(paso)
+    return pasos
+
+
+# --- La pestaña Estilos: dónde está el CSS y cómo mejorarlo ---------------------------------
+
+ESTILOS_GUIA = {
+    "web": {
+        "base": "css/estilos.css: los estilos de todas las páginas (botones, tablas, formularios).",
+        "componente": "Cada componente trae su CSS en css/componentes/<nombre>.css, importado arriba de css/estilos.css. Sus clases empiezan con el nombre del componente (.tarjeta), así no chocan con otras.",
+        "pagina": "Para el CSS de una página: nuevo estilo <nombre> (queda en css/estilos/ y se importa solo).",
+    },
+    "django-web": {
+        "base": "static/css/estilos.css: los estilos de todo el sitio, cargados en templates/base.html.",
+        "componente": "En Django las partes reutilizables son plantillas que se incluyen ({% include %}): para su CSS, nuevo estilo <nombre>.",
+        "pagina": "Para el CSS de una página o de una sección del crud: nuevo estilo <nombre> (queda en static/css/estilos/ y se carga en base.html).",
+    },
+    "vue": {
+        "base": "src/estilos.css: los estilos globales, importados en src/main.js.",
+        "componente": "Cada componente .vue tiene su CSS en <style scoped>: solo afecta a ese componente.",
+        "pagina": "Las páginas también pueden tener <style scoped>. Para un CSS compartido: nuevo estilo <nombre> (queda en src/estilos/).",
+    },
+    "react": {
+        "base": "src/index.css: los estilos globales, importados en src/main.",
+        "componente": "Cada componente y cada página traen su .module.css: las clases solo afectan a ese archivo (className={styles.root}).",
+        "pagina": "Para un CSS compartido entre varias páginas: nuevo estilo <nombre> (queda en src/estilos/ y se importa en src/main).",
+    },
+    "next": {
+        "base": "app/globals.css: los estilos globales, importados en app/layout.",
+        "componente": "Cada componente y cada página traen su .module.css: las clases solo afectan a ese archivo (className={styles.root}).",
+        "pagina": "Para un CSS compartido entre varias páginas: nuevo estilo <nombre> (queda en app/estilos/ y se importa en app/layout).",
+    },
+    "react-native": {
+        "base": "React Native no usa CSS: cada componente tiene sus estilos en un StyleSheet, en el mismo archivo.",
+        "componente": "nuevo componente <Nombre> trae su StyleSheet. Para que use los colores del tema: const tema = useTema(); y style={[estilos.root, { backgroundColor: tema.superficie }]}.",
+        "pagina": "Las pantallas igual: StyleSheet en el archivo y los colores de useTema().",
+    },
+    "reflex": {
+        "base": "Reflex arma los estilos con Python: cada componente recibe sus propiedades (padding=\"4\", color_scheme=\"green\"...).",
+        "componente": "nuevo componente <Nombre> crea una función que devuelve componentes: los estilos van como argumentos (rx.card(..., size=\"2\")).",
+        "pagina": "El tema (nuevo tema) fija el color de acento, el modo y los bordes de toda la aplicación.",
+    },
+}
+ESTILOS_GUIA["next-fullstack"] = ESTILOS_GUIA["next"]
+
 # --- Ejecución ---------------------------------------------------------------------------
 
 
@@ -1458,6 +1755,10 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
                 "modificados": [{"ruta": r, "que": _que_se_modifico(salida, r)} for r in modificados],
                 "uso": datos_pieza["uso"],
                 "uso_lenguaje": datos_pieza["uso_lenguaje"],
+                "forma": f"{PROGRAMA} {forma_general(clave_pieza, pieza)}",
+                "ingles": _PIEZAS_EN_INGLES.get(clave_pieza, ""),
+                "opciones": sorted(pieza.opciones),
+                "variantes": variantes(clave_pieza, pieza, datos_pieza["comando"]),
             }
         )
     archivos = [_archivo(stack.clave, r, d, estado[r], origen[r]) for r, d in _instantanea(proyecto).items()]
@@ -1486,6 +1787,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
         "comandos_andamio": [{"comando": c, "descripcion": d} for c, d in comandos],
         "camino": camino(stack.clave, variante, archivos),
         "combinaciones": combinaciones(stack.clave, variante),
+        "recorrido": recorrido(base, stack, variante),
     }
 
 
@@ -1570,6 +1872,7 @@ def demo_tecnologia(base: Path, stack) -> dict:
         "carpeta": info["carpeta"],
         "tipos": stack.tipos if any(p.usa_campos for p in stack.piezas.values()) else {},
         "comandos_proyecto": [{"comando": c, "descripcion": d} for c, d in info["extra"]],
+        "estilos": ESTILOS_GUIA.get(stack.clave),
         "variantes": [demo_variante(base, stack, v) for v in variantes],
     }
 
