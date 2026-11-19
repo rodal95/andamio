@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Sequence
 
+from andamio.nucleo import consola
 from andamio.nucleo.errores import AndamioError
 
 if TYPE_CHECKING:
@@ -58,5 +59,5 @@ def error_no_detectado(desde: Path, registro: Sequence[Stack] | None = None) -> 
     senales = "\n".join(f"  - {s.titulo}: {s.senal}" for s in registro)
     return AndamioError(
         f"No encontré un proyecto en {desde} ni en las carpetas de arriba.\nBusqué:\n{senales}",
-        "Entrá a la carpeta de tu proyecto con cd, o creá uno nuevo con: andamio crear <tipo> <nombre>",
+        f"Entrá a la carpeta de tu proyecto con cd, o creá uno nuevo con: {consola.programa()} crear <tipo> <nombre>",
     )

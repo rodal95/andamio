@@ -16,10 +16,10 @@ Abrí http://localhost:5173
 ## Generar código
 
 ```
-andamio nuevo componente Tarjeta
-andamio nuevo pagina Productos
-andamio nuevo hook contador
-andamio nuevo servicio producto nombre:str precio:decimal stock:int
+python -m andamio nuevo componente Tarjeta
+python -m andamio nuevo pagina Productos
+python -m andamio nuevo hook contador
+python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
 
 El servicio usa la API de Django definida en `VITE_API_URL` (archivo `.env`).

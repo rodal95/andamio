@@ -151,12 +151,13 @@
 
   function instalar() {
     const contenido = `
-      ${A.comandoHtml(`py -m pip install ${A.urlWhl}`)}
+      ${A.comandoHtml(`python -m pip install ${A.urlWhl}`)}
       <p class="bajada">Para comprobar que quedó instalado:</p>
-      ${A.comandoHtml("andamio --version")}
-      <p class="nota">¿No se reconoce el comando? Usá <code>py -m andamio</code>. ¿Sin permisos o sin internet? Mirá
+      ${A.comandoHtml("python -m andamio --version")}
+      <p class="nota">andamio es un programa de Python: por eso todos los comandos de esta guía empiezan con
+        <code>python -m andamio</code>, que funciona en cualquier PC. ¿Sin permisos o sin internet? Mirá
         <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>`;
-    return seccion("instalar", 1, "Instalá andamio", contenido, "Una sola vez en la PC. En Windows, en CMD o PowerShell:");
+    return seccion("instalar", 1, "Instalá andamio", contenido, "Una sola vez en la PC. En Windows, en CMD o PowerShell (en Linux o Mac, con python3):");
   }
 
   function crear() {

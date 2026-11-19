@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 from typing import Callable, Sequence, TypeVar
 
 from andamio.nucleo.errores import AndamioError, Cancelado
@@ -61,6 +62,19 @@ def color(texto: str, *estilos: str) -> str:
         return texto
     codigos = ";".join(_CODIGOS[e] for e in estilos)
     return f"\033[{codigos}m{texto}\033[0m"
+
+
+def programa() -> str:
+    """Cómo se ejecuta andamio, para mostrarlo en los mensajes.
+
+    Siempre con Python adelante, porque funciona en cualquier PC aunque el comando
+    `andamio` solo no esté en el PATH: `python -m andamio`, o `python andamio.pyz`
+    si se usa el archivo .pyz sin instalar.
+    """
+    origen = Path(sys.argv[0]) if sys.argv and sys.argv[0] else None
+    if origen is not None and origen.suffix == ".pyz":
+        return f"python {origen.name}"
+    return "python -m andamio"
 
 
 # --- Mensajes ---------------------------------------------------------------

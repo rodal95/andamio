@@ -20,7 +20,8 @@ def test_la_instalacion_apunta_a_la_version_actual():
 def test_la_primera_pantalla_es_corta():
     arriba = README.split("\n---\n")[0]
     assert len(arriba.splitlines()) <= 30
-    assert "py -m pip install" in arriba  # Windows primero
+    assert "python -m pip install" in arriba  # Windows primero
+    assert "python -m andamio" in arriba
     assert arriba.count("andamio ") >= 3
 
 

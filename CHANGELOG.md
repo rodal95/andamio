@@ -5,6 +5,20 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.0.1] - 2026-11-19
+
+### Agregado
+- `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
+  usuario (sin permisos de administrador) para poder escribir solo `andamio`.
+  En Linux y Mac explica qué línea agregar. Es opcional.
+
+### Cambiado
+- Todos los mensajes, la ayuda y los README de los proyectos generados
+  muestran los comandos con Python adelante (`python -m andamio ...`, o
+  `python andamio.pyz ...` si se usa el .pyz), que funciona en cualquier PC.
+- La instalación se documenta con `python -m pip`, que funciona también con
+  el Python de la Microsoft Store (que no trae `py`).
+
 ## [1.0.0] - 2026-11-19
 
 Primera versión.
@@ -37,5 +51,6 @@ Primera versión.
   en cada Release.
 - Licencia MIT.
 
-[Sin publicar]: https://github.com/rodal95/andamio/compare/v1.0.0...HEAD
+[Sin publicar]: https://github.com/rodal95/andamio/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/rodal95/andamio/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/rodal95/andamio/releases/tag/v1.0.0

@@ -38,12 +38,12 @@
           <figure class="terminal terminal--portada" aria-label="Sesión del menú interactivo de andamio">
             <div class="terminal__barra">
               <span class="terminal__puntos" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="terminal__titulo">C:\Users\alumno\mi-api&gt; andamio</span>
+              <span class="terminal__titulo">C:\Users\alumno\mi-api&gt; python -m andamio</span>
               <button class="terminal__boton" type="button" id="repetir-menu">Repetir</button>
             </div>
             <pre class="terminal__cuerpo" id="terminal-menu"></pre>
             <figcaption class="terminal__pie">
-              Escribiendo solo <code>andamio</code>, un menú te pregunta todo paso a paso.
+              Con <code>python -m andamio</code>, un menú te pregunta todo paso a paso.
             </figcaption>
           </figure>
         </div>
@@ -71,19 +71,19 @@
               <span class="paso__numero">1</span>
               <h3>Instalalo una vez</h3>
               <p>Un solo comando, sin configurar nada. Funciona en las PC del laboratorio sin permisos de administrador.</p>
-              <code class="paso__comando">py -m pip install …andamio.whl</code>
+              <code class="paso__comando">python -m pip install …andamio.whl</code>
             </li>
             <li class="paso">
               <span class="paso__numero">2</span>
               <h3>Creá el proyecto</h3>
               <p>Carpetas, configuración y archivos base listos para ejecutar, con el siguiente paso exacto.</p>
-              <code class="paso__comando">andamio crear react mi-web</code>
+              <code class="paso__comando">python -m andamio crear react mi-web</code>
             </li>
             <li class="paso">
               <span class="paso__numero">3</span>
               <h3>Generá las piezas</h3>
               <p>Adentro del proyecto, andamio detecta qué tipo es y genera el código que corresponde.</p>
-              <code class="paso__comando">andamio nuevo componente Tarjeta</code>
+              <code class="paso__comando">python -m andamio nuevo componente Tarjeta</code>
             </li>
           </ol>
         </div>
@@ -93,7 +93,7 @@
       <section class="seccion" id="instalar">
         <div class="contenedor contenedor--angosto">
           <h2>Instalar</h2>
-          <p class="seccion__bajada">Necesitás Python 3.10 o más nuevo. Se instala una sola vez en cada PC.</p>
+          <p class="seccion__bajada">Necesitás Python 3.10 o más nuevo. Se instala una sola vez en cada PC. andamio es un programa de Python: por eso todos los comandos empiezan con <code>python -m</code>.</p>
           <div class="pestanas pestanas--claras" role="tablist" aria-label="Forma de instalar" id="pestanas-instalar">
             <button role="tab" aria-selected="true" data-panel="instalar-windows">Windows</button>
             <button role="tab" aria-selected="false" data-panel="instalar-unix">Linux o Mac</button>
@@ -102,26 +102,27 @@
           <div class="instalar__panel" id="instalar-windows" role="tabpanel">
             <ol class="pasos-marcha">
               <li><p style="margin:0;color:inherit">Abrí <b>CMD</b> o <b>PowerShell</b> (tecla Windows, escribí "cmd" y Enter).</p></li>
-              <li><span data-instalar="py"></span><p>Descarga e instala andamio. No necesita permisos de administrador.</p></li>
-              <li><div class="comando"><code>andamio --version</code><button type="button" class="comando__copiar" data-copiar="andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado.</p></li>
+              <li><span data-instalar="python"></span><p>Descarga e instala andamio. No necesita permisos de administrador. Si aparece un aviso de que una carpeta "is not on PATH", es normal: no afecta.</p></li>
+              <li><div class="comando"><code>python -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado.</p></li>
             </ol>
             <div class="aviso-caja">
-              <p><b>¿Dice que "andamio" no se reconoce?</b> Usá <code>py -m andamio</code> en lugar de <code>andamio</code>:
-                hace exactamente lo mismo. Pasa cuando la carpeta de instalación no está en el PATH de Windows.</p>
+              <p><b>Opcional: escribir solo <code>andamio</code>.</b> Ejecutá una vez <code>python -m andamio configurar</code>,
+                cerrá la terminal (y VS Code, si lo usás) y abrí una nueva. Si no, seguí con <code>python -m andamio</code>: funciona siempre.</p>
             </div>
+            <p class="nota">¿Dice que "python" no se reconoce? Probá con <code>py</code> en lugar de <code>python</code>.</p>
           </div>
           <div class="instalar__panel" id="instalar-unix" role="tabpanel" hidden>
             <ol class="pasos-marcha">
               <li><span data-instalar="python3"></span><p>Descarga e instala andamio.</p></li>
-              <li><div class="comando"><code>andamio --version</code><button type="button" class="comando__copiar" data-copiar="andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado.</p></li>
+              <li><div class="comando"><code>python3 -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python3 -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado. En Linux y Mac, los comandos de esta página van con <code>python3</code>.</p></li>
             </ol>
           </div>
           <div class="instalar__panel" id="instalar-pyz" role="tabpanel" hidden>
             <p>
               Descargá <a href="https://github.com/rodal95/andamio/releases/latest/download/andamio.pyz">andamio.pyz</a>, guardalo
-              donde quieras (sirve un pendrive) y usalo en lugar de <code>andamio</code>:
+              donde quieras (sirve un pendrive) y usalo en lugar de <code>python -m andamio</code>:
             </p>
-            <div class="comando"><code>py C:\ruta\andamio.pyz crear python mi-tienda</code><button type="button" class="comando__copiar" data-copiar="py C:\ruta\andamio.pyz crear python mi-tienda">Copiar</button></div>
+            <div class="comando"><code>python C:\ruta\andamio.pyz crear python mi-tienda</code><button type="button" class="comando__copiar" data-copiar="python C:\ruta\andamio.pyz crear python mi-tienda">Copiar</button></div>
             <p>No necesita instalación, ni permisos, ni internet.</p>
           </div>
         </div>
@@ -133,6 +134,7 @@
           <h2>Cómo se escriben los comandos</h2>
           <p class="seccion__bajada">Todos los comandos tienen la misma forma. Este genera un recurso de Django con dos campos:</p>
           <div class="anatomia" aria-label="Partes de un comando">
+            <div class="anatomia__parte" style="--color:#c9d1d9"><code>python -m</code><span>Python ejecuta…</span></div>
             <div class="anatomia__parte" style="--color:#e6edf3"><code>andamio</code><span>el programa</span></div>
             <div class="anatomia__parte" style="--color:#79c0ff"><code>nuevo</code><span>qué hacer</span></div>
             <div class="anatomia__parte" style="--color:#7ee787"><code>recurso</code><span>qué pieza</span></div>
@@ -141,13 +143,14 @@
             <div class="anatomia__parte" style="--color:#d2a8ff"><code>--simular</code><span>opciones</span></div>
           </div>
           <ul class="lista-explicada">
-            <li><code>andamio</code><p>Sin nada más, abre un menú que te pregunta todo paso a paso. Es la forma más fácil de empezar.</p></li>
-            <li><code>andamio crear &lt;tipo&gt; &lt;nombre&gt;</code><p>Crea un proyecto nuevo: <code>python</code>, <code>django</code>, <code>react</code> o <code>react-native</code>. Con <code>--js</code>, React y React Native se crean en JavaScript.</p></li>
-            <li><code>andamio nuevo &lt;pieza&gt; &lt;nombre&gt;</code><p>Adentro de un proyecto, genera una pieza. Funciona desde cualquier subcarpeta.</p></li>
-            <li><code>andamio info</code><p>Muestra qué tipo de proyecto detectó y qué piezas podés generar ahí.</p></li>
+            <li><code>python -m andamio</code><p>Sin nada más, abre un menú que te pregunta todo paso a paso. Es la forma más fácil de empezar.</p></li>
+            <li><code>python -m andamio crear &lt;tipo&gt; &lt;nombre&gt;</code><p>Crea un proyecto nuevo: <code>python</code>, <code>django</code>, <code>react</code> o <code>react-native</code>. Con <code>--js</code>, React y React Native se crean en JavaScript.</p></li>
+            <li><code>python -m andamio nuevo &lt;pieza&gt; &lt;nombre&gt;</code><p>Adentro de un proyecto, genera una pieza. Funciona desde cualquier subcarpeta.</p></li>
+            <li><code>python -m andamio info</code><p>Muestra qué tipo de proyecto detectó y qué piezas podés generar ahí.</p></li>
             <li><code>--simular</code><p>Muestra qué archivos crearía o modificaría, sin tocar nada.</p></li>
             <li><code>--plural paises</code><p>Indica el plural cuando el automático no sirve (andamio arma "productos" solo).</p></li>
-            <li><code>andamio plantillas exportar</code><p>Copia las plantillas a tu proyecto para modificar el código que se genera.</p></li>
+            <li><code>python -m andamio plantillas exportar</code><p>Copia las plantillas a tu proyecto para modificar el código que se genera.</p></li>
+            <li><code>python -m andamio configurar</code><p>Opcional: después de ejecutarlo una vez (y abrir una terminal nueva), podés escribir solo <code>andamio</code>.</p></li>
           </ul>
           <p class="nota">
             Los nombres se escriben como quieras (<code>Línea Venta</code>, <code>linea-venta</code>) y andamio los adapta
@@ -168,13 +171,13 @@
           <div class="flujo">
             <div class="flujo__caja">
               <span class="flujo__etiqueta">Django REST</span>
-              <code>andamio nuevo recurso producto nombre:str precio:decimal</code>
+              <code>python -m andamio nuevo recurso producto nombre:str precio:decimal</code>
               <span class="flujo__detalle">API en <code>/api/productos/</code></span>
             </div>
             <div class="flujo__flecha" aria-hidden="true">→</div>
             <div class="flujo__caja">
               <span class="flujo__etiqueta">React · React Native</span>
-              <code>andamio nuevo servicio producto nombre:str precio:decimal</code>
+              <code>python -m andamio nuevo servicio producto nombre:str precio:decimal</code>
               <span class="flujo__detalle"><code>productoService.listar()</code>, <code>crear()</code>, …</span>
             </div>
           </div>
@@ -190,8 +193,8 @@
             <article class="ventaja"><h3>Errores que se entienden</h3><p>En español, diciendo qué pasó y cómo seguir. Si un dato no sirve, te explica por qué y te lo vuelve a pedir.</p></article>
             <article class="ventaja"><h3>TypeScript o JavaScript</h3><p>React y React Native en el lenguaje que uses. En un proyecto que ya existe, andamio se da cuenta solo.</p></article>
             <article class="ventaja"><h3>Código comentado</h3><p>El código generado explica qué hace cada parte, con consultas parametrizadas, tests y buenas prácticas.</p></article>
-            <article class="ventaja"><h3>Plantillas modificables</h3><p><code>andamio plantillas exportar</code> copia las plantillas a tu proyecto para que generen el código a tu manera.</p></article>
-            <article class="ventaja"><h3>Sin internet, sin instalar</h3><p><code>andamio.pyz</code> es un solo archivo: llevalo en un pendrive y ejecutalo con <code>py andamio.pyz</code>.</p></article>
+            <article class="ventaja"><h3>Plantillas modificables</h3><p><code>python -m andamio plantillas exportar</code> copia las plantillas a tu proyecto para que generen el código a tu manera.</p></article>
+            <article class="ventaja"><h3>Sin internet, sin instalar</h3><p><code>andamio.pyz</code> es un solo archivo: llevalo en un pendrive y ejecutalo con <code>python andamio.pyz</code>.</p></article>
           </div>
         </div>
       </section>
@@ -200,8 +203,8 @@
       <section class="seccion" id="preguntas">
         <div class="contenedor contenedor--angosto">
           <h2>Preguntas frecuentes</h2>
-          <details><summary>Dice que "andamio" no se reconoce como un comando.</summary><p>La carpeta donde se instaló no está en el PATH de Windows. Usá <code>py -m andamio</code> en su lugar: hace exactamente lo mismo.</p></details>
-          <details><summary>Dice "No encontré un proyecto".</summary><p>Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con <code>cd mi-proyecto</code>, o creá uno con <code>andamio crear</code>.</p></details>
+          <details><summary>¿Por qué los comandos empiezan con "python -m"?</summary><p>Porque andamio es un programa de Python, y así funciona en cualquier PC. Si preferís escribir solo <code>andamio</code>, ejecutá una vez <code>python -m andamio configurar</code> y abrí una terminal nueva.</p></details>
+          <details><summary>Dice "No encontré un proyecto".</summary><p>Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con <code>cd mi-proyecto</code>, o creá uno con <code>python -m andamio crear</code>.</p></details>
           <details><summary>Mi proyecto de React lo creé con npm create vite. ¿Sirve?</summary><p>Sí. andamio reconoce cualquier proyecto con Vite y React, y genera TypeScript o JavaScript según el proyecto.</p></details>
           <details><summary>Borré una línea que decía "no borrar esta línea".</summary><p>No pasa nada grave: andamio genera igual los archivos y te muestra exactamente qué línea pegar y en qué archivo.</p></details>
           <p class="nota">Cada guía tiene sus problemas comunes. Más preguntas en el <a href="https://github.com/rodal95/andamio#preguntas-frecuentes">README del proyecto</a>.</p>

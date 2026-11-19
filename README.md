@@ -4,33 +4,33 @@ Genera el código repetitivo de tus proyectos (carpetas, tablas, menús, APIs,
 componentes, pantallas) para que te concentres en la lógica. Funciona con
 **Python + SQLite**, **Django REST**, **React** y **React Native (Expo)**.
 
-**Instalar en Windows** (en CMD o PowerShell):
+**Instalar** (en Windows, en CMD o PowerShell):
 
 ```
-py -m pip install https://github.com/rodal95/andamio/releases/download/v1.0.0/andamio-1.0.0-py3-none-any.whl
+python -m pip install https://github.com/rodal95/andamio/releases/download/v1.0.1/andamio-1.0.1-py3-none-any.whl
 ```
 
-En Linux o Mac: `python3 -m pip install` con la misma dirección.
+En Linux o Mac, escribí `python3` en lugar de `python`.
+
+**Usar.** andamio es un programa de Python: los comandos empiezan con `python -m andamio`
+y así funcionan en cualquier PC.
+
+```
+python -m andamio                            menú: te pregunta todo, paso a paso
+python -m andamio crear django mi-api        crea un proyecto nuevo
+python -m andamio nuevo recurso producto nombre:str precio:decimal stock:int
+```
+
 ¿No podés instalar? Descargá [andamio.pyz](https://github.com/rodal95/andamio/releases/latest/download/andamio.pyz)
-y escribí `py andamio.pyz` en lugar de `andamio`.
-
-**Usar:**
-
-```
-andamio                            menú: te pregunta todo, paso a paso
-andamio crear django mi-api        crea un proyecto nuevo
-andamio nuevo recurso producto nombre:str precio:decimal stock:int
-```
-
-¿`andamio` no se reconoce? Usá `py -m andamio` (ver [preguntas frecuentes](#preguntas-frecuentes)).
+y usá `python andamio.pyz` en lugar de `python -m andamio`.
 
 ---
 
 ## Qué podés crear y generar
 
-Con `andamio crear <tipo> <nombre>` creás un proyecto. Adentro del proyecto,
-`andamio nuevo <pieza> <nombre>` agrega piezas. Para ver qué se puede generar
-en tu proyecto, escribí `andamio info`.
+Con `python -m andamio crear <tipo> <nombre>` creás un proyecto. Adentro del proyecto
+(en cualquier subcarpeta), `python -m andamio nuevo <pieza> <nombre>` agrega piezas. Para ver qué se puede generar
+en tu proyecto, escribí `python -m andamio info`.
 
 | Tipo de proyecto | `crear` | Piezas (`nuevo`) |
 |---|---|---|
@@ -40,17 +40,17 @@ en tu proyecto, escribí `andamio info`.
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
 
 React y React Native se crean en **TypeScript** (por defecto) o en **JavaScript**
-con `--js`: `andamio crear react mi-web --js`. En un proyecto que ya existe (por
+con `--js`: `python -m andamio crear react mi-web --js`. En un proyecto que ya existe (por
 ejemplo, uno creado con `npm create vite`), andamio se da cuenta solo: si tiene
 `tsconfig.json` genera `.tsx`; si no, `.jsx`.
 
 Ejemplos:
 
 ```
-andamio nuevo entidad cliente nombre:str telefono:str
-andamio nuevo componente Tarjeta
-andamio nuevo pantalla detalle-producto --carpeta productos
-andamio nuevo servicio producto nombre:str precio:decimal stock:int
+python -m andamio nuevo entidad cliente nombre:str telefono:str
+python -m andamio nuevo componente Tarjeta
+python -m andamio nuevo pantalla detalle-producto --carpeta productos
+python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
 
 Opciones útiles:
@@ -83,14 +83,14 @@ Los campos se escriben `nombre:tipo`. Si no ponés el tipo, se usa `str`.
 **los mismos campos** que el recurso:
 
 ```
-andamio nuevo recurso producto nombre:str precio:decimal     (en el proyecto Django)
-andamio nuevo servicio producto nombre:str precio:decimal    (en el proyecto React)
+python -m andamio nuevo recurso producto nombre:str precio:decimal     (en el proyecto Django)
+python -m andamio nuevo servicio producto nombre:str precio:decimal    (en el proyecto React)
 ```
 
 ## Modificar el código que se genera
 
 ```
-andamio plantillas exportar
+python -m andamio plantillas exportar
 ```
 
 Copia las plantillas a `.andamio/plantillas/` dentro de tu proyecto. Si las
@@ -99,26 +99,28 @@ los marcadores `@@...@@` que podés usar. Para volver a la original, borrá la c
 
 ## Preguntas frecuentes
 
-**"andamio" no se reconoce como un comando.**
-Windows no encuentra el programa porque la carpeta donde se instaló no está en
-el PATH. Usá `py -m andamio` en su lugar: hace lo mismo
-(`py -m andamio nuevo recurso producto nombre:str`).
+**¿Por qué `python -m andamio` y no solo `andamio`?**
+`python -m andamio` funciona en cualquier PC. Si querés escribir solo `andamio`,
+ejecutá una vez `python -m andamio configurar`: agrega la carpeta de andamio al
+PATH de tu usuario (sin permisos de administrador). Después cerrá la terminal (y
+VS Code, si lo usás) y abrí una nueva. Es opcional.
 
-**"pip" o "py" no se reconocen.**
-Probá con `python -m pip install ...` y `python -m andamio`. Si tampoco funciona,
-falta instalar Python (python.org, versión 3.10 o más nueva).
+**"python" no se reconoce como un comando.**
+Probá con `py` en lugar de `python` (`py -m pip install ...`, `py -m andamio`).
+Si tampoco funciona, falta instalar Python (python.org o Microsoft Store, versión
+3.10 o más nueva).
 
 **No tengo permisos de administrador / no tengo internet en el laboratorio.**
 Descargá `andamio.pyz` desde la [última versión](https://github.com/rodal95/andamio/releases/latest)
-(en un pendrive, si hace falta) y usalo así: `py C:\ruta\andamio.pyz crear python mi-tienda`.
+(en un pendrive, si hace falta) y usalo así: `python C:\ruta\andamio.pyz crear python mi-tienda`.
 No necesita instalación ni internet.
 
 **Dice "No encontré un proyecto".**
 Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con
-`cd mi-proyecto`. Si todavía no lo creaste: `andamio crear <tipo> <nombre>`.
+`cd mi-proyecto`. Si todavía no lo creaste: `python -m andamio crear <tipo> <nombre>`.
 
 **Dice que los archivos ya existen.**
-andamio nunca sobrescribe archivos. Elegí otro nombre o borrá los archivos que
+python -m andamio nunca sobrescribe archivos. Elegí otro nombre o borrá los archivos que
 generaste antes.
 
 **Borré una línea que decía `andamio:... (no borrar esta línea)`.**

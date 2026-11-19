@@ -153,10 +153,12 @@ def preparar_campos(stack: Stack, pieza: Pieza, nombre: Nombre, textos: list[str
     if pieza.usa_campos and not campos:
         raise AndamioError(
             f"Indicá al menos un campo para '{pieza.clave}'.",
-            f"Ejemplo: andamio nuevo {pieza.clave} {pieza.ejemplo}",
+            f"Ejemplo: {consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}",
         )
     if campos and not pieza.usa_campos:
-        raise AndamioError(f"La pieza '{pieza.clave}' no lleva campos.", f"Ejemplo: andamio nuevo {pieza.clave} {pieza.ejemplo}")
+        raise AndamioError(
+            f"La pieza '{pieza.clave}' no lleva campos.", f"Ejemplo: {consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}"
+        )
     return campos
 
 
@@ -220,7 +222,7 @@ def info(cwd: Path) -> int:
     ancho = max(len(c) for c in stack.piezas)
     for clave, pieza in stack.piezas.items():
         consola.escribir(f"  {clave.ljust(ancho)}  {pieza.descripcion}")
-        consola.escribir(consola.color(f"  {' ' * ancho}  andamio nuevo {clave} {pieza.ejemplo}", "gris"))
+        consola.escribir(consola.color(f"  {' ' * ancho}  {consola.programa()} nuevo {clave} {pieza.ejemplo}", "gris"))
     if any(p.usa_campos for p in stack.piezas.values()):
         consola.escribir()
         consola.titulo("Tipos de campo:")

@@ -39,6 +39,9 @@ from andamio.nucleo.generador import contexto_proyecto, pasos_proyecto  # noqa: 
 
 DESTINO = RAIZ / "sitio" / "datos.js"
 
+# Los comandos se muestran siempre con Python adelante: funcionan en cualquier PC.
+PROGRAMA = "python -m andamio"
+
 # La demo se ejecuta en una carpeta temporal; en la página se muestra una ruta
 # típica de un alumno en Windows.
 CARPETA_EJEMPLO = "C:\\Users\\alumno"
@@ -175,13 +178,13 @@ _COMUNES = [
 CARPETAS = {
     "react": {
         "public/.gitkeep": "Carpeta para archivos que se sirven tal cual: imágenes, íconos, fuentes.",
-        "src/hooks/.gitkeep": "Carpeta para los hooks: acá los crea andamio nuevo hook.",
-        "src/pages/.gitkeep": "Carpeta para las páginas: acá las crea andamio nuevo pagina.",
-        "src/services/.gitkeep": "Carpeta para los servicios: acá los crea andamio nuevo servicio.",
+        "src/hooks/.gitkeep": "Carpeta para los hooks: acá los crea python -m andamio nuevo hook.",
+        "src/pages/.gitkeep": "Carpeta para las páginas: acá las crea python -m andamio nuevo pagina.",
+        "src/services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
     },
     "react-native": {
-        "hooks/.gitkeep": "Carpeta para los hooks: acá los crea andamio nuevo hook.",
-        "services/.gitkeep": "Carpeta para los servicios: acá los crea andamio nuevo servicio.",
+        "hooks/.gitkeep": "Carpeta para los hooks: acá los crea python -m andamio nuevo hook.",
+        "services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
     },
 }
 
@@ -307,7 +310,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
     info = TECNOLOGIAS[stack.clave]
     carpeta = info["carpeta"] + (f"-{variante}" if variante else "")
     opcion = f" --{variante}" if variante and variante != next(iter(stack.variantes)) else ""
-    comando_crear = f"andamio crear {stack.clave} {info['carpeta']}{opcion}"
+    comando_crear = f"{PROGRAMA} crear {stack.clave} {info['carpeta']}{opcion}"
     os.chdir(base)
     salida_crear = _ejecutar(["crear", stack.clave, carpeta, *(["--variante", variante] if variante else [])])
     salida_crear = salida_crear.replace(carpeta, info["carpeta"])
@@ -336,7 +339,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
                 "titulo": pieza.titulo,
                 "descripcion": pieza.descripcion,
                 "explicacion": datos_pieza["explicacion"],
-                "comando": "andamio " + datos_pieza["comando"],
+                "comando": f"{PROGRAMA} " + datos_pieza["comando"],
                 "salida": salida,
                 "creados": creados,
                 "modificados": [{"ruta": r, "que": _que_se_modifico(salida, r)} for r in modificados],
@@ -352,10 +355,11 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
     if any("migrar" in pieza.opciones for pieza in stack.piezas.values()):
         comandos.append((f"{piezas[0]['comando']} --migrar", "Genera el recurso y además ejecuta makemigrations y migrate."))
     comandos += [
-        ("andamio", "Abre el menú: te pregunta qué generar y te pide cada dato."),
-        ("andamio info", "Muestra qué tipo de proyecto detectó y qué piezas podés generar."),
+        (PROGRAMA, "Abre el menú: te pregunta qué generar y te pide cada dato."),
+        (f"{PROGRAMA} info", "Muestra qué tipo de proyecto detectó y qué piezas podés generar."),
         (f"{piezas[0]['comando']} --simular", "Muestra qué archivos crearía o modificaría, sin tocar nada."),
-        ("andamio plantillas exportar", "Copia las plantillas al proyecto para modificar el código que se genera."),
+        (f"{PROGRAMA} plantillas exportar", "Copia las plantillas al proyecto para modificar el código que se genera."),
+        (f"{PROGRAMA} configurar", "Opcional: hace que funcione escribiendo solo andamio (una vez por PC)."),
     ]
     return {
         "clave": variante,

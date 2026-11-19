@@ -21,7 +21,7 @@ La documentación de la API queda en http://127.0.0.1:8000/api/docs/
 ## Agregar un recurso
 
 ```
-andamio nuevo recurso producto nombre:str precio:decimal stock:int
+python -m andamio nuevo recurso producto nombre:str precio:decimal stock:int
 python manage.py makemigrations productos
 python manage.py migrate
 ```

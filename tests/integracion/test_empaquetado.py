@@ -66,6 +66,8 @@ def test_zip_con_python_m_andamio(dist, tmp_path):
 
 def test_notas_de_version_del_changelog():
     notas = empaquetar.notas_de_version(andamio.__version__)
-    assert "Stack `django`" in notas
+    assert notas.strip() and "### " in notas
     assert "## [" not in notas
     assert "]: https://" not in notas
+    # Cada versión trae solo sus notas.
+    assert "Stack `django`" in empaquetar.notas_de_version("1.0.0")

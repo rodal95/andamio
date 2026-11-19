@@ -35,7 +35,7 @@
     comando.className = "t-comando";
     terminal.insertBefore(comando, cursor);
     await A.esperar(500);
-    await escribir(comando, "andamio", 90);
+    await escribir(comando, "python -m andamio", 70);
     await A.esperar(300);
     agregar("\n");
     for (const evento of datos.menu) {

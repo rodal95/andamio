@@ -27,7 +27,7 @@ def _ejemplo(stack: Stack, pieza: Pieza, raiz: Path) -> tuple[str, dict[str, str
     campos = [parsear_campo(c, stack.tipos) for c in campos_texto]
     variante = variante_del_proyecto(stack, raiz)
     contexto = contexto_pieza(Solicitud(stack, pieza, raiz, nombre, campos, variante=variante))
-    return f"andamio nuevo {pieza.clave} {pieza.ejemplo}", contexto
+    return f"{consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}", contexto
 
 
 def _formatear_valor(valor: str) -> str:
@@ -57,7 +57,7 @@ def generar_leeme(stack: Stack, pieza: Pieza, raiz: Path) -> str:
     )
     return f"""# Plantillas de `{pieza.clave}` ({stack.titulo})
 
-Estos archivos son los que usa `andamio nuevo {pieza.clave}` en este proyecto.
+Estos archivos son los que usa `{consola.programa()} nuevo {pieza.clave}` en este proyecto.
 Si los modificás, andamio usa tu versión en lugar de la que trae incorporada.
 Para volver a la original, borrá esta carpeta.
 

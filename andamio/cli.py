@@ -38,21 +38,26 @@ class _Parser(argparse.ArgumentParser):
         raise SystemExit(2)
 
 
-EJEMPLOS = """ejemplos:
-  andamio                                   menú interactivo
-  andamio crear django mi-api               crea un proyecto
-  andamio crear react mi-web --js           crea un proyecto React en JavaScript
-  andamio nuevo recurso producto nombre:str precio:decimal
-  andamio info                              qué se puede generar acá
-  andamio plantillas exportar               copia las plantillas para modificarlas
-"""
+def _ejemplos() -> str:
+    p = consola.programa()
+    filas = [
+        (p, "menú interactivo"),
+        (f"{p} crear django mi-api", "crea un proyecto"),
+        (f"{p} crear react mi-web --js", "crea un proyecto React en JavaScript"),
+        (f"{p} nuevo recurso producto nombre:str", "genera un recurso con un campo"),
+        (f"{p} info", "qué se puede generar acá"),
+        (f"{p} plantillas exportar", "copia las plantillas para modificarlas"),
+        (f"{p} configurar", "hace que funcione escribiendo solo: andamio"),
+    ]
+    ancho = max(len(c) for c, _ in filas) + 3
+    return "ejemplos:\n" + "\n".join(f"  {c.ljust(ancho)}{d}" for c, d in filas) + "\n"
 
 
 def construir_parser() -> argparse.ArgumentParser:
     parser = _Parser(
-        prog="andamio",
+        prog=consola.programa(),
         description="Genera la estructura de código de tus proyectos. Sin argumentos abre el menú.",
-        epilog=EJEMPLOS,
+        epilog=_ejemplos(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"andamio {__version__}")
@@ -71,9 +76,9 @@ def construir_parser() -> argparse.ArgumentParser:
         "nuevo",
         help="genera una pieza en el proyecto actual",
         description="Genera una pieza (recurso, componente, etc.) en el proyecto actual.",
-        epilog="Los campos se escriben nombre:tipo (ej: precio:decimal). Usá 'andamio info' para ver piezas y tipos.",
+        epilog=f"Los campos se escriben nombre:tipo (ej: precio:decimal). Usá '{consola.programa()} info' para ver piezas y tipos.",
     )
-    nuevo.add_argument("pieza", help="qué generar (ver 'andamio info')")
+    nuevo.add_argument("pieza", help="qué generar (ver la lista con: info)")
     nuevo.add_argument("nombre", help="nombre en singular (ej: producto)")
     nuevo.add_argument("campos", nargs="*", help="campos con la forma nombre:tipo")
     nuevo.add_argument("--plural", help="plural del nombre, si el automático no es correcto")
@@ -87,6 +92,14 @@ def construir_parser() -> argparse.ArgumentParser:
     plantillas_sub = plantillas.add_subparsers(dest="accion", metavar="accion", parser_class=_Parser)
     exportar = plantillas_sub.add_parser("exportar", help="copia las plantillas a .andamio/plantillas/")
     exportar.add_argument("pieza", nargs="?", help="solo esta pieza (por defecto, todas)")
+
+    configurar = sub.add_parser(
+        "configurar",
+        help="hace que funcione escribiendo solo: andamio",
+        description="Agrega la carpeta de andamio al PATH de tu usuario (sin permisos de administrador), "
+        "para poder escribir 'andamio' en lugar de 'python -m andamio'. Es opcional.",
+    )
+    configurar.add_argument("--simular", action="store_true", help="muestra qué cambiaría, sin tocar nada")
     return parser
 
 
@@ -101,11 +114,15 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)
     if args.comando == "info":
         return acciones.info(cwd)
+    if args.comando == "configurar":
+        from andamio import configurar
+
+        return configurar.configurar(simular=args.simular)
     if args.comando == "plantillas":
         if args.accion != "exportar":
             raise AndamioError(
                 "Indicá qué hacer con las plantillas.",
-                "Para copiarlas a tu proyecto y modificarlas: andamio plantillas exportar",
+                f"Para copiarlas a tu proyecto y modificarlas: {consola.programa()} plantillas exportar",
             )
         from andamio import exportar
 

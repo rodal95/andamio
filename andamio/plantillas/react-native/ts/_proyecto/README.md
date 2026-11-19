@@ -17,10 +17,10 @@ o escaneá el código QR con la app Expo Go.
 ## Generar código
 
 ```
-andamio nuevo pantalla detalle-producto
-andamio nuevo componente Tarjeta
-andamio nuevo hook contador
-andamio nuevo servicio producto nombre:str precio:decimal stock:int
+python -m andamio nuevo pantalla detalle-producto
+python -m andamio nuevo componente Tarjeta
+python -m andamio nuevo hook contador
+python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
 
 El servicio usa la API de Django definida en `EXPO_PUBLIC_API_URL` (archivo `.env`).

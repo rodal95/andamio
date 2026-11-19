@@ -22,7 +22,7 @@ def main():
         opciones = list(MENUS.items())
         if not opciones:
             print("Todavía no hay entidades. Generá una con:")
-            print("    andamio nuevo entidad producto nombre:str precio:float")
+            print("    python -m andamio nuevo entidad producto nombre:str precio:float")
         for numero, (titulo, _) in enumerate(opciones, start=1):
             print(f"{numero}. {titulo}")
         print("0. Salir")

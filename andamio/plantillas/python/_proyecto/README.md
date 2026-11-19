@@ -11,7 +11,7 @@ python main.py
 ## Agregar una entidad
 
 ```
-andamio nuevo entidad producto nombre:str precio:float stock:int
+python -m andamio nuevo entidad producto nombre:str precio:float stock:int
 ```
 
 Tipos de campo: `str` (texto), `int` (número entero), `float` (número con decimales).
