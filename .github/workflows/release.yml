@@ -66,6 +66,8 @@ jobs:
           test -f api-node/src/app.js && test -f api-node/prisma/schema.prisma && test -f api-node/.gitignore
           python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear next-fullstack app-next
           test -f app-next/app/layout.tsx && test -f app-next/prisma/schema.prisma && test -f app-next/proxy.ts
+          python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear reflex app-reflex
+          test -f app-reflex/rxconfig.py && test -f app-reflex/app_reflex/app_reflex.py
 
       - name: Crear la Release
         env:

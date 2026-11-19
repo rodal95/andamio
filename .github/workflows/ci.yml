@@ -30,7 +30,8 @@ jobs:
 
   # Instala las dependencias de los proyectos generados y los compila:
   # npm install + build (React y Next.js), tsc (React Native), npm test (Express y Next.js full
-  # stack), y servicios y CRUD en el navegador contra las APIs de Django, FastAPI, Express y Next.js.
+  # stack), Reflex (reflex run), y servicios y CRUD en el navegador contra las APIs de Django,
+  # FastAPI, Express y Next.js.
   lento:
     name: Proyectos generados (--lento)
     runs-on: ubuntu-latest
@@ -42,11 +43,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Instalar andamio, pytest y las dependencias de Django y FastAPI
+      - name: Instalar andamio, pytest y las dependencias de Django, FastAPI y Reflex
         run: |
           python -m pip install -e ".[dev]"
           python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
           python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
+          python -m pip install -r andamio/plantillas/reflex/_proyecto/requirements.txt
       - name: Playwright (prueba en el navegador del CRUD generado)
         run: |
           npm install -g playwright@1.63.0

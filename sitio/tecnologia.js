@@ -1,4 +1,4 @@
-/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react, react-native, next y next-fullstack .html). */
+/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react, react-native, next, next-fullstack y reflex .html). */
 (function () {
   "use strict";
 
@@ -63,6 +63,11 @@
         ],
       },
     },
+    reflex: {
+      piezas: {
+        crud: [{ src: "img/reflex-crud.jpg", url: "http://localhost:3000/productos", titulo: "La página del crud", texto: "El formulario arriba (con el error de validación en español debajo del campo) y la tabla con Editar y Eliminar. Todo escrito en Python." }],
+      },
+    },
     "react-native": {
       marcha: [{ src: "img/react-native-inicio.jpg", telefono: true, titulo: "La app recién creada", texto: "La pantalla de inicio, en el navegador o en tu celular con Expo Go." }],
       piezas: {
@@ -123,6 +128,13 @@
       ["The table `main.productos` does not exist", "Falta la migración: npx prisma migrate dev --name productos (o generá el recurso con --migrar)."],
       ["Cambié prisma/schema.prisma y no se ve el cambio", "Creá una migración (npx prisma migrate dev --name <qué cambió>) y volvé a ejecutar npm run dev, que genera el cliente de Prisma de nuevo."],
       ["Quiero usar esta API desde React Native", "En el celular usá http://IP-DE-TU-PC:3000/api en EXPO_PUBLIC_API_URL. Para Expo en el navegador, agregá su dirección a CORS_ALLOWED_ORIGINS."],
+    ],
+    reflex: [
+      ["No matching distribution found for reflex", "Reflex 0.11 necesita Python 3.11 o más nuevo. Revisalo con python --version."],
+      ["reflex run tarda mucho la primera vez", "Es normal: descarga lo que usa para el navegador (necesita internet). Las siguientes veces arranca enseguida."],
+      ["no such table: productos", "Falta la migración: la primera vez reflex db init; después de cambiar un modelo, reflex db makemigrations y reflex db migrate (o generá el crud con --migrar)."],
+      ["La página de crud-api dice que no se pudo conectar", "La API (Django, FastAPI o Express) tiene que estar andando y API_URL del .env tiene que apuntar a ella. Si cambiaste el .env, reiniciá reflex run."],
+      ["Address already in use (puerto 8001 o 3000)", "Ya hay otra aplicación en ese puerto (por ejemplo, Next.js en el 3000). Cerrala, o cambiá frontend_port o backend_port en rxconfig.py."],
     ],
     "react-native": [
       ["Network request failed", "En el emulador de Android tu PC es 10.0.2.2 (ya viene en el .env). En un celular real, poné la IP de tu PC en EXPO_PUBLIC_API_URL y hacé que la API escuche en la red: python manage.py runserver 0.0.0.0:8000 (Django) o python -m uvicorn app.main:app --host 0.0.0.0 (FastAPI)."],

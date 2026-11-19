@@ -3,7 +3,7 @@
     python scripts/capturas_sitio.py
 
 Genera con andamio un proyecto de cada tecnología (Django, FastAPI, Express, React,
-React Native y Next.js en sus dos formas), los pone en marcha de verdad (APIs con
+React Native, Next.js en sus dos formas y Reflex), los pone en marcha de verdad (APIs con
 datos, webs compiladas, app de Expo exportada para web) y les saca fotos con Chromium
 (Playwright). Se ejecuta a mano cuando cambian las plantillas, y las imágenes se
 suben al repositorio.
@@ -354,6 +354,47 @@ def next_fullstack(base: Path) -> None:
         )
 
 
+def reflex(base: Path) -> None:
+    """La página del crud de Reflex, con datos y un error de validación en el formulario."""
+    print("Reflex")
+    carpeta = base / "reflex"
+    carpeta.mkdir()
+    andamio(carpeta, "crear", "reflex", "mi-app")
+    app = carpeta / "mi-app"
+    os.environ["VIRTUAL_ENV"] = str(Path(sys.executable).parent.parent)  # --migrar usa este Python
+    andamio(app, "nuevo", "crud", "producto", *CAMPOS, "--migrar")
+    alta = (
+        "import reflex as rx\nfrom mi_app.modelos.producto import Producto\nwith rx.session() as s:\n"
+        + "".join(f"    s.add(Producto(nombre={n!r}, precio={p!r}, stock={st}))\n" for n, p, st in PRODUCTOS)
+        + "    s.commit()\n"
+    )
+    ejecutar([sys.executable, "-c", alta], app)
+    entorno = {**os.environ, "REFLEX_FRONTEND_PORT": "3005", "REFLEX_BACKEND_PORT": "8005", "REFLEX_API_URL": "http://localhost:8005"}
+    servidor = subprocess.Popen(
+        [sys.executable, "-m", "reflex", "run"], cwd=app, env=entorno, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    try:
+        esperar_url("http://localhost:3005/", 600)
+        fotos(
+            [
+                {
+                    "url": "http://localhost:3005/productos",
+                    "archivo": str(IMAGENES / "reflex-crud.jpg"),
+                    "ancho": 1000,
+                    "alto": 760,
+                    "esperar": "text=Mate de calabaza",
+                    "llenar": {"Nombre": "Termo de acero", "Precio": "123456789012", "Stock": "3"},
+                    "enviar": "Guardar",
+                    "esperar_despues": "text=dígitos",
+                },
+            ],
+            base,
+        )
+    finally:
+        servidor.terminate()
+        servidor.wait(timeout=60)
+
+
 def react_native(base: Path) -> None:
     print("React Native")
     andamio(base, "crear", "react-native", "mi-app")
@@ -390,6 +431,7 @@ def principal() -> None:
             react(base)
             next_frontend(base)
             next_fullstack(base)
+            reflex(base)
             react_native(base)
         finally:
             servidor.terminate()

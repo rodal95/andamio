@@ -25,7 +25,7 @@ andamio/
 ├── stacks/
 │   ├── __init__.py     REGISTRO (orden de detección) y ORDEN_MENU
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
-│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py  next.py
+│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py  next.py  reflex.py
 │   └── _js.py          ayudas compartidas por los stacks de JavaScript
 └── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
@@ -278,7 +278,9 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   tres). En Express, además, `npm install`, la migración de Prisma, `npm test` y
   `tsc` del proyecto generado, en TypeScript y en JavaScript. En Next.js, `next build`
   (que revisa los tipos), `next start` y el mismo CRUD en Chromium: el frontend
-  contra FastAPI y el full stack contra su propia API (después de `npm test`).
+  contra FastAPI y el full stack contra su propia API (después de `npm test`). En
+  Reflex, `--migrar`, `reflex run` y sus dos páginas en Chromium (`crud` con su base
+  y `crud-api` contra FastAPI): necesita Reflex instalado (Python 3.11+).
 - Las tres APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
   lista sin paginación, decimales como número, fechas con hora en hora local con su
   zona, errores 400 `{campo: [mensajes]}` en español, 404 `{"detail": ...}`, 204 al
@@ -298,6 +300,11 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   `next-fullstack`. Guiarse por `npx create-next-app@<versión>`, pero sin
   `next/font/google` (descarga fuentes al compilar: falla sin internet). Next.js
   usa TypeScript 5.x (no la 7). Las APIs aceptan pedidos de `localhost:3000` (CORS).
+- Reflex: `andamio/plantillas/reflex/_proyecto/requirements.txt`. Cambia rápido
+  (0.9, 0.10 y 0.11 salieron en dos meses): después de actualizarlo, ejecutá
+  `python -m pytest --lento tests/integracion/test_reflex.py`. No uses `rx.Model`
+  (obsoleto desde 0.9.2): los modelos son de SQLModel directamente. La parte de
+  Python de Reflex usa el puerto 8001, para dejar el 8000 a las APIs de andamio.
 - Express: `andamio/plantillas/express/{ts,js}/_proyecto/package.json` (versiones
   exactas). Ojo: en npm, `prisma@latest` puede apuntar a una versión candidata
   (`8.0.0-rc...`); usá la última estable (`npm view prisma dist-tags`). Prisma 7
@@ -345,7 +352,7 @@ JavaScript, sin librerías):
 | Archivo | Qué es |
 |---|---|
 | `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
-| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html`, `next.html`, `next-fullstack.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html`, `next.html`, `next-fullstack.html`, `reflex.html` | una guía por tecnología, armada por `tecnologia.js` |
 | `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
@@ -372,8 +379,8 @@ cambia algo en `sitio/` o en `andamio/`.
 
 **Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
 (API de Django con datos y panel de administración, APIs de FastAPI y de Express
-con su Swagger, webs de React y Next.js compiladas, Next.js full stack, app de Expo
-exportada para web) y les saca fotos con Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
+con su Swagger, webs de React y Next.js compiladas, Next.js full stack, Reflex, app de
+Expo exportada para web) y les saca fotos con Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
 se suben al repositorio. Necesita las dependencias de Django y de FastAPI en ese
 Python, Node 22.13+ y Playwright para Node.
 

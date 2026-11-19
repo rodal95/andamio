@@ -32,6 +32,12 @@ Todos los cambios importantes de andamio. El proyecto usa
     con el mismo contrato que las otras APIs (también la puede usar React
     Native), 5 tests (`npm test`) y `--migrar`. `proxy.ts` habilita CORS.
 - Un stack puede extender a otro (`Stack.extiende`) y reutilizar sus plantillas.
+- Stack `reflex` (Reflex 0.11, web hecha solo con Python; pide Python 3.11+): piezas
+  `crud` (tabla con SQLModel en su propia base, migraciones con `reflex db` y
+  `--migrar`, y una página para listar, agregar, editar y eliminar con los errores
+  de validación en español), `crud-api` (la misma página con los datos de una API
+  de andamio), `pagina`, `componente`, `estado` y `servicio`. Los proyectos no
+  envían datos de uso (telemetría) y dejan el puerto 8000 libre para las APIs.
 - Pieza `crud` para React: `python -m andamio nuevo crud producto <campos>`
   genera la lista, el detalle (con eliminar) y el formulario para crear y
   editar (con los errores de validación de la API en cada campo), el
@@ -43,8 +49,8 @@ Todos los cambios importantes de andamio. El proyecto usa
   `src/pages/InicioPage/`. `nuevo pagina` registra también su ruta y su enlace.
 - Se rechaza una página o un CRUD si su ruta ya existe en `App`. En proyectos
   sin router, andamio genera igual e indica el `npm install` y qué pegar.
-- Test en el navegador (Playwright) del CRUD generado (React y Next.js) contra las
-  APIs de Django, FastAPI, Express y Next.js full stack.
+- Test en el navegador (Playwright) del CRUD generado (React, Next.js y Reflex) contra
+  las APIs de Django, FastAPI, Express y Next.js full stack.
 - `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
   usuario (sin permisos de administrador) para poder escribir solo `andamio`.
   En Linux y Mac explica qué línea agregar. Es opcional.
