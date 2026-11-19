@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{# La misma plantilla sirve para crear y para editar: al editar, la vista pasa object. #}
+{% block titulo %}{% if object %}Editar{% else %}Agregar{% endif %} @@verbose@@{% endblock %}
+
+{% block contenido %}
+  <h1>{% if object %}Editar {{ object }}{% else %}Agregar @@verbose@@{% endif %}</h1>
+
+  <form method="post" class="formulario" novalidate>
+    {% csrf_token %}
+    {% include "formulario.html" %}
+    <div class="acciones">
+      <button type="submit" class="boton">Guardar</button>
+      <a href="{% url '@@plural@@:lista' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,5 @@
+# Dependencias del proyecto. Instalalas con:  pip install -r requirements.txt
+# Versiones elegidas para funcionar con Python 3.10 o más nuevo.
+Django~=5.2.19
+python-dotenv~=1.2.4
+dj-database-url~=3.1.2

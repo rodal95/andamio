@@ -30,7 +30,7 @@ def test_exporta_todas_las_piezas_con_su_leeme(stack, en_carpeta, monkeypatch, c
     for clave, pieza in stack.piezas.items():
         carpeta = raiz / ".andamio" / "plantillas" / stack.clave / clave
         leeme = leer(carpeta / "LEEME.md")
-        assert f"andamio nuevo {clave} {pieza.ejemplo}" in leeme
+        assert f"andamio nuevo {clave} {pieza.ejemplo}".rstrip() in leeme
         for marcador in {**MARCADORES_NOMBRE, **pieza.marcadores}:
             assert f"`@@{marcador}@@`" in leeme, marcador
         if "## Además" in leeme:

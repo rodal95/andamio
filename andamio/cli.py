@@ -79,11 +79,12 @@ def construir_parser() -> argparse.ArgumentParser:
         epilog=f"Los campos se escriben nombre:tipo (ej: precio:decimal). Usá '{consola.programa()} info' para ver piezas y tipos.",
     )
     nuevo.add_argument("pieza", help="qué generar (ver la lista con: info)")
-    nuevo.add_argument("nombre", help="nombre en singular (ej: producto)")
+    nuevo.add_argument("nombre", nargs="?", help="nombre en singular (ej: producto); algunas piezas, como login, no lo necesitan")
     nuevo.add_argument("campos", nargs="*", help="campos con la forma nombre:tipo")
     nuevo.add_argument("--plural", help="plural del nombre, si el automático no es correcto")
     nuevo.add_argument("--carpeta", help="subcarpeta (pantallas de React Native)")
     nuevo.add_argument("--migrar", action="store_true", help="ejecuta makemigrations y migrate (Django)")
+    nuevo.add_argument("--protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
     nuevo.add_argument("--simular", action="store_true", help="muestra qué se crearía, sin tocar nada")
 
     sub.add_parser("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
@@ -110,7 +111,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         stack = acciones.stack_por_clave(args.stack)
         return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante)
     if args.comando == "nuevo":
-        opciones = {"carpeta": args.carpeta, "migrar": args.migrar}
+        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)
     if args.comando == "info":
         return acciones.info(cwd)

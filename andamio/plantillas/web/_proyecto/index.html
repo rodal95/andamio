@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@@proyectoTitulo@@</title>
+    <link rel="stylesheet" href="css/estilos.css" />
+    <!-- type="module" permite usar import/export entre archivos .js -->
+    <script type="module" src="js/inicio.js"></script>
+  </head>
+  <body>
+    <!-- El menú lo dibuja js/menu.js (así se escribe una sola vez para todas las páginas). -->
+    <header class="barra" data-menu></header>
+
+    <main class="contenido">
+      <h1>@@proyectoTitulo@@</h1>
+      <p>Página hecha con HTML, CSS y JavaScript, sin instalar nada.</p>
+      <p>Para agregar una página:</p>
+      <pre>python -m andamio nuevo pagina Contacto</pre>
+    </main>
+  </body>
+</html>

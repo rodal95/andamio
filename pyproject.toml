@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "andamio"
 dynamic = ["version"]
-description = "Generador de código para proyectos de alumnos (Python, Django, React, React Native)."
+description = "Generador de código para proyectos de alumnos (Python, Django, FastAPI, Express, HTML, React, Vue, React Native, Next.js, Reflex)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

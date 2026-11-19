@@ -226,10 +226,10 @@ def test_deteccion(en_carpeta):
 
 
 def test_menu(en_carpeta, respuestas):
-    respuestas(["8", "1", "mi app", "s"])  # 8: full stack, 1: TypeScript
+    respuestas(["10", "1", "mi app", "s"])  # 10: full stack, 1: TypeScript
     assert main([]) == 0
     assert (en_carpeta / "mi-app/proxy.ts").is_file()
-    respuestas(["7", "2", "mi web", "s"])  # 7: frontend, 2: JavaScript
+    respuestas(["9", "2", "mi web", "s"])  # 9: frontend, 2: JavaScript
     assert main([]) == 0
     assert (en_carpeta / "mi-web/app/layout.jsx").is_file()
 

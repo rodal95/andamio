@@ -68,8 +68,8 @@
 
   const GRUPOS = [
     { titulo: "La API (el servidor)", texto: "Guarda los datos y los entrega en /api/. La usan las webs y las apps.", claves: ["django", "fastapi", "express"] },
-    { titulo: "La interfaz (web y celular)", texto: "Lo que ve el usuario. Pide los datos a una API.", claves: ["react", "next", "react-native"] },
-    { titulo: "Todo en uno (full stack)", texto: "La interfaz y la API en el mismo proyecto.", claves: ["next-fullstack", "reflex"] },
+    { titulo: "La interfaz (web y celular)", texto: "Lo que ve el usuario. Pide los datos a una API.", claves: ["web", "react", "vue", "next", "react-native"] },
+    { titulo: "Todo en uno (full stack)", texto: "La interfaz y la API en el mismo proyecto.", claves: ["django-web", "next-fullstack", "reflex"] },
     { titulo: "Para empezar", texto: "Un programa de consola con base de datos: solo Python.", claves: ["python"] },
   ];
 

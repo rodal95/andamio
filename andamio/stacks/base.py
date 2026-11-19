@@ -57,6 +57,9 @@ class Pieza:
     titulo: str
     descripcion: str
     ejemplo: str  # ejemplo de uso: "producto nombre:str precio:float"
+    # Nombre que se usa si no se escribe ninguno (ej.: "cuenta" en el login de Django).
+    # Con nombre por defecto, el menú no pregunta el nombre.
+    nombre_defecto: str = ""
     # Formas del nombre que se muestran en "Se usará: ...": "snake", "pascal", ... o un
     # texto con marcadores, como "use@@Nombre@@".
     formas: tuple[str, ...] = ("snake",)

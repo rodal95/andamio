@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}Registrarse{% endblock %}
+
+{% block contenido %}
+  <h1>Crear un usuario</h1>
+  <form method="post" class="formulario">
+    {% csrf_token %}
+    {% include "formulario.html" %}
+    <button type="submit" class="boton">Registrarme</button>
+  </form>
+{% endblock %}

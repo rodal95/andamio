@@ -6,14 +6,16 @@ ORDEN_MENU es el orden en que se ofrecen al crear un proyecto.
 
 from __future__ import annotations
 
-from andamio.stacks import django, express, fastapi, next, python, react, react_native, reflex
+from andamio.stacks import django, django_web, express, fastapi, next, python, react, react_native, reflex, vue, web
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
-# Orden de detección: django, fastapi, reflex, react-native, next-fullstack, next, react, express, python.
+# Orden de detección: django-web, django, fastapi, reflex, react-native, next-fullstack, next, react, vue, express, web, python.
 # - next-fullstack antes que next: los dos tienen next; el full stack, además, Prisma.
 # - Express va después de React y Next: un proyecto de React con express (para un
 #   servidor propio) sigue siendo un proyecto de React.
+# - django-web antes que django: los dos tienen manage.py; el sitio, además, templates/base.html.
 REGISTRO: list[Stack] = [
+    django_web.STACK,
     django.STACK,
     fastapi.STACK,
     reflex.STACK,
@@ -21,7 +23,9 @@ REGISTRO: list[Stack] = [
     next.STACK_FULLSTACK,
     next.STACK,
     react.STACK,
+    vue.STACK,
     express.STACK,
+    web.STACK,
     python.STACK,
 ]
 # En el menú: primero los backends, después los frontends y al final los full stack.
@@ -30,10 +34,13 @@ ORDEN_MENU: list[Stack] = [
     django.STACK,
     fastapi.STACK,
     express.STACK,
+    web.STACK,
     react.STACK,
+    vue.STACK,
     react_native.STACK,
     next.STACK,
     next.STACK_FULLSTACK,
+    django_web.STACK,
     reflex.STACK,
 ]
 

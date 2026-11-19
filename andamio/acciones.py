@@ -187,7 +187,7 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
 def nuevo(
     cwd: Path,
     clave_pieza: str,
-    texto_nombre: str,
+    texto_nombre: str | None,
     textos_campos: list[str],
     plural: str | None = None,
     opciones: dict[str, Any] | None = None,
@@ -196,6 +196,13 @@ def nuevo(
     stack, raiz = proyecto_actual(cwd)
     pieza = pieza_por_clave(stack, clave_pieza)
     opciones = preparar_opciones(pieza, opciones or {})
+    if not texto_nombre:
+        if not pieza.nombre_defecto:
+            raise AndamioError(
+                f"Falta el nombre de '{pieza.clave}'.",
+                f"Ejemplo: {consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}",
+            )
+        texto_nombre = pieza.nombre_defecto
     if plural and not pieza.usa_plural:
         raise AndamioError(f"La pieza '{pieza.clave}' no usa plural; sacá la opción --plural.")
     nombre = preparar_nombre(stack, pieza, raiz, texto_nombre, plural)
@@ -222,7 +229,7 @@ def info(cwd: Path) -> int:
     ancho = max(len(c) for c in stack.piezas)
     for clave, pieza in stack.piezas.items():
         consola.escribir(f"  {clave.ljust(ancho)}  {pieza.descripcion}")
-        consola.escribir(consola.color(f"  {' ' * ancho}  {consola.programa()} nuevo {clave} {pieza.ejemplo}", "gris"))
+        consola.escribir(consola.color(f"  {' ' * ancho}  {consola.programa()} nuevo {clave} {pieza.ejemplo}".rstrip(), "gris"))
     if any(p.usa_campos for p in stack.piezas.values()):
         consola.escribir()
         consola.titulo("Tipos de campo:")

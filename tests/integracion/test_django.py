@@ -206,7 +206,7 @@ def test_python_del_proyecto_prefiere_el_entorno_virtual(tmp_path, monkeypatch):
 
 
 def test_menu_interactivo(proyecto, respuestas, capsys):
-    preguntas = respuestas(["1", "producto", "", "nombre", "1", "precio", "4", "", "s", "n"])
+    preguntas = respuestas(["1", "producto", "", "n", "nombre", "1", "precio", "4", "", "s", "n"])
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out
@@ -242,3 +242,70 @@ def test_opcion_migrar(proyecto, capsys):
     assert "makemigrations productos\n" not in salida.split("Siguientes pasos")[-1]
     assert (proyecto / "productos/migrations/0001_initial.py").is_file()
     assert (proyecto / "db.sqlite3").is_file()
+
+
+# --- Login con JWT y recursos protegidos ------------------------------------------------
+
+
+def test_login_genera_la_app_y_configura_jwt(proyecto, capsys):
+    assert main(["nuevo", "login"]) == 0
+    for archivo in ["__init__.py", "apps.py", "serializers.py", "views.py", "urls.py", "tests.py"]:
+        assert (proyecto / "cuentas" / archivo).is_file(), archivo
+    settings = leer(proyecto / "config/settings.py")
+    assert '"cuentas",\n    # --- andamio:apps' in settings
+    assert "rest_framework_simplejwt.authentication.JWTAuthentication" in settings
+    assert "ACCESS_TOKEN_LIFETIME" in settings
+    assert 'path("api/", include("cuentas.urls")),' in leer(proyecto / "config/urls.py")
+    assert "djangorestframework-simplejwt~=" in leer(proyecto / "requirements.txt")
+    for archivo in proyecto.rglob("*.py"):
+        py_compile.compile(str(archivo), doraise=True)
+    capsys.readouterr()
+    assert main(["nuevo", "login"]) == 1
+    assert "cuentas" in capsys.readouterr().err
+
+
+def test_login_en_el_menu_no_pide_nombre(proyecto, respuestas):
+    preguntas = respuestas(["2", "s"])
+    assert main([]) == 0
+    assert not any("Nombre" in p for p in preguntas)
+    assert (proyecto / "cuentas/urls.py").is_file()
+
+
+def test_recurso_protegido(proyecto):
+    assert main(["nuevo", "recurso", "pedido", "cliente:str", "total:decimal", "--protegido"]) == 0
+    vista, tests = leer(proyecto / "pedidos/views.py"), leer(proyecto / "pedidos/tests.py")
+    assert "from rest_framework.permissions import IsAuthenticatedOrReadOnly" in vista
+    assert "permission_classes = [IsAuthenticatedOrReadOnly]" in vista
+    assert "force_authenticate(usuario)" in tests and "def test_sin_login_no_se_puede_crear" in tests
+    py_compile.compile(str(proyecto / "pedidos/tests.py"), doraise=True)
+    # Sin --protegido no queda rastro de los permisos.
+    assert main(["nuevo", "recurso", "cliente", "nombre"]) == 0
+    assert "permission" not in leer(proyecto / "clientes/views.py")
+    assert "get_user_model" not in leer(proyecto / "clientes/tests.py")
+
+
+def test_protegido_no_existe_en_otras_piezas(en_carpeta, monkeypatch, capsys):
+    assert main(["crear", "fastapi", "api"]) == 0
+    monkeypatch.chdir(en_carpeta / "api")
+    capsys.readouterr()
+    assert main(["nuevo", "recurso", "producto", "nombre", "--protegido"]) == 1
+    assert "no acepta la opción --protegido" in capsys.readouterr().err
+
+
+SIMPLEJWT = importlib.util.find_spec("rest_framework_simplejwt") is not None
+
+
+@pytest.mark.django
+@requiere_django
+@pytest.mark.skipif(not SIMPLEJWT, reason="falta djangorestframework-simplejwt")
+def test_login_y_protegido_funcionan(proyecto):
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "cliente:str", "total:decimal", "entregado:bool", "--protegido"]) == 0
+    for argumentos in (["check"], ["makemigrations"], ["test", "-v", "2"], ["spectacular", "--validate", "--fail-on-warn", "--file", "schema.yml"]):
+        resultado = manage(proyecto, *argumentos)
+        assert resultado.returncode == 0, f"manage.py {' '.join(argumentos)}\n{resultado.stdout}\n{resultado.stderr}"
+        if argumentos[0] == "test":
+            # 6 del login y 6 del recurso protegido (los 5 de siempre + sin login).
+            assert "Ran 12 tests" in resultado.stderr
+    # Swagger tiene el botón Authorize para el token.
+    assert "bearerFormat: JWT" in leer(proyecto / "schema.yml")

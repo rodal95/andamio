@@ -1,0 +1,38 @@
+{% load static %}<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block titulo %}@@proyectoTitulo@@{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}" />
+  </head>
+  <body>
+    <header class="barra">
+      <a class="marca" href="{% url 'inicio' %}">@@proyectoTitulo@@</a>
+      <nav>
+        <a href="{% url 'inicio' %}">Inicio</a>
+        {# --- andamio:enlaces (no borrar esta línea) --- #}
+      </nav>
+      <div class="usuario">
+        {% if user.is_authenticated %}
+          <span>Hola, {{ user.username }}</span>
+          {# Desde Django 5, salir se hace con un formulario (POST), no con un enlace. #}
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="boton boton--borde">Salir</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">Ingresar</a>
+          <a class="boton" href="{% url 'registro' %}">Registrarse</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="contenido">
+      {% for mensaje in messages %}
+        <p class="mensaje mensaje--{{ mensaje.tags }}">{{ mensaje }}</p>
+      {% endfor %}
+      {% block contenido %}{% endblock %}
+    </main>
+  </body>
+</html>

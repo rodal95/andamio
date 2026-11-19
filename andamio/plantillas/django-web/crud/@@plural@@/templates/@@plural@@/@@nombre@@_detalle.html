@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ @@nombre@@ }}{% endblock %}
+
+{% block contenido %}
+  <h1>{{ @@nombre@@ }}</h1>
+
+  <dl class="detalle">
+    @@campos_detalle@@
+  </dl>
+
+  <div class="acciones">
+    <a class="boton" href="{% url '@@plural@@:editar' @@nombre@@.pk %}">Editar</a>
+    <a class="boton boton--peligro" href="{% url '@@plural@@:eliminar' @@nombre@@.pk %}">Eliminar</a>
+    <a href="{% url '@@plural@@:lista' %}">Volver a la lista</a>
+  </div>
+{% endblock %}

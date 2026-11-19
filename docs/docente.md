@@ -25,7 +25,8 @@ andamio/
 ├── stacks/
 │   ├── __init__.py     REGISTRO (orden de detección) y ORDEN_MENU
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
-│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py  next.py  reflex.py
+│   ├── python.py  django.py  django_web.py  fastapi.py  express.py  web.py
+│   │   react.py  vue.py  react_native.py  next.py  reflex.py
 │   └── _js.py          ayudas compartidas por los stacks de JavaScript
 └── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
@@ -35,6 +36,7 @@ tests/unit/             núcleo, CLI, menú, control de plantillas
 tests/integracion/      un archivo por stack, exportación, empaquetado, coherencia
 scripts/empaquetar.py   arma andamio.pyz y el .zip de la Release
 scripts/sitio.py        genera las demostraciones de la página (sitio/datos.js)
+docs/guias/             guías para alumnos: comandos, combinaciones, reglas, Django + JWT, Django con plantillas
 sitio/                  página web (HTML, CSS y JS sin librerías) para GitHub Pages
 ```
 
@@ -189,7 +191,8 @@ Campos de `Pieza` que más se usan:
 | `inserciones` | líneas que se agregan a archivos existentes (ver abajo) |
 | `ajustar_palabras` | ej.: quitar `use` de `useContador` para no generar `useUseContador` |
 | `validar_nombre`, `campos_reservados` | nombres que romperían el código generado |
-| `opciones`, `normalizar_opcion` | opciones extra (`--carpeta`, `--migrar`) |
+| `opciones`, `normalizar_opcion` | opciones extra (`--carpeta`, `--migrar`, `--protegido`) |
+| `nombre_defecto` | la pieza no necesita nombre (`nuevo login`); el menú no lo pregunta |
 | `siguiente_paso` | comandos a mostrar al final (`# ` = nota, `http...` = enlace) |
 | `despues`, `confirmaciones` | acción posterior (como `--migrar`) y su pregunta en el menú |
 
@@ -223,7 +226,8 @@ Insercion(
   crea el archivo si no existe).
 - La línea marcador va en la plantilla del proyecto:
   `# --- andamio:apps (no borrar esta línea) ---` (o `//` en TypeScript, con
-  `comentario="//"` en la `Insercion`). Se busca por la clave `andamio:apps`,
+  `comentario="//"` en la `Insercion`). Para otros archivos: `"{/*"` (JSX), `"{#"`
+  (plantillas de Django), `"<!--"` (HTML y `.vue`) y `"/*"` (CSS). Se busca por la clave `andamio:apps`,
   así que cambiar el resto del comentario no la rompe.
 - El texto se inserta con la sangría de la línea marcador y no se duplica si ya
   está.
@@ -255,9 +259,13 @@ no tiene en su carpeta (componente, página, crud...) se toman de las del otro. 
 las dos formas de Next.js comparten las mismas plantillas de interfaz.
 
 6. En la página: `sitio/<clave>.html` (copiá otra guía y cambiá
-   `data-tecnologia`), el enlace en `PAGINAS` de `sitio/comun.js`, y sus textos en
+   `data-tecnologia`), el enlace en `GUIAS` de `sitio/comun.js` (el menú desplegable,
+   por grupo) y en `GRUPOS` de `sitio/inicio.js` (la portada), y sus textos en
    `TECNOLOGIAS` y `DESCRIPCIONES` de `scripts/sitio.py` (los tests del sitio
    fallan hasta que esté todo).
+7. En `docs/guias/comandos.md`, su sección con cada pieza (hay un test que lo controla).
+8. Si cambiás `ORDEN_MENU`, cambian los números del menú: revisá los tests que
+   simulan el menú (`respuestas([...])`) y `demo_menu` en `scripts/sitio.py`.
 
 ## Tests
 
@@ -281,6 +289,13 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   contra FastAPI y el full stack contra su propia API (después de `npm test`). En
   Reflex, `--migrar`, `reflex run` y sus dos páginas en Chromium (`crud` con su base
   y `crud-api` contra FastAPI): necesita Reflex instalado (Python 3.11+).
+- Django con plantillas (`django-web`) usa las mismas dependencias que Django
+  (sin REST Framework). Sus tests generan los crud, ejecutan los tests generados y
+  arman cada página con el cliente de pruebas de Django. El login con JWT necesita
+  `djangorestframework-simplejwt` (se saltea si no está).
+- La web HTML (`web`) no compila: `node --check` revisa la sintaxis de cada `.js` y
+  las combinaciones controlan que cada `import` apunte a un archivo que existe.
+  Vue, con `--lento`, hace `npm install` y `npm run build`.
 - Las tres APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
   lista sin paginación, decimales como número, fechas con hora en hora local con su
   zona, errores 400 `{campo: [mensajes]}` en español, 404 `{"detail": ...}`, 204 al
@@ -314,6 +329,10 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   que Prisma bloquea cuando lo ejecuta un asistente de IA).
 - React: `andamio/plantillas/react/_proyecto/package.json` (versiones exactas;
   guiarse por la plantilla oficial `npm create vite@latest -- --template react-ts`).
+- Vue: `andamio/plantillas/vue/_proyecto/package.json` (versiones exactas; guiarse por
+  `npm create vue@latest`). Misma versión de Vite que React.
+- Login de Django: `VERSION_SIMPLEJWT` en `andamio/stacks/django.py` (se agrega al
+  `requirements.txt` del proyecto con `nuevo login`).
 - React Native: `andamio/plantillas/react-native/_proyecto/package.json`, todas
   del mismo SDK de Expo (`bundledNativeModules.json` del paquete `expo`).
 
@@ -352,8 +371,8 @@ JavaScript, sin librerías):
 | Archivo | Qué es |
 |---|---|
 | `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
-| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html`, `next.html`, `next-fullstack.html`, `reflex.html` | una guía por tecnología, armada por `tecnologia.js` |
-| `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
+| `python.html`, `django.html`, `django-web.html`, `fastapi.html`, `express.html`, `web.html`, `react.html`, `vue.html`, `react-native.html`, `next.html`, `next-fullstack.html`, `reflex.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `comun.js` | utilidades compartidas: barra (con el menú desplegable de guías, `GUIAS`), colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
 | `ejemplos/` | el código de las combinaciones de cada guía (lo que escribe el alumno), en TypeScript y JavaScript |
