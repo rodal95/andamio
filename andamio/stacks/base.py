@@ -30,6 +30,7 @@ class Solicitud:
     campos: list[Campo] = field(default_factory=list)
     opciones: dict[str, Any] = field(default_factory=dict)
     contexto: dict[str, str] = field(default_factory=dict)
+    variante: str = ""  # ej.: "ts" o "js"; vacío si el stack no tiene variantes
 
 
 # Lista de comandos (con marcadores) o función que la calcula según la solicitud.
@@ -96,5 +97,12 @@ class Stack:
     # Validación extra del nombre según el proyecto (ej.: apps de Django que ya existen).
     # Recibe la raíz del proyecto y el nombre; lanza AndamioError si no sirve.
     validar_nombre: Callable[[Path, Nombre], None] | None = None
+    # Variantes (ej.: {"ts": "TypeScript", "js": "JavaScript"}). La primera es la que se usa
+    # por defecto. Con variantes, las plantillas van en plantillas/<stack>/<variante>/.
+    variantes: dict[str, str] = field(default_factory=dict)
+    # Cuál es la variante de un proyecto que ya existe (ej.: "ts" si hay tsconfig.json).
+    detectar_variante: Callable[[Path], str] | None = None
+    # Marcadores propios de cada variante: {"ts": {"ext": "ts", "extx": "tsx"}, "js": {...}}.
+    marcadores_variante: dict[str, dict[str, str]] = field(default_factory=dict)
     # Solo para tests: carpeta de plantillas alternativa a la incorporada.
     plantillas: Traversable | None = None

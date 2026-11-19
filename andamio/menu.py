@@ -10,7 +10,13 @@ from andamio.nucleo import consola
 from andamio.nucleo.campos import Campo, validar_tipo
 from andamio.nucleo.deteccion import buscar_proyecto
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.generador import carpeta_proyecto, describir_nombre, validar_nombre_pieza
+from andamio.nucleo.generador import (
+    carpeta_proyecto,
+    describir_nombre,
+    nombre_variante,
+    validar_nombre_pieza,
+    variante_del_proyecto,
+)
 from andamio.nucleo.nombres import Nombre, parece_plural, validar_nombre_campo
 from andamio.stacks.base import Pieza, Solicitud, Stack
 
@@ -41,15 +47,25 @@ def _menu_crear(cwd: Path) -> int:
             raise AndamioError(f"Ya existe la carpeta '{carpeta}' y no está vacía. Elegí otro nombre.")
         return texto
 
+    variante = None
+    if stack.variantes:
+        consola.escribir()
+        opciones_variante = [
+            (clave, nombre + (" (recomendado)" if i == 0 else "")) for i, (clave, nombre) in enumerate(stack.variantes.items())
+        ]
+        variante = consola.elegir("¿En qué lenguaje?", opciones_variante)
+        consola.escribir()
     texto = consola.preguntar("Nombre del proyecto", validar=validar, ejemplo=stack.ejemplo_proyecto)
-    return acciones.crear_proyecto(stack, texto, cwd, confirmar=True)
+    return acciones.crear_proyecto(stack, texto, cwd, confirmar=True, variante=variante)
 
 
 # --- Generar pieza ------------------------------------------------------------
 
 
 def _menu_piezas(stack: Stack, raiz: Path) -> int:
-    consola.exito(f"Proyecto {stack.titulo} detectado.")
+    variante = variante_del_proyecto(stack, raiz)
+    nombre = nombre_variante(stack, variante)
+    consola.exito(f"Proyecto {stack.titulo}" + (f" ({nombre})" if nombre else "") + " detectado.")
     consola.escribir(consola.color(f"Carpeta: {raiz}", "gris"))
     consola.escribir()
     opciones: list[tuple[Pieza | None, str]] = [(p, f"{p.titulo}: {p.descripcion}") for p in stack.piezas.values()]
@@ -61,7 +77,7 @@ def _menu_piezas(stack: Stack, raiz: Path) -> int:
     extras = _pedir_opciones(pieza)
     campos = _pedir_campos(stack, acciones.campos_reservados(pieza, nombre)) if pieza.usa_campos else []
     consola.escribir()
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, extras)
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, extras, variante=variante)
     return acciones.generar_pieza(sol, confirmar=True)
 
 

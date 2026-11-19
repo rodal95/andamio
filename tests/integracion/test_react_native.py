@@ -50,7 +50,7 @@ def test_estructura_del_proyecto(proyecto):
     assert json.loads(leer(proyecto / "tsconfig.json"))["compilerOptions"]["paths"] == {"@/*": ["./*"]}
     assert "EXPO_PUBLIC_API_URL=http://10.0.2.2:8000/api" in leer(proyecto / ".env")
     # El ícono (binario) se copia sin modificar.
-    original = (carpeta_incorporada("react-native") / "_proyecto" / "assets" / "icon.png").read_bytes()
+    original = (carpeta_incorporada("react-native") / "ts" / "_proyecto" / "assets" / "icon.png").read_bytes()
     assert (proyecto / "assets/icon.png").read_bytes() == original
 
 

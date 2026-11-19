@@ -34,13 +34,49 @@ _COMENTARIOS_TS = {
     "datetime": '  // fecha y hora: "2025-03-15T10:30:00Z"',
 }
 
-MARCADORES_SERVICIO = {"campos_ts": "una línea por campo de la interfaz: precio: number;"}
+_COMENTARIOS_JSDOC = {
+    "decimal": "número con 2 decimales",
+    "date": 'fecha: "2025-03-15"',
+    "datetime": 'fecha y hora: "2025-03-15T10:30:00Z"',
+}
+
+# --- Variantes: TypeScript y JavaScript -------------------------------------------------
+
+VARIANTES = {"ts": "TypeScript", "js": "JavaScript"}
+
+MARCADORES_VARIANTE = {
+    "ts": {"ext": "ts", "extx": "tsx"},
+    "js": {"ext": "js", "extx": "jsx"},
+}
+
+MARCADORES_EXTENSION = {
+    "ext": "extensión de los archivos de código: ts o js",
+    "extx": "extensión de los componentes: tsx o jsx",
+}
+
+
+def detectar_variante(raiz: Path) -> str:
+    """TypeScript si el proyecto tiene tsconfig.json o la dependencia typescript."""
+    if (raiz / "tsconfig.json").is_file() or "typescript" in dependencias_npm(raiz):
+        return "ts"
+    return "js"
+
+
+MARCADORES_SERVICIO = {
+    **MARCADORES_EXTENSION,
+    "campos_ts": "una línea por campo de la interfaz (TypeScript): precio: number;",
+    "campos_jsdoc": "una línea por campo del comentario JSDoc (JavaScript): * @property {number} precio",
+}
 
 
 def contexto_servicio(sol: Solicitud) -> dict[str, str]:
     # Los campos quedan en snake_case, igual que en el JSON que devuelve Django.
-    lineas = [f"{c.nombre}: {_TIPOS_TS[c.tipo]};{_COMENTARIOS_TS.get(c.tipo, '')}" for c in sol.campos]
-    return {"campos_ts": "\n".join(lineas)}
+    lineas_ts = [f"{c.nombre}: {_TIPOS_TS[c.tipo]};{_COMENTARIOS_TS.get(c.tipo, '')}" for c in sol.campos]
+    lineas_jsdoc = [
+        f"* @property {{{_TIPOS_TS[c.tipo]}}} {c.nombre}" + (f" {_COMENTARIOS_JSDOC[c.tipo]}" if c.tipo in _COMENTARIOS_JSDOC else "")
+        for c in sol.campos
+    ]
+    return {"campos_ts": "\n".join(lineas_ts), "campos_jsdoc": "\n".join(lineas_jsdoc)}
 
 
 def detectar_dependencias(*paquetes: str) -> Callable[[Path], bool]:
@@ -119,6 +155,7 @@ def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
 
 
 MARCADORES_PANTALLA = {
+    **MARCADORES_EXTENSION,
     "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto",
     "url_pantalla": "ruta para navegar: /productos/detalle-producto",
 }

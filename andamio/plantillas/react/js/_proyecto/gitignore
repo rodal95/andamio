@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+
+# Configuración local
+.env
+.env.local

@@ -42,7 +42,7 @@ def test_pyz_funciona_desde_cualquier_carpeta(dist, tmp_path):
     assert andamio.__version__ in ejecutar([str(pyz), "--version"], tmp_path)
     ejecutar([str(pyz), "crear", "react-native", "app"], tmp_path)
     # El ícono binario sale intacto desde adentro del .pyz.
-    original = (RAIZ / "andamio/plantillas/react-native/_proyecto/assets/icon.png").read_bytes()
+    original = (RAIZ / "andamio/plantillas/react-native/ts/_proyecto/assets/icon.png").read_bytes()
     assert (tmp_path / "app/assets/icon.png").read_bytes() == original
     ejecutar([str(pyz), "nuevo", "pantalla", "detalle", "--carpeta", "(tabs)"], tmp_path / "app")
     assert (tmp_path / "app/app/(tabs)/detalle.tsx").is_file()

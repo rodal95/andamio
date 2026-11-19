@@ -39,6 +39,11 @@ en tu proyecto, escribí `andamio info`.
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
 
+React y React Native se crean en **TypeScript** (por defecto) o en **JavaScript**
+con `--js`: `andamio crear react mi-web --js`. En un proyecto que ya existe (por
+ejemplo, uno creado con `npm create vite`), andamio se da cuenta solo: si tiene
+`tsconfig.json` genera `.tsx`; si no, `.jsx`.
+
 Ejemplos:
 
 ```

@@ -41,6 +41,7 @@ class _Parser(argparse.ArgumentParser):
 EJEMPLOS = """ejemplos:
   andamio                                   menú interactivo
   andamio crear django mi-api               crea un proyecto
+  andamio crear react mi-web --js           crea un proyecto React en JavaScript
   andamio nuevo recurso producto nombre:str precio:decimal
   andamio info                              qué se puede generar acá
   andamio plantillas exportar               copia las plantillas para modificarlas
@@ -62,6 +63,9 @@ def construir_parser() -> argparse.ArgumentParser:
     crear.add_argument("stack", metavar="tipo", help=f"tipo de proyecto: {claves}")
     crear.add_argument("nombre", help="nombre del proyecto (ej: mi-tienda)")
     crear.add_argument("--simular", action="store_true", help="muestra qué se crearía, sin tocar nada")
+    crear.add_argument("--variante", help="variante del proyecto (ej.: ts o js en React y React Native)")
+    crear.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js (JavaScript)")
+    crear.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts (TypeScript)")
 
     nuevo = sub.add_parser(
         "nuevo",
@@ -91,7 +95,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         return menu.ejecutar(cwd)
     if args.comando == "crear":
         stack = acciones.stack_por_clave(args.stack)
-        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular)
+        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante)
     if args.comando == "nuevo":
         opciones = {"carpeta": args.carpeta, "migrar": args.migrar}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)

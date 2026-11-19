@@ -12,10 +12,11 @@ COMPONENTE = Pieza(
     ejemplo="Tarjeta",
     formas=("pascal",),
     validar_nombre=_js.validar_componente,
+    marcadores=_js.MARCADORES_EXTENSION,
     existe_si=("src/components/@@Nombre@@",),
     inserciones=(
         Insercion(
-            "src/components/index.ts",
+            "src/components/index.@@ext@@",
             "export { @@Nombre@@ } from './@@Nombre@@';",
             descripcion="export de @@Nombre@@",
             comentario="//",
@@ -33,7 +34,8 @@ HOOK = Pieza(
     formas=("use@@Nombre@@",),
     ajustar_palabras=_js.sin_prefijo_use,
     validar_nombre=_js.validar_hook,
-    existe_si=("src/hooks/use@@Nombre@@.ts",),
+    marcadores=_js.MARCADORES_EXTENSION,
+    existe_si=("src/hooks/use@@Nombre@@.@@ext@@",),
     siguiente_paso=["# Usalo en src/App.tsx:", "import { use@@Nombre@@ } from './hooks/use@@Nombre@@';"],
 )
 
@@ -45,6 +47,7 @@ PAGINA = Pieza(
     formas=("@@Nombre@@Page",),
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_js.validar_componente,
+    marcadores=_js.MARCADORES_EXTENSION,
     existe_si=("src/pages/@@Nombre@@Page",),
     siguiente_paso=["# Mostrala en src/App.tsx:", "import { @@Nombre@@Page } from './pages/@@Nombre@@Page';"],
 )
@@ -59,8 +62,8 @@ SERVICIO = Pieza(
     usa_plural=True,
     contexto=_js.contexto_servicio,
     marcadores=_js.MARCADORES_SERVICIO,
-    existe_si=("src/services/@@nombreCamel@@Service.ts",),
-    si_no_existe=frozenset({"src/services/http.ts"}),
+    existe_si=("src/services/@@nombreCamel@@Service.@@ext@@",),
+    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}),
     siguiente_paso=[
         "# Usalo en un componente:",
         "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",
@@ -78,4 +81,7 @@ STACK = Stack(
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},
+    variantes=_js.VARIANTES,
+    detectar_variante=_js.detectar_variante,
+    marcadores_variante=_js.MARCADORES_VARIANTE,
 )

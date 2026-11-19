@@ -22,11 +22,15 @@ Primera versión.
 - Stack `django`: API REST con Django 5.2 LTS + Django REST Framework, `.env`,
   CORS, Swagger en `/api/docs/` (sin internet) y pieza `recurso` con modelo,
   serializer, ViewSet, rutas, admin y 5 tests. Opción `--migrar`.
-- Stack `react`: React 19 + Vite 8 + TypeScript, con piezas `componente`,
-  `pagina`, `hook` y `servicio` (CRUD tipado contra la API de Django).
-- Stack `react-native`: Expo SDK 58 + Expo Router + TypeScript, con piezas
-  `pantalla` (opción `--carpeta`, admite grupos como `(tabs)`), `componente`,
-  `hook` y `servicio`.
+- Stack `react`: React 19 + Vite 8, con piezas `componente`, `pagina`, `hook`
+  y `servicio` (CRUD contra la API de Django).
+- Stack `react-native`: Expo SDK 58 + Expo Router, con piezas `pantalla`
+  (opción `--carpeta`, admite grupos como `(tabs)`), `componente`, `hook` y
+  `servicio`.
+- Variantes TypeScript y JavaScript para React y React Native
+  (`andamio crear react mi-web --js`). En proyectos existentes la variante se
+  detecta sola (por `tsconfig.json` o la dependencia `typescript`); los
+  servicios en JavaScript llevan tipos en comentarios JSDoc.
 - Plantillas editables por proyecto en `.andamio/plantillas/`, con un
   `LEEME.md` por pieza que lista los marcadores y sus valores de ejemplo.
 - Distribución: `.whl`, `andamio.pyz` (un solo archivo, sin instalar) y `.zip`

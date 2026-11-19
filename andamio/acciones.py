@@ -15,10 +15,13 @@ from andamio.nucleo.generador import (
     nombre_para_pieza,
     pasos_pieza,
     pasos_proyecto,
+    nombre_variante,
     planificar_pieza,
     planificar_proyecto,
+    resolver_variante,
     ubicar_plantilla,
     validar_nombre_pieza,
+    variante_del_proyecto,
 )
 from andamio.nucleo.nombres import Nombre, parece_plural
 from andamio.nucleo.plan import Plan
@@ -72,9 +75,19 @@ def stack_por_clave(clave: str) -> Stack:
     return stack
 
 
-def crear_proyecto(stack: Stack, texto_nombre: str, padre: Path, simular: bool = False, confirmar: bool = False) -> int:
-    plan, contexto = planificar_proyecto(stack, texto_nombre, padre)
+def crear_proyecto(
+    stack: Stack,
+    texto_nombre: str,
+    padre: Path,
+    simular: bool = False,
+    confirmar: bool = False,
+    variante: str | None = None,
+) -> int:
+    variante = resolver_variante(stack, variante)
+    plan, contexto = planificar_proyecto(stack, texto_nombre, padre, variante)
     consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
+    if variante:
+        consola.escribir(f"Variante: {consola.color(nombre_variante(stack, variante), 'negrita')}")
     existente = buscar_proyecto(padre)
     if existente:
         consola.aviso(
@@ -151,7 +164,7 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
     consola.escribir(f"Se usará: {consola.color(describir_nombre(sol.pieza, sol.nombre), 'negrita')}")
     if sol.campos:
         consola.escribir("Campos: " + ", ".join(f"{c.nombre} ({c.tipo})" for c in sol.campos))
-    _, personalizada = ubicar_plantilla(sol.stack, sol.pieza, sol.raiz)
+    _, personalizada = ubicar_plantilla(sol.stack, sol.pieza, sol.raiz, sol.variante)
     if personalizada:
         consola.aviso(f"Se usan tus plantillas de .andamio/plantillas/{sol.stack.clave}/{sol.pieza.clave}/")
     plan = planificar_pieza(sol)
@@ -190,7 +203,7 @@ def nuevo(
             "Si de verdad es singular (como 'país'), indicá el plural con --plural. Ejemplo: --plural paises",
         )
     campos = preparar_campos(stack, pieza, nombre, textos_campos)
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones)
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones, variante=variante_del_proyecto(stack, raiz))
     return generar_pieza(sol, simular=simular)
 
 
@@ -199,7 +212,8 @@ def nuevo(
 
 def info(cwd: Path) -> int:
     stack, raiz = proyecto_actual(cwd)
-    consola.titulo(f"Proyecto {stack.titulo}")
+    variante = nombre_variante(stack, variante_del_proyecto(stack, raiz))
+    consola.titulo(f"Proyecto {stack.titulo}" + (f" ({variante})" if variante else ""))
     consola.escribir(f"Carpeta: {raiz}")
     consola.escribir()
     consola.titulo("Piezas que podés generar:")

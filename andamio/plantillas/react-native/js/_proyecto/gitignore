@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+
+# Carpetas nativas generadas (npx expo prebuild)
+/ios
+/android
+
+# Configuración local
+.env
+.env*.local

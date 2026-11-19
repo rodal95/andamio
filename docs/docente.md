@@ -27,9 +27,10 @@ andamio/
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
 │   ├── python.py  django.py  react.py  react_native.py
 │   └── _js.py          ayudas compartidas por react y react-native
-└── plantillas/<stack>/
+└── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
     └── <pieza>/        lo que genera "andamio nuevo <pieza>"
+                        (react y react-native tienen las variantes ts/ y js/)
 tests/unit/             núcleo, CLI, menú, control de plantillas
 tests/integracion/      un archivo por stack, exportación, empaquetado, coherencia
 scripts/empaquetar.py   arma andamio.pyz y el .zip de la Release
@@ -91,6 +92,38 @@ Marcadores disponibles en todas las piezas (para `línea venta`):
 
 En `_proyecto/`: `@@proyecto@@` (kebab), `@@proyecto_snake@@`, `@@Proyecto@@`,
 `@@proyectoTitulo@@`, `@@carpeta@@` y los de `Stack.contexto_proyecto`.
+
+## Variantes (TypeScript / JavaScript)
+
+Un stack puede tener variantes: otra versión de todas sus plantillas. React y
+React Native tienen `ts` (la primera, que se usa por defecto) y `js`:
+
+```python
+STACK = Stack(
+    ...,
+    variantes={"ts": "TypeScript", "js": "JavaScript"},
+    detectar_variante=_js.detectar_variante,   # "ts" si hay tsconfig.json o la dependencia typescript
+    marcadores_variante={"ts": {"ext": "ts", "extx": "tsx"}, "js": {"ext": "js", "extx": "jsx"}},
+)
+```
+
+- Las plantillas van en `plantillas/<stack>/<variante>/_proyecto/` y
+  `plantillas/<stack>/<variante>/<pieza>/`. Cada variante tiene que tener las
+  mismas piezas (hay un test que lo controla).
+- La variante de un proyecto nuevo se elige con `--variante js` (o el atajo
+  `--js`), y en el menú con la pregunta "¿En qué lenguaje?". En un proyecto que
+  ya existe, se detecta con `detectar_variante`.
+- Las rutas de la definición de la pieza (`existe_si`, `inserciones`) usan
+  `@@ext@@` y `@@extx@@` para no depender de la variante:
+  `existe_si=("src/hooks/use@@Nombre@@.@@ext@@",)`.
+- Las plantillas exportadas (`.andamio/plantillas/<stack>/<pieza>/`) son las de la
+  variante del proyecto.
+- `tests/unit/test_plantillas.py` controla que las plantillas `js` no tengan
+  sintaxis de TypeScript (`interface`, `: string`, `import type`...).
+
+Para agregar una variante: creá su carpeta con todas las piezas, sumala a
+`variantes` y `marcadores_variante`, y agregá sus tests (como
+`tests/integracion/test_variantes_js.py`).
 
 ## Agregar una pieza
 

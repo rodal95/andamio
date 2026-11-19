@@ -106,16 +106,26 @@ def _ejecutar_script(proyecto_web, base, url, nombre):
 @requiere_node
 def test_servicios_de_react_y_react_native_contra_django(api_django, en_carpeta, monkeypatch):
     monkeypatch.chdir(en_carpeta)
-    main(["crear", "react", "web"])
-    main(["crear", "react-native", "movil"])
-    for carpeta in ("web", "movil"):
+    proyectos = {
+        "web": ["react", "web"],
+        "movil": ["react-native", "movil"],
+        "web-js": ["react", "web-js", "--js"],
+        "movil-js": ["react-native", "movil-js", "--js"],
+    }
+    for carpeta, argumentos in proyectos.items():
+        monkeypatch.chdir(en_carpeta)
+        assert main(["crear", *argumentos]) == 0
         monkeypatch.chdir(en_carpeta / carpeta)
         assert main(["nuevo", "servicio", "producto", *CAMPOS]) == 0
         assert main(["nuevo", "servicio", "cliente", "nombre", "email:email"]) == 0
     web = en_carpeta / "web"
     npm_install(web)
-    # Los servicios de React Native se empaquetan con el Vite del proyecto web
-    # (así no hace falta instalar Expo para esta prueba).
+    # Los demás servicios se empaquetan con el Vite del proyecto web
+    # (así no hace falta instalar Expo ni los otros proyectos para esta prueba).
     shutil.copytree(en_carpeta / "movil" / "services", web / "scripts" / "rn")
+    shutil.copytree(en_carpeta / "web-js" / "src" / "services", web / "scripts" / "web-js")
+    shutil.copytree(en_carpeta / "movil-js" / "services", web / "scripts" / "rn-js")
     _ejecutar_script(web, "../src/services", api_django, "react")
     _ejecutar_script(web, "./rn", api_django, "react-native")
+    _ejecutar_script(web, "./web-js", api_django, "react-js")
+    _ejecutar_script(web, "./rn-js", api_django, "react-native-js")

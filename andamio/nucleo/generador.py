@@ -66,16 +66,48 @@ def carpeta_proyecto(texto: str) -> str:
 # --- Plantillas -------------------------------------------------------------
 
 
-def _base(stack: Stack) -> Traversable:
-    return stack.plantillas if stack.plantillas is not None else plantillas.carpeta_incorporada(stack.clave)
+def carpeta_plantillas(stack: Stack, variante: str = "") -> Traversable:
+    """Carpeta de plantillas incorporadas del stack (y de la variante, si tiene)."""
+    base = stack.plantillas if stack.plantillas is not None else plantillas.carpeta_incorporada(stack.clave)
+    return base / variante if variante else base
 
 
-def ubicar_plantilla(stack: Stack, pieza: Pieza, raiz: Path) -> tuple[Traversable, bool]:
+def ubicar_plantilla(stack: Stack, pieza: Pieza, raiz: Path, variante: str = "") -> tuple[Traversable, bool]:
     """Devuelve la carpeta de plantillas a usar y si es la personalizada por el alumno."""
     propia = plantillas.carpeta_personalizada(raiz, stack.clave, pieza.clave)
     if propia.is_dir():
         return propia, True
-    return _base(stack) / pieza.clave, False
+    return carpeta_plantillas(stack, variante) / pieza.clave, False
+
+
+# --- Variantes --------------------------------------------------------------
+
+
+def resolver_variante(stack: Stack, pedida: str | None) -> str:
+    """La variante para un proyecto nuevo: la pedida (validada) o la primera del stack."""
+    if not stack.variantes:
+        if pedida:
+            raise AndamioError(f"Los proyectos {stack.titulo} no tienen variantes; sacá la opción --variante/--js/--ts.")
+        return ""
+    if pedida is None:
+        return next(iter(stack.variantes))
+    pedida = pedida.strip().lower()
+    if pedida not in stack.variantes:
+        disponibles = ", ".join(f"{k} ({v})" for k, v in stack.variantes.items())
+        raise AndamioError(f"'{pedida}' no es una variante de {stack.titulo}.", f"Variantes: {disponibles}")
+    return pedida
+
+
+def variante_del_proyecto(stack: Stack, raiz: Path) -> str:
+    if not stack.variantes:
+        return ""
+    if stack.detectar_variante:
+        return stack.detectar_variante(raiz)
+    return next(iter(stack.variantes))
+
+
+def nombre_variante(stack: Stack, variante: str) -> str:
+    return stack.variantes.get(variante, "")
 
 
 # --- Piezas -----------------------------------------------------------------
@@ -83,6 +115,7 @@ def ubicar_plantilla(stack: Stack, pieza: Pieza, raiz: Path) -> tuple[Traversabl
 
 def contexto_pieza(sol: Solicitud) -> dict[str, str]:
     contexto = sol.nombre.marcadores()
+    contexto.update(sol.stack.marcadores_variante.get(sol.variante, {}))
     if sol.pieza.contexto:
         contexto.update(sol.pieza.contexto(sol))
     return contexto
@@ -96,7 +129,7 @@ def planificar_pieza(sol: Solicitud) -> Plan:
     for ruta in pieza.existe_si:
         plan.exigir_inexistente(renderizar_ruta(tuple(ruta.split("/")), contexto, ruta))
 
-    carpeta, _ = ubicar_plantilla(stack, pieza, sol.raiz)
+    carpeta, _ = ubicar_plantilla(stack, pieza, sol.raiz, sol.variante)
     if not carpeta.is_dir():
         raise AndamioError(f"No encontré las plantillas de '{pieza.clave}' en {carpeta}.")
     for archivo in plantillas.leer_arbol(carpeta):
@@ -129,9 +162,10 @@ def pasos_pieza(sol: Solicitud) -> list[str]:
 # --- Proyectos --------------------------------------------------------------
 
 
-def contexto_proyecto(stack: Stack, texto: str) -> dict[str, str]:
+def contexto_proyecto(stack: Stack, texto: str, variante: str = "") -> dict[str, str]:
     palabras = separar_palabras(texto, "El nombre del proyecto")
     contexto = {
+        **stack.marcadores_variante.get(variante, {}),
         "carpeta": kebab(palabras),
         "proyecto": kebab(palabras),
         "proyecto_snake": snake(palabras),
@@ -143,8 +177,8 @@ def contexto_proyecto(stack: Stack, texto: str) -> dict[str, str]:
     return contexto
 
 
-def planificar_proyecto(stack: Stack, texto: str, padre: Path) -> tuple[Plan, dict[str, str]]:
-    contexto = contexto_proyecto(stack, texto)
+def planificar_proyecto(stack: Stack, texto: str, padre: Path, variante: str = "") -> tuple[Plan, dict[str, str]]:
+    contexto = contexto_proyecto(stack, texto, variante)
     nombre_carpeta = contexto["carpeta"]
     destino = padre / nombre_carpeta
     if destino.exists() and (not destino.is_dir() or any(destino.iterdir())):
@@ -155,7 +189,7 @@ def planificar_proyecto(stack: Stack, texto: str, padre: Path) -> tuple[Plan, di
     plan = Plan(padre)
     plan.crear_carpeta(nombre_carpeta)
     base = PurePosixPath(nombre_carpeta)
-    for archivo in plantillas.leer_arbol(_base(stack) / plantillas.CARPETA_PROYECTO, ignorar_leeme=False):
+    for archivo in plantillas.leer_arbol(carpeta_plantillas(stack, variante) / plantillas.CARPETA_PROYECTO, ignorar_leeme=False):
         origen = f"{stack.clave}/{plantillas.CARPETA_PROYECTO}/{archivo.ruta}"
         destino_rel = base / renderizar_ruta(archivo.partes, contexto, origen)
         texto_plantilla = archivo.texto

@@ -1,26 +1,37 @@
-"""Controles sobre las plantillas incorporadas de todos los stacks."""
+"""Controles sobre las plantillas incorporadas de todos los stacks y variantes."""
 
 import pytest
 
 from andamio import stacks
 from andamio.nucleo import plantillas
+from andamio.nucleo.generador import carpeta_plantillas
 from andamio.nucleo.motor import marcadores_usados
 from andamio.nucleo.nombres import MARCADORES_NOMBRE
 
-MARCADORES_PROYECTO = {"carpeta", "proyecto", "proyecto_snake", "Proyecto", "proyectoTitulo"}
+
+def _variantes(stack):
+    return list(stack.variantes) or [""]
+
+
+def _combinaciones():
+    for stack in stacks.REGISTRO:
+        for variante in _variantes(stack):
+            yield pytest.param(stack, variante, id=f"{stack.clave}-{variante or 'unica'}")
 
 
 def _piezas():
     for stack in stacks.REGISTRO:
-        for pieza in stack.piezas.values():
-            yield pytest.param(stack, pieza, id=f"{stack.clave}-{pieza.clave}")
+        for variante in _variantes(stack):
+            for pieza in stack.piezas.values():
+                yield pytest.param(stack, variante, pieza, id=f"{stack.clave}-{variante or 'unica'}-{pieza.clave}")
 
 
-@pytest.mark.parametrize("stack, pieza", list(_piezas()))
-def test_cada_marcador_de_una_pieza_esta_declarado(stack, pieza):
+@pytest.mark.parametrize("stack, variante, pieza", list(_piezas()))
+def test_cada_marcador_de_una_pieza_esta_declarado(stack, variante, pieza):
     """Si falla: agregá el marcador a `marcadores` de la Pieza (así aparece en el LEEME)."""
     declarados = set(MARCADORES_NOMBRE) | set(pieza.marcadores)
-    carpeta = plantillas.carpeta_incorporada(stack.clave) / pieza.clave
+    carpeta = carpeta_plantillas(stack, variante) / pieza.clave
+    assert carpeta.is_dir(), f"falta la carpeta {stack.clave}/{variante}/{pieza.clave}"
     usados = set()
     for archivo in plantillas.leer_arbol(carpeta):
         usados |= marcadores_usados(archivo.ruta)
@@ -28,24 +39,41 @@ def test_cada_marcador_de_una_pieza_esta_declarado(stack, pieza):
             usados |= marcadores_usados(archivo.texto)
     for insercion in pieza.inserciones:
         usados |= marcadores_usados(insercion.archivo + insercion.texto + insercion.descripcion)
+    for ruta in pieza.existe_si:
+        usados |= marcadores_usados(ruta)
     assert usados - declarados == set()
 
 
-@pytest.mark.parametrize("stack", stacks.REGISTRO, ids=lambda s: s.clave)
-def test_cada_stack_tiene_plantilla_de_proyecto(stack):
-    carpeta = plantillas.carpeta_incorporada(stack.clave) / plantillas.CARPETA_PROYECTO
+@pytest.mark.parametrize("stack, variante", list(_combinaciones()))
+def test_cada_variante_tiene_plantilla_de_proyecto(stack, variante):
+    carpeta = carpeta_plantillas(stack, variante) / plantillas.CARPETA_PROYECTO
     assert carpeta.is_dir()
     assert plantillas.leer_arbol(carpeta, ignorar_leeme=False)
 
 
-@pytest.mark.parametrize("stack", stacks.REGISTRO, ids=lambda s: s.clave)
-def test_cada_pieza_tiene_carpeta(stack):
-    for pieza in stack.piezas:
-        assert (plantillas.carpeta_incorporada(stack.clave) / pieza).is_dir(), pieza
+@pytest.mark.parametrize("stack", [s for s in stacks.REGISTRO if s.variantes], ids=lambda s: s.clave)
+def test_las_variantes_tienen_las_mismas_piezas_y_marcadores(stack):
+    for variante in stack.variantes:
+        assert set(stack.marcadores_variante[variante]) == set(stack.marcadores_variante[next(iter(stack.variantes))])
 
 
-def test_el_servicio_es_igual_en_react_y_react_native():
-    """Coherencia: el mismo servicio en los dos stacks (solo cambia http.ts)."""
-    react = plantillas.carpeta_incorporada("react") / "servicio" / "src" / "services" / "@@nombreCamel@@Service.ts"
-    nativo = plantillas.carpeta_incorporada("react-native") / "servicio" / "services" / "@@nombreCamel@@Service.ts"
+@pytest.mark.parametrize("variante, archivo", [("ts", "@@nombreCamel@@Service.ts"), ("js", "@@nombreCamel@@Service.js")])
+def test_el_servicio_es_igual_en_react_y_react_native(variante, archivo):
+    """Coherencia: el mismo servicio en los dos stacks (solo cambia http)."""
+    react = plantillas.carpeta_incorporada("react") / variante / "servicio" / "src" / "services" / archivo
+    nativo = plantillas.carpeta_incorporada("react-native") / variante / "servicio" / "services" / archivo
     assert react.read_text(encoding="utf-8") == nativo.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("stack", [s for s in stacks.REGISTRO if s.variantes], ids=lambda s: s.clave)
+def test_las_plantillas_js_no_tienen_sintaxis_de_typescript(stack):
+    import re
+
+    tipos = re.compile(r"^import type |\binterface \w+ \{|: (string|number|boolean)\b[;,)]|<T>\(")
+    raiz = carpeta_plantillas(stack, "js")
+    for carpeta in raiz.iterdir():
+        for archivo in plantillas.leer_arbol(carpeta, ignorar_leeme=False):
+            if archivo.texto is None or not archivo.ruta.endswith((".js", ".jsx")):
+                continue
+            for numero, linea in enumerate(archivo.texto.splitlines(), 1):
+                assert not tipos.search(linea), f"{carpeta.name}/{archivo.ruta}:{numero}: {linea}"
