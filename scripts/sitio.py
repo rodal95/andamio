@@ -1160,7 +1160,7 @@ DESCRIPCIONES = {
         ("src/pages/*", "Una página: código (<script setup>), lo que se ve (<template>) y estilos."),
         ("src/components/*", "Un componente .vue con props, slot y estilos propios (<style scoped>)."),
         ("src/composables/use*", "Un composable: estado (ref) y lógica para reutilizar en varios componentes."),
-        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env."),
+        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env y, si guardaste el token del login (guardarToken), lo manda en cada pedido."),
         ("src/services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar."),
     ],
     "fastapi": [
@@ -1218,7 +1218,7 @@ DESCRIPCIONES = {
         ("components/*", "El componente: una función que recibe props y devuelve lo que se ve."),
         ("hooks/useConsulta.*", "Hook genérico para pedir datos a la API: guarda el resultado, si está cargando y el error. Lo usan las páginas del CRUD."),
         ("hooks/use*", "Un hook: estado y lógica para reutilizar en componentes 'use client'."),
-        ("services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa NEXT_PUBLIC_API_URL del .env."),
+        ("services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa NEXT_PUBLIC_API_URL del .env y, si guardaste el token del login (guardarToken), lo manda en cada pedido."),
         ("services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
     ],
     "next-fullstack": [
@@ -1274,7 +1274,7 @@ DESCRIPCIONES = {
         ("src/pages/*", "Una página completa de la aplicación."),
         ("src/hooks/useConsulta.*", "Hook genérico para pedir datos a la API: guarda el resultado, si está cargando y el error. Lo usan las páginas del CRUD."),
         ("src/hooks/use*", "Un hook: estado y lógica para reutilizar en varios componentes."),
-        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env."),
+        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env y, si guardaste el token del login (guardarToken), lo manda en cada pedido."),
         ("src/services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
     ],
     "react-native": [

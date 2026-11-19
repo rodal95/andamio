@@ -100,9 +100,10 @@ No levantes Django con plantillas y una API en el puerto 8000 al mismo tiempo
 - En la API de Django, generá `nuevo login` **antes** de usar recursos protegidos
   desde una web: es lo que da los tokens. Después, `pip install -r requirements.txt`.
 - La interfaz tiene que mandar el token (`Authorization: Bearer <token>`). La web
-  HTML ya lo hace si lo guardás (ver [combinaciones](combinaciones.md#login-con-jwt-desde-la-web-html)).
-  En los `crud` de React, Vue y Next.js todavía no: usá recursos sin `--protegido`
-  o agregá el encabezado en `services/http`.
+  HTML, React, Vue y Next.js ya lo hacen solos si lo guardaste: `localStorage` con la
+  clave `token` (en React, Vue y Next.js, con `guardarToken()` de `services/http`).
+  Ver [combinaciones](combinaciones.md#login-con-jwt-desde-react-vue-o-nextjs).
+  React Native todavía no.
 
 ## 10. Para cambiar el código que se genera
 

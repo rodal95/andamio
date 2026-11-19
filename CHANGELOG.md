@@ -5,6 +5,18 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- React, Vue y Next.js: el `http` que generan `servicio` y `crud` manda el token del
+  login JWT si hay uno guardado (`Authorization: Bearer <token>`), así el `crud`
+  funciona con los recursos `--protegido` de Django. Trae `guardarToken()`,
+  `borrarToken()` y `leerToken()` (la misma clave `token` en `localStorage` que la web
+  HTML). Receta con la página de ingreso en `docs/guias/combinaciones.md`.
+
+### Cambiado
+- Los errores de la API muestran su explicación (`detail`) en lugar de "La API
+  respondió con el error 401": por ejemplo, "Las credenciales de autenticación no se
+  proveyeron.".
+
 ## [1.2.0] - 2026-11-19
 
 ### Agregado
