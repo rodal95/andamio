@@ -173,7 +173,7 @@ def nuevo(
     if pieza.usa_plural and not plural and parece_plural(nombre.palabras):
         raise AndamioError(
             f"'{texto_nombre}' parece estar en plural. Los nombres van en singular (ej: 'producto', no 'productos').",
-            f"Si de verdad es singular (como 'país'), indicá el plural: --plural {nombre.snake}es",
+            "Si de verdad es singular (como 'país'), indicá el plural con --plural. Ejemplo: --plural paises",
         )
     campos = preparar_campos(stack, pieza, nombre, textos_campos)
     sol = Solicitud(stack, pieza, raiz, nombre, campos, {k: v for k, v in opciones.items() if v not in (None, False)})

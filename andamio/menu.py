@@ -69,7 +69,7 @@ def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
     ejemplo = pieza.ejemplo.split()[0]
     while True:
         nombre = consola.preguntar(
-            f"Nombre ({pieza.titulo.lower()})",
+            "Nombre en singular" if pieza.usa_plural else "Nombre",
             validar=lambda t: acciones.preparar_nombre(stack, pieza, raiz, t, None),
             ejemplo=ejemplo,
         )

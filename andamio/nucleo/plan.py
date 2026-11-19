@@ -182,7 +182,7 @@ class Plan:
     def mostrar(self, titulo_creados: str = "Se van a crear", titulo_modificados: str = "Se van a modificar") -> None:
         if self.nuevos:
             consola.titulo(f"{titulo_creados}:")
-            for ruta in self.nuevos:
+            for ruta in sorted(self.nuevos, key=lambda r: self.rel(r).lower()):
                 consola.escribir(consola.color("  + ", "verde") + self.rel(ruta))
         if self.modificados:
             consola.titulo(f"{titulo_modificados}:")
