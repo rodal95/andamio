@@ -1,0 +1,61 @@
+/* Tarjetas: una grilla que se acomoda sola al ancho de la pantalla.
+
+   <div class="tarjetas">
+     <article class="tarjeta">
+       <img class="tarjeta__imagen" src="yerba.jpg" alt="Paquete de yerba" />
+       <h3 class="tarjeta__titulo">Yerba</h3>
+       <p class="tarjeta__texto">$ 1500</p>
+       <div class="tarjeta__pie"><a class="boton" href="#">Ver</a></div>
+     </article>
+   </div>
+
+   (En React y Next.js: className en lugar de class.) */
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--espacio, 1rem);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--espacio, 1rem);
+  background: var(--superficie, #fff);
+  border: 1px solid var(--borde, #d9dee5);
+  border-radius: var(--radio, 8px);
+  box-shadow: var(--sombra, 0 1px 3px rgb(0 0 0 / 8%));
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.tarjeta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-alta, 0 8px 24px rgb(0 0 0 / 12%));
+}
+
+.tarjeta__imagen {
+  width: calc(100% + 2 * var(--espacio, 1rem));
+  max-width: none;
+  margin: calc(-1 * var(--espacio, 1rem)) calc(-1 * var(--espacio, 1rem)) 0;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radio, 8px) var(--radio, 8px) 0 0;
+}
+
+.tarjeta__titulo {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tarjeta__texto {
+  margin: 0;
+  color: var(--suave, #5c6878);
+}
+
+.tarjeta__pie {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}

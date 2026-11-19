@@ -1,0 +1,55 @@
+/* Ventana modal con <dialog> (el navegador ya maneja el foco y la tecla Escape).
+
+   <button class="boton" onclick="document.getElementById('confirmar').showModal()">Eliminar</button>
+
+   <dialog class="modal" id="confirmar">
+     <form method="dialog">
+       <h2 class="modal__titulo">¿Eliminar el producto?</h2>
+       <p>Esta acción no se puede deshacer.</p>
+       <div class="modal__acciones">
+         <button class="boton boton--borde" value="cancelar">Cancelar</button>
+         <button class="boton boton--peligro" value="eliminar">Eliminar</button>
+       </div>
+     </form>
+   </dialog>
+
+   <form method="dialog"> cierra la ventana al tocar un botón; dialog.returnValue dice cuál.
+   En React o Vue, guardá el <dialog> en un ref y llamá ref.current.showModal() (Vue: ref.value). */
+
+.modal {
+  width: min(480px, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--borde, #d9dee5);
+  border-radius: calc(var(--radio, 8px) * 1.5);
+  background: var(--superficie, #fff);
+  color: var(--texto, #1b2430);
+  box-shadow: var(--sombra-alta, 0 16px 48px rgb(0 0 0 / 25%));
+}
+
+.modal::backdrop {
+  background: rgb(15 20 26 / 55%);
+  backdrop-filter: blur(2px);
+}
+
+.modal[open] {
+  animation: modal-aparecer 0.15s ease-out;
+}
+
+.modal__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.modal__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+@keyframes modal-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

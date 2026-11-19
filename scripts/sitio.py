@@ -466,6 +466,60 @@ TECNOLOGIAS = {
     },
 }
 
+# --- Estilos: tema, ui y estilo (las mismas piezas en todos los stacks web) ------------
+
+# Cómo se escribe una clase en cada tecnología, y dónde quedan los CSS.
+_CLASE = {"web": "class", "django-web": "class", "vue": "class", "react": "className", "next": "className", "next-fullstack": "className"}
+_CARPETA_CSS = {"web": "css", "django-web": "static/css", "vue": "src", "react": "src", "next": "app", "next-fullstack": "app"}
+_LENGUAJE_USO = {"web": "html", "django-web": "html", "vue": "html", "react": "ts", "next": "ts", "next-fullstack": "ts"}
+
+
+def _piezas_de_estilos(clave: str) -> dict:
+    clase, carpeta = _CLASE[clave], _CARPETA_CSS[clave]
+    return {
+        "tema": {
+            "comando": "nuevo tema violeta --modo auto",
+            "explicacion": f"El tema son variables CSS (colores, letra, bordes, sombras) con modo oscuro, más estilos base para botones, formularios y tablas. Queda en {carpeta}/tema.css y se carga en todo el proyecto: lo que generó andamio y lo que escribas con var(--acento) cambia de look desde ese archivo. Colores: azul, verde, violeta, naranja, rojo, turquesa, rosa, ambar y gris; --modo auto (sigue al sistema), claro u oscuro.",
+            "uso": f"/* En cualquier CSS tuyo: */\n.destacado {{\n  background: var(--superficie);\n  border: 1px solid var(--borde);\n  border-radius: var(--radio);\n  color: var(--acento);\n}}\n\n/* Forzar un modo desde JavaScript: */\ndocument.documentElement.dataset.tema = 'oscuro';",
+            "uso_lenguaje": "css",
+        },
+        "ui": {
+            "comando": "nuevo ui tarjetas",
+            "explicacion": "Partes de interfaz listas, en CSS y sin librerías: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive y accesible. Cada una queda en " + carpeta + "/ui/ con el ejemplo de uso al principio del archivo, se carga sola y toma los colores del tema.",
+            "uso": f'<div {clase}="tarjetas">\n  <article {clase}="tarjeta">\n    <h3 {clase}="tarjeta__titulo">Yerba</h3>\n    <p {clase}="tarjeta__texto">$ 1500</p>\n  </article>\n</div>',
+            "uso_lenguaje": _LENGUAJE_USO[clave],
+        },
+        "estilo": {
+            "comando": "nuevo estilo catalogo",
+            "explicacion": f"Un CSS propio para tu componente o tu página, con el nombre que quieras: {carpeta}/estilos/catalogo.css con la clase .catalogo (y .catalogo__titulo, .catalogo__texto) ya armada con las variables del tema, y cargado en el proyecto. Es el punto de partida para darle estilo a lo tuyo.",
+            "uso": f'<section {clase}="catalogo">\n  <h2 {clase}="catalogo__titulo">Catálogo</h2>\n  <p {clase}="catalogo__texto">Los productos del mes.</p>\n</section>',
+            "uso_lenguaje": _LENGUAJE_USO[clave],
+        },
+    }
+
+
+for _clave in _CLASE:
+    TECNOLOGIAS[_clave]["piezas"].update(_piezas_de_estilos(_clave))
+
+TECNOLOGIAS["react-native"]["piezas"]["tema"] = {
+    "comando": "nuevo tema violeta --modo auto",
+    "explicacion": "React Native no usa CSS: el tema son los colores del modo claro y del oscuro en constants/tema, y el hook useTema() que devuelve los del modo actual (auto sigue al celular).",
+    "uso": "import { useTema } from '@/constants/tema';\n\nconst tema = useTema();\n<View style={[estilos.tarjeta, { backgroundColor: tema.superficie }]}>\n  <Text style={{ color: tema.acento }}>Yerba</Text>\n</View>",
+    "uso_lenguaje": "ts",
+}
+TECNOLOGIAS["reflex"]["piezas"]["tema"] = {
+    "comando": "nuevo tema violeta --modo auto",
+    "explicacion": "El tema de Radix de toda la aplicación: color de acento, modo claro u oscuro (o el del sistema) y bordes, en mi_app/tema.py. andamio lo aplica con app.theme = TEMA.",
+    "uso": 'TEMA = rx.theme(\n    accent_color="violet",\n    appearance="inherit",   # inherit (sistema), light o dark\n    radius="medium",\n)',
+    "uso_lenguaje": "python",
+}
+
+_DESCRIPCIONES_ESTILOS = [
+    ("tema.css", "El tema: variables de color, letra, bordes y sombras (con modo oscuro) y estilos base de botones, formularios y tablas. Cambiando este archivo cambia todo el proyecto."),
+    ("ui/*.css", "Una parte de interfaz lista (tarjetas, alertas, modal...). El ejemplo de uso está al principio del archivo; usa las variables del tema."),
+    ("estilos/*.css", "Un estilo propio (la clase con el nombre que elegiste), armado con las variables del tema para que lo completes."),
+]
+
 # Para qué sirve cada archivo. Se busca en orden: el primero que coincide gana
 # (en fnmatch, "*" también abarca subcarpetas).
 _COMUNES = [
@@ -516,11 +570,15 @@ CAMINO = {
     "fastapi": ["recurso", "tema:rutas"],
     "express": ["recurso", "tema:rutas"],
     "react": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
-    "react-native": ["pantalla", "tema:router", "componente", "hook", "servicio"],
+    "react-native": ["pantalla", "tema:router", "componente", "hook", "servicio", "tema"],
     "next": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
     "next-fullstack": ["recurso", "crud", "componente", "pagina", "tema:router", "hook", "servicio"],
-    "reflex": ["pagina", "tema:router", "componente", "estado", "crud", "servicio", "crud-api"],
+    "reflex": ["pagina", "tema:router", "componente", "estado", "crud", "servicio", "crud-api", "tema"],
 }
+
+# Los estilos van al final de cada guía web: primero se arma, después se le da estilo.
+for _clave in _CLASE:
+    CAMINO[_clave] = [*CAMINO[_clave], "tema", "ui", "estilo"]
 
 # Lecciones de conceptos. "archivos" son archivos del proyecto completo de la guía (se
 # muestran tal cual quedan); {ext} y {extx} cambian según el lenguaje.
@@ -1295,6 +1353,13 @@ DESCRIPCIONES = {
         ("services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
     ],
 }
+
+# Los CSS de tema, ui y estilo, en la carpeta de estilos de cada tecnología.
+for _clave, _carpeta in _CARPETA_CSS.items():
+    DESCRIPCIONES.setdefault(_clave, [])
+    DESCRIPCIONES[_clave][:0] = [(f"{_carpeta}/{patron}", texto) for patron, texto in _DESCRIPCIONES_ESTILOS]
+DESCRIPCIONES["react-native"].insert(0, ("constants/tema.*", "El tema: los colores del modo claro y del oscuro y useTema(), que devuelve los del modo actual."))
+DESCRIPCIONES["reflex"].insert(0, ("*/tema.py", "El tema de la aplicación (rx.theme): color de acento, modo claro u oscuro y bordes. Se aplica con app.theme = TEMA."))
 
 LENGUAJES = {".py": "python", ".ts": "ts", ".tsx": "ts", ".js": "ts", ".jsx": "ts", ".json": "json", ".sql": "sql", ".css": "css", ".html": "html", ".md": "md"}
 

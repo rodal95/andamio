@@ -82,6 +82,14 @@ def _menu_piezas(stack: Stack, raiz: Path) -> int:
 
 
 def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
+    if pieza.nombre_defecto and pieza.pregunta_nombre:
+        nombre = consola.preguntar(
+            pieza.pregunta_nombre,
+            validar=lambda t: acciones.preparar_nombre(stack, pieza, raiz, t or pieza.nombre_defecto, None),
+            permitir_vacio=True,
+        ) or acciones.preparar_nombre(stack, pieza, raiz, pieza.nombre_defecto, None)
+        consola.escribir(f"Se usará: {consola.color(describir_nombre(pieza, nombre), 'negrita')}")
+        return nombre
     if pieza.nombre_defecto:
         nombre = acciones.preparar_nombre(stack, pieza, raiz, pieza.nombre_defecto, None)
         consola.escribir(f"Se usará: {consola.color(describir_nombre(pieza, nombre), 'negrita')}")
@@ -116,6 +124,11 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
     if "protegido" in pieza.opciones:
         extras["protegido"] = consola.confirmar(
             "¿Proteger el recurso? (solo usuarios con login pueden crear, modificar y eliminar)", defecto=False
+        )
+    if "modo" in pieza.opciones:
+        extras["modo"] = consola.elegir(
+            "¿Modo del tema?",
+            [("auto", "auto: claro u oscuro según el sistema (recomendado)"), ("claro", "siempre claro"), ("oscuro", "siempre oscuro")],
         )
     if "carpeta" in pieza.opciones:
         normalizar = pieza.normalizar_opcion.get("carpeta")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from andamio.estilos import piezas_de_estilos
 from andamio.stacks import _js
 from andamio.stacks.base import Insercion, Pieza, Stack
 
@@ -154,13 +155,27 @@ SERVICIO = Pieza(
     ],
 )
 
+ESTILOS = piezas_de_estilos(
+    "src",
+    lambda ruta: Insercion(
+        "src/main.@@extx@@",
+        f"import './{ruta}';",
+        marcador="estilos",
+        descripcion="import del CSS",
+        ubicacion="junto a import './index.css'",
+        comentario="//",
+    ),
+    'En JSX: className="...".',
+    _js.MARCADORES_EXTENSION,
+)
+
 STACK = Stack(
     clave="react",
     titulo="React + Vite",
     senal="package.json con vite y react",
     detectar=_js.detectar_dependencias("vite", "react"),
     tipos=_js.TIPOS,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},

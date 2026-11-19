@@ -1,0 +1,94 @@
+/* Barra de navegación que en el celular se pliega en un botón ☰ (sin JavaScript).
+
+   <header class="navbar">
+     <a class="navbar__marca" href="/">Mi tienda</a>
+     <input class="navbar__interruptor" type="checkbox" id="navbar-menu" />
+     <label class="navbar__boton" for="navbar-menu" aria-label="Abrir el menú">☰</label>
+     <nav class="navbar__enlaces">
+       <a href="/" aria-current="page">Inicio</a>
+       <a href="/productos">Productos</a>
+       <a href="/contacto">Contacto</a>
+     </nav>
+   </header>
+
+   En pantallas anchas los enlaces se ven siempre; en el celular, al tocar ☰.
+   Marcá la página actual con aria-current="page" en su enlace.
+   (En React y Next.js: className y htmlFor en lugar de class y for.) */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--superficie, #fff);
+  border-bottom: 1px solid var(--borde, #d9dee5);
+}
+
+.navbar__marca {
+  font-weight: 700;
+  color: var(--texto, #1b2430);
+  text-decoration: none;
+}
+
+/* El checkbox que abre y cierra el menú: invisible, pero se puede usar con el teclado. */
+.navbar__interruptor {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.navbar__boton {
+  display: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.navbar__interruptor:focus-visible + .navbar__boton {
+  outline: 2px solid var(--acento, #0b7a75);
+  border-radius: var(--radio, 8px);
+}
+
+.navbar__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.navbar__enlaces a {
+  color: var(--suave, #5c6878);
+  text-decoration: none;
+}
+
+.navbar__enlaces a:hover,
+.navbar__enlaces a[aria-current="page"],
+.navbar__enlaces a.router-link-exact-active {
+  color: var(--acento, #0b7a75);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .navbar__boton {
+    display: block;
+  }
+  .navbar__enlaces {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 0.5rem;
+  }
+  .navbar__interruptor:checked ~ .navbar__enlaces {
+    display: flex;
+  }
+  .navbar__enlaces a {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--borde, #d9dee5);
+  }
+}

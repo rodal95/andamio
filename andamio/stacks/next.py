@@ -16,6 +16,7 @@ from pathlib import Path
 
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
+from andamio.estilos import piezas_de_estilos
 from andamio.stacks import _js, express
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
@@ -158,13 +159,27 @@ def _marcadores_variante(api: str) -> dict[str, dict[str, str]]:
     return {v: {**marcadores, "api_por_defecto": api} for v, marcadores in _js.MARCADORES_VARIANTE.items()}
 
 
+ESTILOS = piezas_de_estilos(
+    "app",
+    lambda ruta: Insercion(
+        "app/layout.@@extx@@",
+        f"import './{ruta}';",
+        marcador="estilos",
+        descripcion="import del CSS",
+        ubicacion="junto a import './globals.css'",
+        comentario="//",
+    ),
+    'En JSX: className="...".',
+    _js.MARCADORES_EXTENSION,
+)
+
 STACK = Stack(
     clave="next",
     titulo="Next.js (frontend)",
     senal="package.json con next",
     detectar=_js.detectar_dependencias("next"),
     tipos=_js.TIPOS,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:3000"],
     contexto_env=lambda: {},
@@ -215,6 +230,7 @@ STACK_FULLSTACK = Stack(
             descripcion="funciones para usar un recurso de la API de este proyecto",
             siguiente_paso=SERVICIO.siguiente_paso[:2],
         ),
+        **ESTILOS,
     },
     ejemplo_proyecto="mi-app",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:3000"],

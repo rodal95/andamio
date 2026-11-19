@@ -37,21 +37,21 @@ en tu proyecto, escribí `python -m andamio info`.
 |---|---|---|
 | Python + SQLite (consola) | `python` | `entidad` |
 | Django REST (API) | `django` | `recurso`, `login` |
-| Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina` |
+| Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `tema`, `ui`, `estilo` |
 | FastAPI + SQLModel | `fastapi` | `recurso` |
 | Express + Prisma (TS o JS) | `express` | `recurso` |
-| HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud` |
-| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
-| Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud` |
-| React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
-| Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
-| Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio` |
-| Reflex (web solo con Python) | `reflex` | `crud`, `crud-api`, `pagina`, `componente`, `estado`, `servicio` |
+| HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `tema` |
+| Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio`, `tema`, `ui`, `estilo` |
+| Reflex (web solo con Python) | `reflex` | `crud`, `crud-api`, `pagina`, `componente`, `estado`, `servicio`, `tema` |
 
 **Guías paso a paso** (en [docs/guias/](docs/guias/README.md)): [todos los comandos con
 ejemplos](docs/guias/comandos.md), [cómo combinar piezas y proyectos](docs/guias/combinaciones.md),
 [reglas para no romper nada](docs/guias/reglas.md), [API con Django + login JWT](docs/guias/django-api-jwt.md)
-y [sitio con Django y plantillas](docs/guias/django-plantillas.md).
+[sitio con Django y plantillas](docs/guias/django-plantillas.md) y [estilos: tema, ui y estilo](docs/guias/estilos.md).
 
 **`crud` (React, Vue y Next.js):** con un comando genera la lista, el detalle (con eliminar) y el
 formulario para crear y editar, conectados a la API (Django, FastAPI o Express) y con sus rutas
@@ -96,6 +96,12 @@ python -m andamio nuevo crud producto nombre:str precio:decimal stock:int
 python -m andamio nuevo pantalla detalle-producto --carpeta productos
 python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```
+
+**Estilos (`tema`, `ui`, `estilo`):** `nuevo tema violeta --modo auto` le da colores,
+letra y modo oscuro a todo el proyecto (variables CSS); `nuevo ui <parte>` agrega una
+parte lista (tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando,
+responsive, accesible); `nuevo estilo <nombre>` crea el CSS de tu componente o página,
+ya conectado al tema. Nunca reescriben tu CSS. Ver [la guía de estilos](docs/guias/estilos.md).
 
 **En inglés:** los comandos, las piezas y las opciones también se escriben en inglés
 (`create`, `new`, `resource`, `page`, `--dry-run`, `--migrate`...):

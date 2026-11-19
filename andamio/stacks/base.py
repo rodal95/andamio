@@ -60,6 +60,9 @@ class Pieza:
     # Nombre que se usa si no se escribe ninguno (ej.: "cuenta" en el login de Django).
     # Con nombre por defecto, el menú no pregunta el nombre.
     nombre_defecto: str = ""
+    # Si la pieza tiene nombre por defecto pero conviene elegirlo (ej.: el color del tema),
+    # la pregunta que hace el menú. Vacío = el menú usa el nombre por defecto sin preguntar.
+    pregunta_nombre: str = ""
     # Formas del nombre que se muestran en "Se usará: ...": "snake", "pascal", ... o un
     # texto con marcadores, como "use@@Nombre@@".
     formas: tuple[str, ...] = ("snake",)

@@ -1,0 +1,31 @@
+/* Alertas: mensajes de éxito, error, aviso o información.
+
+   <p class="alerta alerta--exito" role="status">Se guardó el producto.</p>
+   <p class="alerta alerta--error" role="alert">No se pudo conectar con la API.</p>
+   <p class="alerta alerta--aviso">El stock es bajo.</p>
+   <p class="alerta">Información.</p>
+
+   role="alert" hace que los lectores de pantalla lo anuncien enseguida (usalo en errores). */
+
+.alerta {
+  --alerta-color: var(--acento, #0b7a75);
+  margin: 0 0 var(--espacio, 1rem);
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--alerta-color) 35%, transparent);
+  border-left: 4px solid var(--alerta-color);
+  border-radius: var(--radio, 8px);
+  background: color-mix(in srgb, var(--alerta-color) 10%, var(--superficie, #fff));
+  color: var(--texto, #1b2430);
+}
+
+.alerta--exito {
+  --alerta-color: var(--exito, #15803d);
+}
+
+.alerta--error {
+  --alerta-color: var(--peligro, #b42318);
+}
+
+.alerta--aviso {
+  --alerta-color: var(--aviso, #b45309);
+}

@@ -1,0 +1,60 @@
+/* Pestañas sin JavaScript: cada pestaña es un radio con su etiqueta y su panel.
+
+   <div class="tabs">
+     <input type="radio" name="producto" id="tab-datos" checked />
+     <label for="tab-datos">Datos</label>
+     <div class="tabs__panel">Nombre, precio y stock.</div>
+
+     <input type="radio" name="producto" id="tab-ventas" />
+     <label for="tab-ventas">Ventas</label>
+     <div class="tabs__panel">Las ventas del mes.</div>
+   </div>
+
+   name tiene que ser el mismo en las pestañas de un grupo, e id distinto en cada una.
+   (En React y Next.js: htmlFor en lugar de for, y defaultChecked en lugar de checked.) */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--borde, #d9dee5);
+}
+
+.tabs > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tabs > label {
+  order: 0;
+  padding: 0.6rem 1rem;
+  border-bottom: 2px solid transparent;
+  color: var(--suave, #5c6878);
+  cursor: pointer;
+}
+
+.tabs > label:hover {
+  color: var(--texto, #1b2430);
+}
+
+.tabs > input:checked + label {
+  border-bottom-color: var(--acento, #0b7a75);
+  color: var(--acento, #0b7a75);
+  font-weight: 600;
+}
+
+.tabs > input:focus-visible + label {
+  outline: 2px solid var(--acento, #0b7a75);
+  outline-offset: -2px;
+}
+
+.tabs__panel {
+  display: none;
+  order: 1;
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.tabs > input:checked + label + .tabs__panel {
+  display: block;
+}

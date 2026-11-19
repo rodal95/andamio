@@ -25,6 +25,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --migrar             (--migrate)              crea y aplica la migración
 │     --protegido          (--protected)            crear, modificar y eliminar piden login
 │     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
+│     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
 ├── comandos                             (commands) este árbol
@@ -40,7 +41,36 @@ Qué opciones acepta cada pieza:
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
 | `--carpeta` | `pantalla` (React Native) |
+| `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--plural`, `--simular` | todas (`--plural` solo en las que usan plural) |
+
+## La forma general de cada pieza
+
+Los ejemplos de esta guía usan `producto`, `Contacto` o `Tarjeta`, pero **el nombre y
+los campos son los tuyos**. Lo que va entre `< >` lo elegís vos:
+
+```
+nuevo recurso <nombre> <campo:tipo>...        nuevo crud <nombre> <campo:tipo>...
+nuevo servicio <nombre> <campo:tipo>...       nuevo entidad <nombre> <campo:tipo>...
+nuevo pagina <Nombre>                         nuevo componente <Nombre>
+nuevo pantalla <nombre> [--carpeta <carpeta>] nuevo hook <nombre>   /   nuevo composable <nombre>
+nuevo estado <nombre>                         nuevo crud-api <nombre> <campo:tipo>...
+nuevo login                                   nuevo tema [<color>] [--modo auto|claro|oscuro]
+nuevo ui <parte>                              nuevo estilo <nombre>
+```
+
+Por ejemplo, con otros nombres:
+
+```
+python -m andamio nuevo crud cliente nombre:str email:email telefono:str
+python -m andamio nuevo pagina SobreNosotros
+python -m andamio nuevo componente BotonFlotante
+python -m andamio nuevo servicio pedido cliente:str total:decimal entregado:bool
+python -m andamio nuevo estilo perfil-usuario
+```
+
+`python -m andamio comandos` muestra la forma general y un ejemplo de cada pieza del
+proyecto en que estás.
 
 ## En inglés
 
@@ -55,9 +85,9 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode` |
 
-`crud`, `crud-api`, `login`, `hook`, `composable` e `info` son iguales en los dos idiomas.
+`crud`, `crud-api`, `login`, `hook`, `composable`, `tema`, `ui`, `estilo` e `info` son iguales en los dos idiomas.
 
 ```
 python -m andamio create django my-api
@@ -159,6 +189,9 @@ salir, mensajes y `/admin/`.
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | La app `productos/`: modelo, formulario (`forms.py`), 5 vistas (lista con búsqueda y páginas, detalle, crear, editar, eliminar), 4 plantillas HTML, rutas con nombre, admin y 6 tests. Registra la app, las rutas `/productos/` y el enlace en el menú. |
 | `crud --protegido` | `nuevo crud pedido cliente:str total:decimal --protegido` | Lo mismo, con `LoginRequiredMixin` en crear, editar y eliminar. |
 | `pagina` | `nuevo pagina Contacto` | `templates/paginas/contacto.html` (hereda de `base.html`), la ruta `/contacto/` y el enlace en el menú. |
+| `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `static/css/tema.css`, cargado en `templates/base.html`. |
+| `ui` | `nuevo ui tarjetas` | Una parte lista en `static/css/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
+| `estilo` | `nuevo estilo catalogo` | `static/css/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
 
 ```html
 {% extends "base.html" %}
@@ -223,6 +256,9 @@ JavaScript necesitan un servidor.
 | `componente` | `nuevo componente Tarjeta` | `js/componentes/tarjeta.js` (la función `crearTarjeta`) y `css/componentes/tarjeta.css`, importado en `css/estilos.css`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `js/servicios/productoServicio.js`: `listar`, `obtener`, `crear`, `actualizar`, `eliminar`, usando `pedir()` de `js/http.js`. |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `productos.html` y `js/paginas/productos.js`: tabla, formulario para agregar y editar (con los errores de la API por campo) y eliminar. Usa el servicio (lo crea si falta). |
+| `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `css/tema.css`, cargado en `css/estilos.css`. |
+| `ui` | `nuevo ui tarjetas` | Una parte lista en `css/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
+| `estilo` | `nuevo estilo catalogo` | `css/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
 
 ```js
 import { crearTarjeta } from '../componentes/tarjeta.js';
@@ -253,6 +289,9 @@ npm run dev                                      http://localhost:5173
 | `hook` | `nuevo hook contador` | `src/hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http`, si falta). |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, el hook `useConsulta`, el servicio y las 4 rutas con su enlace. |
+| `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main`. |
+| `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
+| `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
 
 ---
 
@@ -272,6 +311,9 @@ npm run dev                                      http://localhost:5173
 | `composable` | `nuevo composable contador` | `src/composables/useContador.js` (como un hook de React). |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService.js` (y `http.js`, si falta). |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `ProductoListaPage`, `ProductoDetallePage` y `ProductoFormPage` (con `v-model` y los errores de la API) en `src/pages/productos/`, el servicio y las 4 rutas con su enlace. |
+| `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main.js`. |
+| `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
+| `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
 
 ```vue
 <script setup>
@@ -304,6 +346,7 @@ npx expo start
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta` con su `StyleSheet`. |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar). |
+| `tema` | `nuevo tema violeta --modo auto` | `constants/tema`: los colores del modo claro y del oscuro y `useTema()`, que devuelve los del modo actual. |
 
 ---
 
@@ -323,10 +366,13 @@ npm run dev                                      http://localhost:3000
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService`. |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `app/productos/` (lista, `nuevo`, `[id]`, `[id]/editar`), el detalle, el hook y el servicio. |
+| `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `app/tema.css`, cargado en `app/layout`. |
+| `ui` | `nuevo ui tarjetas` | Una parte lista en `app/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
+| `estilo` | `nuevo estilo catalogo` | `app/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
 
 ## Next.js full stack — `next-fullstack`
 
-Lo mismo que `next`, más la pieza `recurso`:
+Lo mismo que `next` (incluidos `tema`, `ui` y `estilo`), más la pieza `recurso`:
 
 | Pieza | Comando | Qué genera |
 |---|---|---|
@@ -353,6 +399,7 @@ reflex run                                       http://localhost:3000
 | `componente` | `nuevo componente Tarjeta` | `mi_app/componentes/tarjeta.py`. |
 | `estado` | `nuevo estado contador` | `mi_app/estados/contador.py` (`ContadorState`). |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `mi_app/servicios/producto.py` (funciones async). |
+| `tema` | `nuevo tema violeta --modo auto` | `mi_app/tema.py` con el tema de Radix (color de acento, claro u oscuro), aplicado con `app.theme = TEMA`. |
 
 ---
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import './globals.css';
+// --- andamio:estilos (no borrar esta línea) ---
 import styles from './layout.module.css';
 
 /** @type {import('next').Metadata} */

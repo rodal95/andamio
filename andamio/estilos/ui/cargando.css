@@ -1,0 +1,67 @@
+/* Indicadores de carga: una ruedita y "esqueletos" (bloques grises mientras llegan los datos).
+
+   <p class="cargando" role="status">Cargando productos...</p>
+
+   <div class="esqueleto esqueleto--titulo"></div>
+   <div class="esqueleto"></div>
+   <div class="esqueleto" style="width: 60%"></div>
+
+   Si la persona pidió menos movimiento en su sistema, las animaciones se detienen. */
+
+.cargando {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--suave, #5c6878);
+}
+
+.cargando::before {
+  content: "";
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid var(--borde, #d9dee5);
+  border-top-color: var(--acento, #0b7a75);
+  border-radius: 50%;
+  animation: cargando-girar 0.8s linear infinite;
+}
+
+.esqueleto {
+  height: 1em;
+  margin: 0.5rem 0;
+  border-radius: var(--radio, 8px);
+  background: linear-gradient(
+    90deg,
+    var(--borde, #d9dee5) 25%,
+    color-mix(in srgb, var(--borde, #d9dee5) 40%, var(--superficie, #fff)) 50%,
+    var(--borde, #d9dee5) 75%
+  );
+  background-size: 200% 100%;
+  animation: esqueleto-brillo 1.4s ease-in-out infinite;
+}
+
+.esqueleto--titulo {
+  width: 40%;
+  height: 1.6em;
+}
+
+@keyframes cargando-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes esqueleto-brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cargando::before,
+  .esqueleto {
+    animation: none;
+  }
+}
