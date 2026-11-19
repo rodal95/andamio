@@ -50,3 +50,25 @@ def test_guia_docente():
     guia = (RAIZ / "docs" / "docente.md").read_text(encoding="utf-8")
     for tema in ("## Agregar una pieza", "## Agregar un stack", "## Publicar una versión", "## Tests"):
         assert tema in guia
+
+
+def test_las_guias_tienen_todos_los_stacks_y_piezas():
+    """Si falla: agregá el stack o la pieza a docs/guias/comandos.md."""
+    comandos = (RAIZ / "docs" / "guias" / "comandos.md").read_text(encoding="utf-8")
+    secciones = {s.split("\n")[0]: s for s in comandos.split("\n## ")[1:]}
+    for stack in stacks.REGISTRO:
+        seccion = next((s for titulo, s in secciones.items() if titulo.endswith(f"`{stack.clave}`")), None)
+        assert seccion, f"falta la sección de {stack.clave} en docs/guias/comandos.md"
+        for pieza in stack.piezas:
+            assert f"| `{pieza}`" in seccion or (stack.extiende and f"| `{pieza}`" in secciones_de(secciones, stack.extiende)), (stack.clave, pieza)
+
+
+def secciones_de(secciones, clave):
+    return next((s for titulo, s in secciones.items() if titulo.endswith(f"`{clave}`")), "")
+
+
+def test_los_enlaces_de_las_guias_existen():
+    guias = RAIZ / "docs" / "guias"
+    for archivo in [RAIZ / "README.md", *guias.glob("*.md")]:
+        for destino in re.findall(r"\]\(([^)#:]+\.md)", archivo.read_text(encoding="utf-8")):
+            assert (archivo.parent / destino).is_file(), f"{archivo.name} enlaza a {destino}, que no existe"

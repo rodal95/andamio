@@ -17,6 +17,11 @@ import re
 def linea_marcador(clave: str, comentario: str = "#") -> str:
     if comentario == "{/*":  # comentario dentro de JSX
         return f"{{/* --- andamio:{clave} (no borrar esta línea) --- */}}"
+    if comentario == "{#":  # plantilla de Django
+        return f"{{# --- andamio:{clave} (no borrar esta línea) --- #}}"
+    if comentario in ("<!--", "/*"):  # HTML y CSS
+        cierre = "-->" if comentario == "<!--" else "*/"
+        return f"{comentario} --- andamio:{clave} (no borrar esta línea) --- {cierre}"
     return f"{comentario} --- andamio:{clave} (no borrar esta línea) ---"
 
 

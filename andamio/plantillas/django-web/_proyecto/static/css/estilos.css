@@ -1,0 +1,170 @@
+/* Estilos de todo el sitio. Se cargan en templates/base.html. */
+
+:root {
+  --fondo: #f6f7f9;
+  --texto: #1b2430;
+  --suave: #5c6878;
+  --borde: #d9dee5;
+  --acento: #0b7a75;
+  --peligro: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+body {
+  margin: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+a {
+  color: var(--acento);
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid var(--borde);
+}
+
+.marca {
+  font-weight: 700;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.barra nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  flex: 1;
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.usuario form {
+  margin: 0;
+}
+
+.contenido {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.boton {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--acento);
+  border-radius: 6px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton--borde {
+  background: transparent;
+  color: var(--acento);
+}
+
+.boton--peligro {
+  border-color: var(--peligro);
+  background: var(--peligro);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+
+.formulario {
+  display: grid;
+  gap: 1rem;
+  max-width: 480px;
+}
+
+.campo {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.campo--check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.campo input,
+.campo textarea,
+.campo select {
+  padding: 0.45rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.ayuda {
+  color: var(--suave);
+}
+
+.error {
+  color: var(--peligro);
+}
+
+.mensaje {
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  background: #e6f4f1;
+}
+
+.mensaje--error {
+  background: #fdecea;
+}
+
+.detalle dt {
+  font-weight: 600;
+}
+
+.detalle dd {
+  margin: 0 0 0.75rem;
+}
+
+.tarjeta {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tarjeta h3 {
+  margin: 0 0 0.25rem;
+}

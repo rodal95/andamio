@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@@titulo@@</title>
+    <link rel="stylesheet" href="css/estilos.css" />
+    <script type="module" src="js/paginas/@@pluralKebab@@.js"></script>
+  </head>
+  <body>
+    <header class="barra" data-menu></header>
+
+    <main class="contenido">
+      <h1>@@titulo@@</h1>
+
+      <!-- Sirve para agregar y para editar: al tocar "Editar" se llena con los datos. -->
+      <form id="formulario" class="formulario" novalidate>
+        <h2 id="titulo-formulario">Agregar</h2>
+        @@campos_formulario@@
+        <p class="error" id="error-general"></p>
+        <div class="acciones">
+          <button type="submit" class="boton">Guardar</button>
+          <button type="button" class="boton boton--borde" id="cancelar" hidden>Cancelar</button>
+        </div>
+      </form>
+
+      <p id="estado">Cargando...</p>
+      <table class="tabla" hidden>
+        <thead>
+          <tr>
+            @@columnas_encabezado@@
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="filas"></tbody>
+      </table>
+    </main>
+  </body>
+</html>

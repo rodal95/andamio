@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block titulo %}Catálogo{% endblock %}
+
+{% block contenido %}
+  <h1>Catálogo</h1>
+
+  {% for producto in productos %}
+    <article class="tarjeta">
+      <h3><a href="{% url 'productos:detalle' producto.pk %}">{{ producto.nombre }}</a></h3>
+      <p>$ {{ producto.precio }} · {{ producto.stock }} en stock</p>
+    </article>
+  {% empty %}
+    <p>No hay productos con stock. <a href="{% url 'productos:crear' %}">Agregá uno</a>.</p>
+  {% endfor %}
+{% endblock %}

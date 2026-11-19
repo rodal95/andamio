@@ -4,17 +4,15 @@
 
   const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const PAGINAS = [
-    { href: "index.html", texto: "Inicio" },
-    { href: "python.html", texto: "Python" },
-    { href: "django.html", texto: "Django" },
-    { href: "fastapi.html", texto: "FastAPI" },
-    { href: "express.html", texto: "Express" },
-    { href: "react.html", texto: "React" },
-    { href: "react-native.html", texto: "React Native" },
-    { href: "next.html", texto: "Next.js" },
-    { href: "next-fullstack.html", texto: "Next full stack" },
-    { href: "reflex.html", texto: "Reflex" },
+  // Las guías, agrupadas como en la portada. La barra las muestra en un menú desplegable.
+  const GUIAS = [
+    { titulo: "La API", paginas: [["django.html", "Django REST"], ["fastapi.html", "FastAPI"], ["express.html", "Express"]] },
+    {
+      titulo: "La interfaz",
+      paginas: [["web.html", "HTML + CSS + JS"], ["react.html", "React"], ["vue.html", "Vue"], ["next.html", "Next.js"], ["react-native.html", "React Native"]],
+    },
+    { titulo: "Todo en uno", paginas: [["django-web.html", "Django con plantillas"], ["next-fullstack.html", "Next.js full stack"], ["reflex.html", "Reflex"]] },
+    { titulo: "Para empezar", paginas: [["python.html", "Python + SQLite"]] },
   ];
 
   // --- Texto y HTML ------------------------------------------------------------
@@ -278,10 +276,36 @@
           andamio
         </a>
         <nav class="barra__nav" aria-label="Guías">
-          ${PAGINAS.map((p) => `<a href="${p.href}"${p.href === actual ? ' aria-current="page"' : ""}>${p.texto}</a>`).join("")}
+          <a href="index.html"${actual === "index.html" ? ' aria-current="page"' : ""}>Inicio</a>
+          <details class="guias">
+            <summary${GUIAS.some((g) => g.paginas.some(([href]) => href === actual)) ? ' aria-current="page"' : ""}>${
+              (GUIAS.flatMap((g) => g.paginas).find(([href]) => href === actual) || [null, "Guías"])[1]
+            }</summary>
+            <div class="guias__panel">
+              ${GUIAS.map(
+                (g) => `<div class="guias__grupo"><span class="guias__titulo">${g.titulo}</span>${g.paginas
+                  .map(([href, texto]) => `<a href="${href}"${href === actual ? ' aria-current="page"' : ""}>${texto}</a>`)
+                  .join("")}</div>`,
+              ).join("")}
+            </div>
+          </details>
         </nav>
         <a class="boton boton--chico boton--borde" href="https://github.com/rodal95/andamio">GitHub</a>
       </div>`;
+  }
+
+  function cerrarGuiasAlSalir() {
+    const menu = document.querySelector(".guias");
+    if (!menu) return;
+    document.addEventListener("click", (evento) => {
+      if (!menu.contains(evento.target)) menu.open = false;
+    });
+    document.addEventListener("keydown", (evento) => {
+      if (evento.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary").focus();
+      }
+    });
   }
 
   function dibujarPie(version) {
@@ -304,6 +328,7 @@
   const urlWhl = `https://github.com/rodal95/andamio/releases/download/v${version}/andamio-${version}-py3-none-any.whl`;
 
   dibujarBarra();
+  cerrarGuiasAlSalir();
   dibujarPie(version);
 
   window.Andamio = {

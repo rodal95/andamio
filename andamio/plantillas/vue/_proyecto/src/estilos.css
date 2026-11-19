@@ -1,0 +1,117 @@
+/* Estilos globales: se aplican a toda la aplicación. Cada componente puede tener los suyos en <style scoped>. */
+
+:root {
+  --fondo: #f6f7f9;
+  --texto: #1b2430;
+  --suave: #5c6878;
+  --borde: #d9dee5;
+  --acento: #0b7a75;
+  --peligro: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+body {
+  margin: 0;
+}
+
+/* Lo que tiene el atributo hidden no se ve, aunque otra regla le ponga display. */
+[hidden] {
+  display: none !important;
+}
+
+a {
+  color: var(--acento);
+}
+
+.barra {
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid var(--borde);
+}
+
+.barra nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.barra a.router-link-exact-active {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.contenido {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.boton {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--acento);
+  border-radius: 6px;
+  background: var(--acento);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.boton--borde {
+  background: transparent;
+  color: var(--acento);
+}
+
+.boton--peligro {
+  border-color: var(--peligro);
+  background: var(--peligro);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+
+.formulario {
+  display: grid;
+  gap: 1rem;
+  max-width: 480px;
+  margin-bottom: 2rem;
+}
+
+.campo {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.campo input,
+.campo textarea {
+  padding: 0.45rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.campo input[type="checkbox"] {
+  justify-self: start;
+}
+
+.error {
+  color: var(--peligro);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

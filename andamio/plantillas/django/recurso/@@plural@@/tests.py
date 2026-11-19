@@ -1,6 +1,7 @@
 """Tests de la API de @@titulo@@. Ejecutalos con: python manage.py test @@plural@@"""
 
 @@imports_tests@@
+@@import_usuario@@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -18,6 +19,7 @@ DATOS_MODIFICADOS = {
 
 
 class @@Nombre@@APITest(APITestCase):
+    @@preparar_tests@@
     def crear(self):
         return @@Nombre@@.objects.create(**DATOS)
 

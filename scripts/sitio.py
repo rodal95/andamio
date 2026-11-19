@@ -76,14 +76,20 @@ TECNOLOGIAS = {
             "recurso": {
                 "comando": "nuevo recurso producto nombre:str precio:decimal stock:int",
                 "explicacion": "Un recurso es una tabla publicada como API: con un solo comando tenés /api/productos/ para listar, crear, ver, modificar y eliminar, con filtros, búsqueda y orden. Además queda en el panel /admin/ y trae 5 tests automáticos.",
-                "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena\nGET    /api/productos/?stock=10         filtra",
+                "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena\nGET    /api/productos/?stock=10         filtra\n\nCon --protegido: leer es libre; crear, modificar y eliminar piden login.",
+                "uso_lenguaje": "texto",
+            },
+            "login": {
+                "comando": "nuevo login",
+                "explicacion": "Agrega el login con tokens JWT (SimpleJWT): una app cuentas con registro de usuarios, el token de acceso y el usuario actual, con 6 tests. La API acepta el token en el encabezado Authorization: Bearer <token>. No lleva nombre: se genera una vez por proyecto. Después, los recursos que generes con --protegido piden login para crear, modificar y eliminar.",
+                "uso": "POST /api/registro/        {\"username\", \"email\", \"password\"}  crea un usuario\nPOST /api/token/           {\"username\", \"password\"}  ->  {\"access\", \"refresh\"}\nPOST /api/token/refresh/   {\"refresh\"}  ->  {\"access\"}  (uno nuevo, sin volver a ingresar)\nGET  /api/yo/              el usuario del token\n\nEn cada pedido:  Authorization: Bearer <access>",
                 "uso_lenguaje": "texto",
             },
         },
         "extra": [
             ("python -m venv .venv", "Crea el entorno virtual del proyecto (una sola vez)."),
             (".venv\\Scripts\\activate", "Activa el entorno virtual en Windows (en Linux o Mac: source .venv/bin/activate)."),
-            ("pip install -r requirements.txt", "Instala Django y las demás librerías."),
+            ("pip install -r requirements.txt", "Instala Django y las demás librerías (de nuevo después de nuevo login, que agrega SimpleJWT)."),
             ("python manage.py makemigrations productos", "Prepara los cambios de la base de datos de una app."),
             ("python manage.py migrate", "Aplica los cambios a la base de datos."),
             ("python manage.py runserver", "Levanta la API en http://127.0.0.1:8000"),
@@ -276,6 +282,111 @@ TECNOLOGIAS = {
             ("reflex db makemigrations --message productos", "Después de cambiar un modelo: crea la migración (y después reflex db migrate)."),
         ],
     },
+    "django-web": {
+        "carpeta": "mi-sitio",
+        "resumen": "Sitio web con Django y plantillas HTML: todo en un proyecto (monolito). El servidor arma cada página con los datos de la base, sin un frontend aparte. Trae login, registro y panel de administración; cada crud genera el modelo, el formulario, las vistas, las plantillas y las rutas.",
+        "requisitos": ["Python 3.10 o más nuevo"],
+        "piezas": {
+            "crud": {
+                "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
+                "explicacion": "Una sección completa del sitio: la app con el modelo (la tabla), el formulario (ModelForm, que valida los datos), cinco vistas genéricas (lista con búsqueda y páginas, detalle, crear, editar y eliminar), sus plantillas HTML, las rutas, el admin y 7 tests, más el enlace en el menú. Con --protegido, crear, editar y eliminar piden iniciar sesión; con --migrar crea la tabla.",
+                "uso": "/productos/               lista (con ?q= para buscar)   ProductoListaView\n/productos/nuevo/         formulario para agregar       ProductoCrearView\n/productos/3/             detalle                       ProductoDetalleView\n/productos/3/editar/      formulario para editar        ProductoEditarView\n/productos/3/eliminar/    confirmar y eliminar          ProductoEliminarView\n\nEn una plantilla:  {% url 'productos:detalle' producto.pk %}",
+                "uso_lenguaje": "texto",
+            },
+            "pagina": {
+                "comando": "nuevo pagina Contacto",
+                "explicacion": "Una página: la plantilla templates/paginas/contacto.html (hereda el menú y los estilos de base.html), su ruta /contacto/ y su enlace en el menú. Para que muestre datos de la base, se cambia el TemplateView por una vista propia (ver las combinaciones).",
+                "uso": "{% extends \"base.html\" %}\n\n{% block contenido %}\n  <h1>Contacto</h1>\n  <p>Escribinos a hola@ejemplo.com</p>\n{% endblock %}",
+                "uso_lenguaje": "html",
+            },
+        },
+        "extra": [
+            ("python -m venv .venv", "Crea el entorno virtual del proyecto (una sola vez)."),
+            (".venv\\Scripts\\activate", "Activa el entorno virtual en Windows (en Linux o Mac: source .venv/bin/activate)."),
+            ("pip install -r requirements.txt", "Instala Django y las demás librerías."),
+            ("python manage.py makemigrations productos", "Prepara los cambios de la base de datos de una app."),
+            ("python manage.py migrate", "Aplica los cambios a la base de datos."),
+            ("python manage.py createsuperuser", "Crea un usuario administrador (para /admin/ y para ingresar al sitio)."),
+            ("python manage.py runserver", "Levanta el sitio en http://127.0.0.1:8000"),
+            ("python manage.py test", "Ejecuta los tests de todas las apps."),
+        ],
+    },
+    "web": {
+        "carpeta": "mi-pagina",
+        "resumen": "Página web con HTML, CSS y JavaScript, sin instalar nada (ni Node ni npm). Cada página es un .html con su .js; el menú se escribe una sola vez. Puede mostrar y guardar datos en una API hecha con andamio (Django, FastAPI, Express o Next.js full stack).",
+        "requisitos": ["Python 3.10 o más nuevo (para andamio y para servir la página)", "Un navegador"],
+        "piezas": {
+            "pagina": {
+                "comando": "nuevo pagina Contacto",
+                "explicacion": "Una página nueva: contacto.html con su código en js/paginas/contacto.js, y el enlace en el menú (js/menu.js). Todas comparten los estilos de css/estilos.css.",
+                "uso": "<!-- En el HTML, un lugar para lo que agregue el código: -->\n<div id=\"contenido\"></div>\n\n// En js/paginas/contacto.js:\ndocument.getElementById('contenido').textContent = 'Hola';",
+                "uso_lenguaje": "ts",
+            },
+            "componente": {
+                "comando": "nuevo componente Tarjeta",
+                "explicacion": "Un componente es una función que crea una parte de la página (un elemento HTML) a partir de datos, con su propio archivo de estilos. Así una tarjeta se escribe una vez y se usa en todas las páginas.",
+                "uso": "import { crearTarjeta } from '../componentes/tarjeta.js';\n\nlista.append(crearTarjeta({ titulo: 'Yerba', texto: '$ 1500' }));",
+                "uso_lenguaje": "ts",
+            },
+            "servicio": {
+                "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
+                "explicacion": "Funciones para usar un recurso de la API: listar, obtener, crear, actualizar y eliminar. Usan pedir() de js/http.js, que arma el fetch, convierte el JSON, avisa los errores en español y manda el token si iniciaste sesión. Generalo con los mismos campos que el recurso de la API.",
+                "uso": "import { productoServicio } from '../servicios/productoServicio.js';\n\nconst productos = await productoServicio.listar();\nawait productoServicio.crear({ nombre: 'Yerba', precio: 1500, stock: 10 });",
+                "uso_lenguaje": "ts",
+            },
+            "crud": {
+                "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
+                "explicacion": "Una página completa para un recurso de la API: la tabla con los registros y un formulario para agregar y editar (con los errores de validación de la API debajo de cada campo), y botones para eliminar. Usa el servicio (lo crea si no existe).",
+                "uso": "productos.html               la página (tabla y formulario)\njs/paginas/productos.js      cargar(), guardar, editar y eliminar\njs/servicios/productoServicio.js",
+                "uso_lenguaje": "texto",
+            },
+        },
+        "extra": [
+            ("python -m http.server 5173", "Sirve la carpeta en http://localhost:5173 (los import de JavaScript no funcionan abriendo el .html con doble clic)."),
+        ],
+    },
+    "vue": {
+        "carpeta": "mi-web",
+        "resumen": "Aplicación web con Vue 3, Vite y Vue Router, en JavaScript. Genera componentes .vue, páginas con su ruta, composables, servicios y CRUDs completos para usar tu API (Django, FastAPI, Express o Next.js full stack).",
+        "requisitos": ["Node.js 20.19 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
+        "piezas": {
+            "componente": {
+                "comando": "nuevo componente Tarjeta",
+                "explicacion": "Un componente .vue junta en un archivo el código (<script setup>), lo que se ve (<template>) y sus estilos (<style scoped>, que no afectan al resto). Recibe datos por props y contenido por el slot.",
+                "uso": "import Tarjeta from '@/components/Tarjeta.vue';\n\n<Tarjeta titulo=\"Yerba\">$ 1500</Tarjeta>",
+                "uso_lenguaje": "html",
+            },
+            "pagina": {
+                "comando": "nuevo pagina Contacto",
+                "explicacion": "Una página en src/pages/, registrada en el router (src/router.js) en la ruta /contacto, con su enlace en el menú (App.vue).",
+                "uso": "<RouterLink to=\"/contacto\">Escribinos</RouterLink>\n\n// desde el código:\nconst router = useRouter();\nrouter.push('/contacto');",
+                "uso_lenguaje": "ts",
+            },
+            "composable": {
+                "comando": "nuevo composable contador",
+                "explicacion": "Un composable es la forma de Vue de reutilizar estado y lógica (como un hook de React): una función use... que usa ref() y devuelve lo que necesita el componente.",
+                "uso": "import { useContador } from '@/composables/useContador';\n\nconst { valor, cambiar } = useContador(0);\n<button @click=\"cambiar(valor + 1)\">{{ valor }}</button>",
+                "uso_lenguaje": "ts",
+            },
+            "servicio": {
+                "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
+                "explicacion": "Funciones para usar un recurso de la API: listar, obtener, crear, actualizar y eliminar. La dirección sale de VITE_API_URL (.env). Generalo con los mismos campos que el recurso de la API.",
+                "uso": "import { productoService } from '@/services/productoService';\n\nconst productos = await productoService.listar();\nawait productoService.crear({ nombre: 'Yerba', precio: 1500, stock: 10 });",
+                "uso_lenguaje": "ts",
+            },
+            "crud": {
+                "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
+                "explicacion": "La interfaz completa de un recurso de la API: la lista, el detalle con eliminar y el formulario para crear y editar (con v-model y los errores de validación de la API en cada campo), con sus cuatro rutas y el enlace en el menú.",
+                "uso": "/productos              lista           listar()\n/productos/nuevo        agregar         crear()\n/productos/3            detalle         obtener(3), eliminar(3)\n/productos/3/editar     editar          obtener(3), actualizar(3)",
+                "uso_lenguaje": "texto",
+            },
+        },
+        "extra": [
+            ("npm install", "Instala las dependencias (una vez, o cuando cambia package.json)."),
+            ("npm run dev", "Levanta la aplicación en http://localhost:5173 y la recarga cada vez que guardás."),
+            ("npm run build", "Arma la versión final en la carpeta dist/."),
+        ],
+    },
     "react": {
         "carpeta": "mi-web",
         "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks, servicios y CRUDs completos para usar tu API (Django, FastAPI o Express).",
@@ -378,6 +489,11 @@ CARPETAS = {
         "hooks/.gitkeep": "Carpeta para los hooks: acá los crea python -m andamio nuevo hook.",
         "services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
     },
+    "vue": {
+        "src/components/.gitkeep": "Carpeta para los componentes: acá los crea python -m andamio nuevo componente.",
+        "src/composables/.gitkeep": "Carpeta para los composables: acá los crea python -m andamio nuevo composable.",
+        "src/services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
+    },
     "reflex": {
         "assets/.gitkeep": "Carpeta para imágenes y otros archivos que se sirven tal cual (por ejemplo, /logo.png).",
     },
@@ -393,7 +509,10 @@ CARPETAS = {
 # concepto que no es una pieza (por ejemplo, el router), definida en TEMAS.
 CAMINO = {
     "python": ["entidad", "tema:menu"],
-    "django": ["recurso", "tema:rutas"],
+    "django": ["recurso", "tema:rutas", "login"],
+    "django-web": ["tema:mvt", "crud", "tema:plantillas", "pagina"],
+    "web": ["pagina", "tema:modulos", "componente", "servicio", "crud"],
+    "vue": ["componente", "pagina", "tema:router", "composable", "servicio", "crud"],
     "fastapi": ["recurso", "tema:rutas"],
     "express": ["recurso", "tema:rutas"],
     "react": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
@@ -433,6 +552,48 @@ TEMAS = {
                 "config/urls.py junta todas las rutas: andamio agrega una línea por cada recurso. En /api/docs/ las ves todas, con Swagger.",
             ],
             "archivos": ["config/urls.py", "productos/urls.py"],
+        }
+    },
+    "django-web": {
+        "mvt": {
+            "titulo": "Cómo responde Django: modelo, vista y plantilla",
+            "texto": [
+                "Cuando el navegador pide /productos/, Django busca la ruta en config/urls.py (y en productos/urls.py), y llama a la vista.",
+                "La vista pide los datos al modelo (Producto.objects.all()) y se los pasa a una plantilla HTML, que los muestra con {{ producto.nombre }} y {% for %}. El navegador recibe la página ya armada.",
+                "Por eso no hace falta una API ni un frontend aparte: es la otra forma de usar Django (la de la API REST es el tipo django).",
+            ],
+            "archivos": ["config/urls.py", "config/settings.py"],
+        },
+        "plantillas": {
+            "titulo": "Las plantillas: base.html y la herencia",
+            "texto": [
+                "templates/base.html tiene lo que comparten todas las páginas: el menú, el usuario que inició sesión y los mensajes. andamio agrega acá un enlace por cada crud o página.",
+                "Cada página empieza con {% extends \"base.html\" %} y completa {% block contenido %}: solo escribe lo suyo.",
+                "{% url 'productos:detalle' producto.pk %} arma la dirección por el nombre de la ruta: si mañana cambia, los enlaces siguen funcionando. formulario.html dibuja cualquier formulario con sus errores.",
+            ],
+            "archivos": ["templates/base.html", "templates/formulario.html"],
+        },
+    },
+    "web": {
+        "modulos": {
+            "titulo": "Los módulos: import y export",
+            "texto": [
+                "Cada .html carga su código con <script type=\"module\" src=\"js/paginas/contacto.js\">. type=\"module\" permite partir el código en archivos: uno exporta (export function dibujarMenu) y otro lo importa (import { dibujarMenu } from '../menu.js').",
+                "Por eso la página se sirve con python -m http.server 5173: el navegador no permite import abriendo el archivo con doble clic.",
+                "js/menu.js tiene la lista ENLACES: andamio agrega una línea por cada página, y todas dibujan el mismo menú.",
+            ],
+            "archivos": ["js/menu.js", "js/http.js"],
+        }
+    },
+    "vue": {
+        "router": {
+            "titulo": "El router: rutas y menú",
+            "texto": [
+                "src/router.js asocia cada dirección con una página: { path: '/contacto', component: ContactoPage }. App.vue muestra la página de la ruta actual en <RouterView />.",
+                "<RouterLink to=\"/contacto\"> navega sin recargar. pagina y crud agregan su ruta, su import y su enlace solos.",
+                "En una página: useRouter().push('/contacto') para ir a otra dirección desde el código, y useRoute().params.id para leer la parte variable (el :id de /productos/:id).",
+            ],
+            "archivos": ["src/router.js", "src/App.vue"],
         }
     },
     "fastapi": {
@@ -709,6 +870,130 @@ COMBINACIONES = {
     ],
 }
 
+COMBINACIONES["web"] = [
+    {
+        **_COMBINACIONES_WEB[0],
+        "texto": "Una página nueva que, al abrirse, pide los productos a la API con el servicio y los muestra en una lista.",
+        "pasos": [("", "nuevo pagina Catalogo"), ("", f"nuevo servicio producto {_CAMPOS_PRODUCTO}")],
+        "archivos": [("js/paginas/catalogo.js", "web/1-catalogo.js")],
+        "claves": [
+            "productoServicio.listar() devuelve una promesa: con await se espera la respuesta (por eso cargar es async).",
+            "Los elementos se crean con document.createElement y se llenan con textContent: un dato nunca se ejecuta como HTML.",
+            "try/catch: si la API no está andando, la página muestra el error en lugar de quedarse en blanco.",
+        ],
+    },
+    {
+        **_COMBINACIONES_WEB[1],
+        "texto": "La misma página, pero cada producto se muestra con el componente Tarjeta. El componente no sabe de la API: recibe lo que tiene que mostrar.",
+        "archivos": [("js/paginas/catalogo.js", "web/2-catalogo.js")],
+        "claves": [
+            "crearTarjeta({ titulo, texto }) devuelve un elemento: replaceChildren(...tarjetas) los pone todos de una vez.",
+            "Los estilos de la tarjeta están en css/componentes/tarjeta.css, que andamio importó en css/estilos.css.",
+            "Si mañana cambiás cómo se ve una tarjeta, se cambia en un solo lugar.",
+        ],
+    },
+    {
+        "id": "login-con-jwt",
+        "titulo": "Ingresar con el login de la API (JWT)",
+        "usa": ["pagina"],
+        "texto": "Una página para iniciar sesión contra una API de Django con nuevo login. El token se guarda en el navegador y js/http.js lo manda solo en cada pedido: así funcionan los recursos --protegido.",
+        "pasos": [
+            ("En la API de Django", "nuevo login"),
+            ("En la API de Django", f"nuevo recurso producto {_CAMPOS_PRODUCTO} --protegido --migrar"),
+            ("", "nuevo pagina Ingresar"),
+        ],
+        "archivos": [("ingresar.html", "web/3-ingresar.html"), ("js/paginas/ingresar.js", "web/3-ingresar.js")],
+        "claves": [
+            "POST /api/token/ con usuario y contraseña devuelve { access, refresh }: access es el token que se manda en cada pedido.",
+            "localStorage guarda el token aunque cierres la pestaña. pedir() lo agrega como Authorization: Bearer <token>.",
+            "Sin token, la API responde 401 al crear, modificar o eliminar un recurso protegido; leer sigue siendo libre.",
+        ],
+    },
+]
+
+COMBINACIONES["vue"] = [
+    {
+        **_COMBINACIONES_WEB[0],
+        "archivos": [("src/pages/CatalogoPage.vue", "vue/1-CatalogoPage.vue")],
+        "claves": [
+            "ref([]) guarda los datos de la página: cuando cambia productos.value, la página se vuelve a dibujar.",
+            "onMounted(...) se ejecuta una vez, al abrir la página: ahí se piden los datos.",
+            "v-for=\"producto in productos\" repite el <li> por cada producto; :key le dice a Vue cuál es cuál.",
+        ],
+    },
+    {
+        **_COMBINACIONES_WEB[1],
+        "archivos": [("src/pages/CatalogoPage.vue", "vue/2-CatalogoPage.vue")],
+        "claves": [
+            ":titulo=\"producto.nombre\" le pasa un dato al componente (una prop); lo que va entre <Tarjeta> y </Tarjeta> llega al slot.",
+            "<style scoped> en la página: la grilla de tarjetas no afecta a otras páginas.",
+            "Si mañana cambiás cómo se ve una tarjeta, se cambia en un solo lugar.",
+        ],
+    },
+    {
+        **_COMBINACIONES_WEB[2],
+        "titulo": "Llevar la lógica a un composable",
+        "usa": ["composable", "servicio"],
+        "texto": "Pedir los datos (con su estado de cargando y su error) se lleva a un composable propio: useProductos. La página queda más corta y otras páginas pueden usar el mismo composable.",
+        "pasos": [("", "nuevo composable productos")],
+        "archivos": [("src/composables/useProductos.js", "vue/3-useProductos.js"), ("src/pages/CatalogoPage.vue", "vue/3-CatalogoPage.vue")],
+        "claves": [
+            "Un composable es una función que empieza con use y puede usar ref() y onMounted().",
+            "Devuelve lo que la página necesita: { productos, cargando, error }.",
+            "andamio genera el esqueleto del composable; acá se reemplaza por el que pide los productos.",
+        ],
+    },
+    {
+        "id": "enlazar-con-el-crud",
+        "titulo": "Enlazar con otra página (router)",
+        "usa": ["crud", "pagina"],
+        "texto": "Cada tarjeta del catálogo lleva al detalle del producto, que es una página del crud. El crud usa el servicio que ya tenías.",
+        "pasos": [("", f"nuevo crud producto {_CAMPOS_PRODUCTO}")],
+        "archivos": [("src/pages/CatalogoPage.vue", "vue/4-CatalogoPage.vue")],
+        "claves": [
+            ":to=\"`/productos/${producto.id}`\" arma la dirección de cada producto: /productos/3.",
+            "Esa ruta la registró el crud en src/router.js; su página lee el 3 con useRoute().params.id.",
+            "El crud no pisó tu servicio: usa el que ya existía, porque tiene los mismos campos.",
+        ],
+    },
+]
+
+COMBINACIONES["django-web"] = [
+    {
+        "id": "pagina-con-datos",
+        "titulo": "Una página que muestra datos de la base",
+        "usa": ["crud", "pagina"],
+        "texto": "Un catálogo con los productos que tienen stock. El crud crea el modelo; la página se cambia de TemplateView (solo la plantilla) a una vista propia que busca los datos y se los pasa a la plantilla.",
+        "pasos": [("", f"nuevo crud producto {_CAMPOS_PRODUCTO} --migrar"), ("", "nuevo pagina Catalogo")],
+        "archivos": [
+            ("config/views.py", "django-web/1-views.py"),
+            ("config/urls.py", "django-web/1-urls.py"),
+            ("templates/paginas/catalogo.html", "django-web/1-catalogo.html"),
+        ],
+        "claves": [
+            "La vista consulta el modelo (Producto.objects.filter(stock__gt=0)) y llama a render con la plantilla y un diccionario: lo que va en el diccionario es lo que la plantilla puede usar.",
+            "En config/urls.py, la ruta catalogo/ pasa a usar views.catalogo; el name=\"catalogo\" no cambia, así que el enlace del menú sigue andando.",
+            "{% for producto in productos %} ... {% empty %} muestra un mensaje si la lista está vacía.",
+        ],
+    },
+    {
+        "id": "crud-con-login",
+        "titulo": "Un crud que pide iniciar sesión",
+        "usa": ["crud"],
+        "texto": "Con --protegido, cualquiera ve la lista y el detalle, pero para agregar, editar o eliminar hay que ingresar. El login y el registro ya vienen en el proyecto.",
+        "pasos": [
+            ("", "nuevo crud pedido cliente:str total:decimal entregado:bool --protegido --migrar"),
+            ("", "python manage.py createsuperuser"),
+            ("", "python manage.py runserver"),
+        ],
+        "claves": [
+            "Las vistas de crear, editar y eliminar llevan LoginRequiredMixin: sin sesión, Django manda a /cuentas/login/?next=... y después vuelve.",
+            "En las plantillas, {% if user.is_authenticated %} muestra algo solo a quien ingresó (como el botón Salir de base.html).",
+            "Desde Django 5, salir se hace con un formulario (POST), no con un enlace: base.html ya lo trae.",
+        ],
+    },
+]
+
 # Las APIs se combinan con los frontends: son pasos en los dos proyectos.
 for _api, _marcha in (
     ("django", "python manage.py runserver"),
@@ -719,19 +1004,19 @@ for _api, _marcha in (
     COMBINACIONES[_api] = [
         {
             "id": "desde-una-web",
-            "titulo": "Usar el recurso desde React o Next.js",
+            "titulo": "Usar el recurso desde una web (React, Vue, Next.js o HTML)",
             "usa": ["recurso"],
             "texto": "La web pide y guarda los datos en esta API. Generá el recurso acá y el crud en la web, con los mismos campos.",
             "pasos": [
                 ("En la API", f"nuevo recurso producto {_CAMPOS_PRODUCTO}{_migrar}"),
                 ("En la API", _marcha),
-                ("En la web (React o Next.js)", f"nuevo crud producto {_CAMPOS_PRODUCTO}"),
-                ("En la web", "npm run dev"),
+                ("En la web (React, Vue, Next.js o HTML)", f"nuevo crud producto {_CAMPOS_PRODUCTO}"),
+                ("En la web", "npm run dev   (en la web HTML: python -m http.server 5173)"),
             ],
             "claves": [
                 "Los campos tienen que ser los mismos en los dos lados: si no, la API responde 400 y dice cuál falta.",
-                "La web ya apunta a http://localhost:8000/api (VITE_API_URL o NEXT_PUBLIC_API_URL en su .env).",
-                "La API ya acepta pedidos de React (puerto 5173) y Next.js (3000): CORS_ALLOWED_ORIGINS en el .env.",
+                "La web ya apunta a http://localhost:8000/api (VITE_API_URL o NEXT_PUBLIC_API_URL en su .env; js/config.js en la web HTML).",
+                "La API ya acepta pedidos de React, Vue y la web HTML (puerto 5173) y de Next.js (3000): CORS_ALLOWED_ORIGINS en el .env.",
             ],
         },
         {
@@ -764,6 +1049,28 @@ for _api, _marcha in (
         },
     ]
 
+COMBINACIONES["django"].append(
+    {
+        "id": "login-jwt",
+        "titulo": "Login con JWT y recursos protegidos",
+        "usa": ["login", "recurso"],
+        "texto": "nuevo login agrega el registro y los tokens; los recursos con --protegido dejan leer a cualquiera, pero crear, modificar y eliminar piden el token.",
+        "pasos": [
+            ("", "nuevo login"),
+            ("", f"nuevo recurso pedido cliente:str total:decimal --protegido --migrar"),
+            ("", "pip install -r requirements.txt"),
+            ("Pedir el token", 'curl -X POST http://127.0.0.1:8000/api/token/ -H "Content-Type: application/json" -d "{\\"username\\": \\"ana\\", \\"password\\": \\"...\\"}"'),
+            ("Usarlo", "curl http://127.0.0.1:8000/api/yo/ -H \"Authorization: Bearer <access>\""),
+        ],
+        "claves": [
+            "En Swagger (/api/docs/) tocá Authorize y pegá el token de acceso: las pruebas lo mandan solas.",
+            "El token de acceso dura 60 minutos; con el de refresco (POST /api/token/refresh/) se pide otro sin volver a ingresar.",
+            "Desde una web: guardá el access y mandalo en el encabezado Authorization: Bearer <token>. La web HTML ya lo hace (ver su guía).",
+            "Los tests del recurso protegido entran con un usuario (force_authenticate) y comprueban que sin login no se puede crear.",
+        ],
+    }
+)
+
 
 DESCRIPCIONES = {
     "python": [
@@ -790,7 +1097,71 @@ DESCRIPCIONES = {
         ("*/urls.py", "Rutas del recurso: /api/productos/ y /api/productos/<id>/."),
         ("*/admin.py", "Registra el modelo en el panel /admin/ con columnas, búsqueda y filtros."),
         ("*/apps.py", "Configuración de la app (el nombre que muestra el panel de administración)."),
+        ("cuentas/serializers.py", "Datos de los usuarios: RegistroSerializer valida y encripta la contraseña; UsuarioSerializer muestra los datos públicos."),
+        ("cuentas/views.py", "Registro de usuarios (POST /api/registro/) y el usuario del token (GET /api/yo/)."),
+        ("cuentas/urls.py", "Rutas del login: /api/token/ y /api/token/refresh/ (SimpleJWT), /api/registro/ y /api/yo/."),
+        ("cuentas/tests.py", "6 tests del login: registro, token, clave incorrecta, /api/yo/ con y sin token y refresco."),
         ("*/tests.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python manage.py test."),
+    ],
+    "django-web": [
+        ("manage.py", "Herramienta de Django: runserver, migrate, makemigrations, test, createsuperuser."),
+        ("requirements.txt", "Librerías del proyecto con sus versiones. Se instalan con pip install -r requirements.txt."),
+        ("config/settings.py", "Configuración: apps (LOCAL_APPS), plantillas (templates/), archivos estáticos (static/), base de datos y login. Lee los valores del .env."),
+        ("config/urls.py", "Rutas del sitio: inicio, /admin/, login, registro y una línea por cada crud o página (andamio las agrega)."),
+        ("config/views.py", "Vistas que no son de ninguna app: el registro de usuarios."),
+        ("config/wsgi.py", "Punto de entrada para publicar el proyecto en un servidor."),
+        ("config/asgi.py", "Punto de entrada para publicar el proyecto en un servidor (modo asíncrono)."),
+        ("templates/base.html", "La base de todas las páginas: el menú (andamio agrega los enlaces), el usuario que inició sesión y los mensajes."),
+        ("templates/inicio.html", "La página de inicio (la ruta /)."),
+        ("templates/formulario.html", "Dibuja cualquier formulario con su etiqueta y sus errores: {% include \"formulario.html\" %}."),
+        ("templates/registration/login.html", "La página para iniciar sesión (/cuentas/login/). La vista la trae Django."),
+        ("templates/registration/registro.html", "La página para crear un usuario (/cuentas/registro/)."),
+        ("templates/paginas/*", "Una página: hereda de base.html y completa el bloque contenido."),
+        ("static/css/estilos.css", "Estilos de todo el sitio. Se cargan en base.html con {% static %}."),
+        ("*/migrations/__init__.py", "Carpeta donde Django guarda las migraciones: los cambios de la base de datos."),
+        ("*/__init__.py", "Convierte la carpeta en un paquete de Python."),
+        ("*/models.py", "El modelo: la tabla y sus campos. Django la crea en la base con makemigrations y migrate."),
+        ("*/forms.py", "El formulario (ModelForm): Django lo arma a partir del modelo y valida los datos que llegan."),
+        ("*/views.py", "Las cinco vistas genéricas: lista (con búsqueda y páginas), detalle, crear, editar y eliminar."),
+        ("*/urls.py", "Rutas de la app, con nombre: lista, crear, detalle, editar y eliminar (app_name evita choques con otras apps)."),
+        ("*/admin.py", "Registra el modelo en el panel /admin/ con columnas, búsqueda y filtros."),
+        ("*/apps.py", "Configuración de la app (el nombre que muestra el panel de administración)."),
+        ("*/tests.py", "Tests de las páginas: lista, crear, datos incompletos, detalle, editar y eliminar."),
+        ("*/templates/*_lista.html", "La lista: una tabla con buscador, páginas y los enlaces Ver, Editar y Eliminar."),
+        ("*/templates/*_detalle.html", "El detalle de un registro, con Editar y Eliminar."),
+        ("*/templates/*_form.html", "El formulario para agregar y editar (la misma plantilla sirve para los dos)."),
+        ("*/templates/*_confirmar_eliminar.html", "Pide confirmación antes de eliminar (con un formulario POST)."),
+    ],
+    "web": [
+        ("index.html", "La página de inicio. Cada página es un .html que carga su código con <script type=\"module\">."),
+        ("*.html", "Una página: el lugar del menú (data-menu), su contenido y su código en js/paginas/."),
+        ("css/estilos.css", "Estilos de todas las páginas. Arriba importa los de cada componente (andamio agrega las líneas)."),
+        ("css/componentes/*", "Estilos de un componente: solo usan su clase, así no afectan al resto."),
+        ("js/menu.js", "El menú de todas las páginas: la lista ENLACES (andamio agrega uno por página) y dibujarMenu()."),
+        ("js/config.js", "La dirección de la API (API_URL)."),
+        ("js/http.js", "pedir(): hace el fetch a la API, convierte el JSON, avisa los errores (ErrorApi, con los mensajes por campo) y manda el token si hay sesión."),
+        ("js/inicio.js", "El código de index.html."),
+        ("js/paginas/*", "El código de una página: dibuja el menú y lo que necesite la página."),
+        ("js/componentes/*", "Un componente: una función que crea un elemento a partir de datos (crearTarjeta)."),
+        ("js/servicios/*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar."),
+    ],
+    "vue": [
+        ("package.json", "Dependencias (Vue, Vue Router, Vite) con versiones fijas, y los comandos npm run dev y npm run build."),
+        ("index.html", 'La página que carga el navegador: Vue se dibuja dentro de <div id="app">.'),
+        ("vite.config.js", "Configuración de Vite: el plugin de Vue y el atajo @/ para importar desde src/."),
+        ("src/main.js", "Punto de entrada: crea la aplicación, le agrega el router y la muestra."),
+        ("src/App.vue", "El marco: el menú (andamio agrega los enlaces) y <RouterView />, donde se ve la página de la ruta actual."),
+        ("src/router.js", "Las rutas: qué página va en cada dirección. andamio agrega acá las páginas que generes."),
+        ("src/estilos.css", "Estilos globales de toda la aplicación."),
+        ("src/pages/InicioPage.vue", "La página de inicio (la ruta /)."),
+        ("src/pages/*/*ListaPage.vue", "La lista: pide los registros a la API con listar() y enlaza al detalle de cada uno."),
+        ("src/pages/*/*DetallePage.vue", "El detalle (ruta /…/:id): pide el registro con obtener(id) y lo elimina con eliminar(id)."),
+        ("src/pages/*/*FormPage.vue", "El formulario para crear y editar (v-model): usa crear() o actualizar() y muestra los errores de validación de la API."),
+        ("src/pages/*", "Una página: código (<script setup>), lo que se ve (<template>) y estilos."),
+        ("src/components/*", "Un componente .vue con props, slot y estilos propios (<style scoped>)."),
+        ("src/composables/use*", "Un composable: estado (ref) y lógica para reutilizar en varios componentes."),
+        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env."),
+        ("src/services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar."),
     ],
     "fastapi": [
         ("requirements.txt", "Librerías del proyecto con sus versiones. Se instalan con pip install -r requirements.txt."),
@@ -1170,7 +1541,7 @@ def demo_menu(base: Path) -> list[dict]:
     os.chdir(base)
     _ejecutar(["crear", "django", "mi-api"])
     os.chdir(base / "mi-api")
-    respuestas = ["1", "producto", "", "nombre", "1", "precio", "4", "stock", "3", "", "s", "n"]
+    respuestas = ["1", "producto", "", "n", "nombre", "1", "precio", "4", "stock", "3", "", "s", "n"]
     eventos: list[dict] = []
     salida = io.StringIO()
 

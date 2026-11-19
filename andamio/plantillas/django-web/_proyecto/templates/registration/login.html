@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ingresar{% endblock %}
+
+{% block contenido %}
+  <h1>Ingresar</h1>
+  <form method="post" class="formulario">
+    {% csrf_token %}
+    {% include "formulario.html" %}
+    {# Después de entrar vuelve a la página que pedía login (o al inicio). #}
+    <input type="hidden" name="next" value="{{ next }}" />
+    <button type="submit" class="boton">Ingresar</button>
+  </form>
+  <p>¿No tenés usuario? <a href="{% url 'registro' %}">Registrate</a>.</p>
+{% endblock %}

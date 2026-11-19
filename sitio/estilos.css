@@ -194,12 +194,116 @@ h3 {
   color: var(--texto);
 }
 
+.barra__nav {
+  align-items: center;
+}
+
+/* Menú desplegable de guías */
+.guias {
+  position: relative;
+}
+
+/* .barra__nav .guias: le gana a los estilos generales de details y summary (preguntas frecuentes). */
+.barra__nav .guias {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.barra__nav .guias summary {
+  padding: 0;
+}
+
+.guias summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--tenue);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.guias summary::-webkit-details-marker {
+  display: none;
+}
+
+.guias summary::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.2em) rotate(45deg);
+}
+
+.guias summary:hover,
+.guias[open] summary {
+  color: var(--texto);
+}
+
+.guias summary[aria-current="page"] {
+  color: var(--texto);
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--acento);
+}
+
+.guias__panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
+  gap: 20px 32px;
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.guias__grupo {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.guias__titulo {
+  color: var(--acento-texto);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.guias__panel a {
+  color: var(--texto);
+}
+
+.guias__panel a:hover {
+  color: var(--acento-texto);
+}
+
+.barra__nav .guias__panel a[aria-current="page"] {
+  box-shadow: none;
+  font-weight: 700;
+}
+
 @media (max-width: 760px) {
-  .barra__nav {
+  .barra__interior > .boton {
     display: none;
   }
-  .barra__interior > .boton {
-    margin-left: auto;
+  .guias {
+    position: static;
+  }
+  .guias__panel {
+    left: 16px;
+    right: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    top: 64px;
   }
 }
 
@@ -978,10 +1082,7 @@ section[id] {
   box-shadow: inset 0 -3px 0 var(--acento);
 }
 
-.barra__nav {
-  overflow-x: auto;
-  scrollbar-width: none;
-}
+
 
 /* Tarjetas de tecnologías (portada) */
 .tecnologias {

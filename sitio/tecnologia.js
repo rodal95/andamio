@@ -1,4 +1,4 @@
-/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react, react-native, next, next-fullstack y reflex .html). */
+/* andamio · sitio: guía de una tecnología (python, django, django-web, fastapi, express, web, react, vue, react-native, next, next-fullstack y reflex .html). */
 (function () {
   "use strict";
 

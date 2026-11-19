@@ -5,6 +5,42 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.2.0] - 2026-11-19
+
+### Agregado
+- Stack `web`: página con HTML, CSS y JavaScript, sin instalar nada (ni Node ni npm),
+  con piezas `pagina` (un `.html` con su `.js` y el enlace en el menú), `componente`
+  (una función que crea un elemento, con su CSS), `servicio` y `crud` (tabla y
+  formulario contra una API de andamio, con los errores de validación por campo).
+  `js/http.js` manda el token del login JWT si hay uno guardado. Se sirve con
+  `python -m http.server 5173` (el puerto que las APIs ya aceptan).
+- Stack `vue`: Vue 3 + Vite + Vue Router, con piezas `componente`, `pagina`,
+  `composable`, `servicio` y `crud` (lista, detalle y formulario con `v-model` y sus
+  cuatro rutas), compatible con las APIs de Django, FastAPI, Express y Next.js.
+- Stack `django-web`: la otra forma de usar Django, un sitio con plantillas HTML
+  (monolito) con login, registro, salir y admin. `crud` genera la app con modelo,
+  `ModelForm`, cinco vistas genéricas (lista con búsqueda y páginas, detalle, crear,
+  editar y eliminar), sus plantillas, rutas con nombre, admin y tests, y el enlace en
+  el menú; `pagina` una plantilla con su ruta. Acepta `--migrar` y `--protegido`.
+- Django REST: pieza `login` (`python -m andamio nuevo login`, sin nombre) con
+  SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/token/verify/`,
+  `/api/registro/` y `/api/yo/`, 6 tests, mensajes en español y el botón Authorize en
+  Swagger. Opción `--protegido` en `recurso`: leer es libre; crear, modificar y
+  eliminar piden login (`IsAuthenticatedOrReadOnly`), con sus tests.
+- Guías en `docs/guias/`: todos los comandos por tecnología, cómo combinar piezas y
+  proyectos (página + servicio en HTML, Vue y React; login JWT desde la web), reglas
+  para no romper nada, API REST con Django + JWT paso a paso y sitio con Django y
+  plantillas paso a paso.
+- Sitio: guías de HTML, Vue y Django con plantillas (con sus combinaciones probadas
+  en los tests) y la lección del login en la de Django REST. El menú de la barra pasa
+  a ser un desplegable agrupado (API, interfaz, todo en uno), que también funciona
+  en el celular.
+
+### Cambiado
+- El menú interactivo pregunta "¿Proteger el recurso?" en las piezas que aceptan
+  `--protegido`, y no pide nombre en las que no lo necesitan (`login`). Los números
+  del menú para crear un proyecto cambiaron (se agregaron tres tipos).
+
 ## [1.1.0] - 2026-11-19
 
 ### Agregado

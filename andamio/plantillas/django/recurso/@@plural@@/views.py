@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+@@import_permisos@@
 
 from .models import @@Nombre@@
 from .serializers import @@Nombre@@Serializer
@@ -13,6 +14,7 @@ class @@Nombre@@ViewSet(viewsets.ModelViewSet):
         ?campo=valor        filtra por los campos de filterset_fields
     """
 
+    @@permisos@@
     queryset = @@Nombre@@.objects.all()
     serializer_class = @@Nombre@@Serializer
     filterset_fields = [@@campos_filtro@@]

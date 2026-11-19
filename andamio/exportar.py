@@ -22,12 +22,12 @@ from andamio.stacks.base import Pieza, Solicitud, Stack
 
 def _ejemplo(stack: Stack, pieza: Pieza, raiz: Path) -> tuple[str, dict[str, str]]:
     """Calcula los marcadores con el ejemplo de la pieza, para mostrar valores reales."""
-    nombre_texto, *campos_texto = pieza.ejemplo.split()
+    nombre_texto, *campos_texto = pieza.ejemplo.split() or [pieza.nombre_defecto]
     nombre = nombre_para_pieza(pieza, nombre_texto)
     campos = [parsear_campo(c, stack.tipos) for c in campos_texto]
     variante = variante_del_proyecto(stack, raiz)
     contexto = contexto_pieza(Solicitud(stack, pieza, raiz, nombre, campos, variante=variante))
-    return f"{consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}", contexto
+    return f"{consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}".rstrip(), contexto
 
 
 def _formatear_valor(valor: str) -> str:

@@ -139,7 +139,7 @@ def test_deteccion(proyecto):
 
 
 def test_menu(en_carpeta, respuestas):
-    respuestas(["9", "mi app", "s"])
+    respuestas(["12", "mi app", "s"])
     assert main([]) == 0
     assert (en_carpeta / "mi-app/rxconfig.py").is_file()
 

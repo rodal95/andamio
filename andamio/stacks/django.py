@@ -8,6 +8,7 @@ import secrets
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable
 
 from andamio.nucleo import consola
 from andamio.nucleo.errores import AndamioError
@@ -100,6 +101,36 @@ def _contexto_recurso(sol: Solicitud) -> dict[str, str]:
         "valor_verificado": valor_verificado,
         # La línea en blanco final separa los import de Python de los de las librerías.
         "imports_tests": f"{import_necesario}\n" if import_necesario else "",
+        **_contexto_permisos(sol),
+    }
+
+
+_PREPARAR_TESTS_PROTEGIDO = """\
+def setUp(self):
+    # El recurso está protegido (--protegido): los tests entran con un usuario.
+    usuario = get_user_model().objects.create_user("prueba", password="clave-de-prueba-123")
+    self.client.force_authenticate(usuario)
+
+def test_sin_login_no_se_puede_crear(self):
+    self.client.force_authenticate(None)
+    respuesta = self.client.post(URL, DATOS, format="json")
+    # 401 con el login de JWT (andamio nuevo login); 403 si solo hay sesión.
+    self.assertIn(respuesta.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+    # Leer sigue siendo libre.
+    self.assertEqual(self.client.get(URL).status_code, status.HTTP_200_OK)
+"""
+
+
+def _contexto_permisos(sol: Solicitud) -> dict[str, str]:
+    """--protegido: cualquiera puede leer; para crear, modificar y eliminar hay que tener login."""
+    if not sol.opciones.get("protegido"):
+        return {"import_permisos": "", "permisos": "", "import_usuario": "", "preparar_tests": ""}
+    return {
+        "import_permisos": "from rest_framework.permissions import IsAuthenticatedOrReadOnly",
+        "permisos": "# Leer es libre; crear, modificar y eliminar necesitan login (token JWT o sesión).\n"
+        "permission_classes = [IsAuthenticatedOrReadOnly]",
+        "import_usuario": "from django.contrib.auth import get_user_model",
+        "preparar_tests": _PREPARAR_TESTS_PROTEGIDO,
     }
 
 
@@ -192,35 +223,39 @@ def python_del_proyecto(raiz: Path) -> str:
     return sys.executable
 
 
-def _migrar(sol: Solicitud) -> None:
-    if not sol.opciones.get("migrar"):
-        return
-    app = sol.nombre.plural
-    python = python_del_proyecto(sol.raiz)
-    activar = r".venv\Scripts\activate" if os.name == "nt" else "source .venv/bin/activate"
-    comprobacion = subprocess.run(
-        [python, "-c", "import django, rest_framework, django_filters, corsheaders, drf_spectacular"],
-        cwd=sol.raiz,
-        capture_output=True,
-    )
-    if comprobacion.returncode != 0:
-        raise AndamioError(
-            f"Los archivos se generaron, pero no se pudo migrar: falta instalar Django en {python}.",
-            f"Activá el entorno virtual ({activar}), instalá las dependencias "
-            f"(pip install -r requirements.txt) y ejecutá: python manage.py makemigrations {app}",
-        )
-    for argumentos in (["makemigrations", app], ["migrate"]):
-        comando = "python manage.py " + " ".join(argumentos)
-        consola.escribir()
-        consola.titulo(f"Ejecutando: {comando}")
-        # En otro proceso: este proceso no tiene cargada la app nueva.
-        resultado = subprocess.run([python, "manage.py", *argumentos], cwd=sol.raiz)
-        if resultado.returncode != 0:
+def migrador(modulos: str) -> Callable[[Solicitud], None]:
+    """--migrar: makemigrations y migrate. `modulos` son los import que tienen que funcionar antes."""
+
+    def migrar(sol: Solicitud) -> None:
+        if not sol.opciones.get("migrar"):
+            return
+        app = sol.nombre.plural
+        python = python_del_proyecto(sol.raiz)
+        activar = r".venv\Scripts\activate" if os.name == "nt" else "source .venv/bin/activate"
+        comprobacion = subprocess.run([python, "-c", f"import {modulos}"], cwd=sol.raiz, capture_output=True)
+        if comprobacion.returncode != 0:
             raise AndamioError(
-                f"Falló '{comando}'. Los archivos del recurso se generaron igual.",
-                f"Leé el error de arriba, corregilo y ejecutá de nuevo: {comando}",
+                f"Los archivos se generaron, pero no se pudo migrar: falta instalar Django en {python}.",
+                f"Activá el entorno virtual ({activar}), instalá las dependencias "
+                f"(pip install -r requirements.txt) y ejecutá: python manage.py makemigrations {app}",
             )
-    sol.opciones["migrado"] = True
+        for argumentos in (["makemigrations", app], ["migrate"]):
+            comando = "python manage.py " + " ".join(argumentos)
+            consola.escribir()
+            consola.titulo(f"Ejecutando: {comando}")
+            # En otro proceso: este proceso no tiene cargada la app nueva.
+            resultado = subprocess.run([python, "manage.py", *argumentos], cwd=sol.raiz)
+            if resultado.returncode != 0:
+                raise AndamioError(
+                    f"Falló '{comando}'. Los archivos del recurso se generaron igual.",
+                    f"Leé el error de arriba, corregilo y ejecutá de nuevo: {comando}",
+                )
+        sol.opciones["migrado"] = True
+
+    return migrar
+
+
+_migrar = migrador("django, rest_framework, django_filters, corsheaders, drf_spectacular")
 
 
 def _pasos_recurso(sol: Solicitud) -> list[str]:
@@ -236,7 +271,7 @@ RECURSO = Pieza(
     formas=("pascal", "snake"),
     usa_campos=True,
     usa_plural=True,
-    opciones=frozenset({"migrar"}),
+    opciones=frozenset({"migrar", "protegido"}),
     contexto=_contexto_recurso,
     campos_reservados=_campos_reservados,
     marcadores={
@@ -255,6 +290,10 @@ RECURSO = Pieza(
         "campo_verificado": "campo que se controla en el test de modificación",
         "valor_verificado": "valor esperado de ese campo",
         "imports_tests": "import que necesitan los tests (puede estar vacío)",
+        "import_permisos": "import de IsAuthenticatedOrReadOnly (vacío sin --protegido)",
+        "permisos": "permission_classes del ViewSet (vacío sin --protegido)",
+        "import_usuario": "import de get_user_model para los tests (vacío sin --protegido)",
+        "preparar_tests": "setUp con un usuario y el test sin login (vacío sin --protegido)",
     },
     existe_si=("@@plural@@",),
     inserciones=(
@@ -279,6 +318,90 @@ RECURSO = Pieza(
 )
 
 
+# --- Login con JWT (SimpleJWT) ----------------------------------------------------
+
+VERSION_SIMPLEJWT = "5.5.1"
+
+_CONFIG_JWT = """
+# --- Login con JWT (lo agregó: andamio nuevo login) ------------------------------
+# La API acepta el token de acceso en el encabezado  Authorization: Bearer <token>
+# y también la sesión del panel /admin/ (útil para probar en el navegador).
+from datetime import timedelta  # noqa: E402
+
+# Como app, para que sus mensajes ("Usuario o contraseña incorrectos"...) salgan en español.
+INSTALLED_APPS += ["rest_framework_simplejwt"]
+
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+    "rest_framework.authentication.SessionAuthentication",
+]
+
+SIMPLE_JWT = {
+    # El token de acceso dura poco; con el de refresco se pide uno nuevo sin volver a loguearse.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}"""
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    try:
+        settings = (raiz / "config" / "settings.py").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return
+    if "JWTAuthentication" in settings:
+        raise AndamioError(
+            "El proyecto ya tiene el login con JWT (JWTAuthentication está en config/settings.py).",
+            "Para proteger un recurso nuevo: python -m andamio nuevo recurso <nombre> <campos> --protegido",
+        )
+
+
+def _pasos_login(sol: Solicitud) -> list[str]:
+    return [
+        "pip install -r requirements.txt",
+        "python manage.py createsuperuser",
+        "python manage.py runserver",
+        "# Pedí un token: POST /api/token/ con {\"username\": ..., \"password\": ...}",
+        "http://127.0.0.1:8000/api/docs/",
+        "# Para que un recurso pida login al crear, modificar y eliminar: nuevo recurso ... --protegido",
+    ]
+
+
+LOGIN = Pieza(
+    clave="login",
+    titulo="Login con JWT",
+    descripcion="registro, token de acceso (SimpleJWT) y usuario actual",
+    ejemplo="",
+    nombre_defecto="cuenta",
+    formas=("app @@plural@@",),
+    validar_nombre=_validar_login,
+    existe_si=("@@plural@@",),
+    inserciones=(
+        Insercion(
+            "config/settings.py",
+            '"@@plural@@",',
+            marcador="apps",
+            descripcion="app en LOCAL_APPS",
+            ubicacion="dentro de la lista LOCAL_APPS",
+        ),
+        Insercion("config/settings.py", _CONFIG_JWT, descripcion="autenticación con JWT (al final)"),
+        Insercion(
+            "config/urls.py",
+            'path("api/", include("@@plural@@.urls")),',
+            marcador="urls",
+            descripcion="rutas /api/token/, /api/registro/ y /api/yo/",
+            ubicacion="dentro de la lista urlpatterns",
+        ),
+        Insercion(
+            "requirements.txt",
+            f"# Login con tokens JWT (andamio nuevo login).\ndjangorestframework-simplejwt~={VERSION_SIMPLEJWT}",
+            descripcion="djangorestframework-simplejwt",
+        ),
+    ),
+    siguiente_paso=_pasos_login,
+)
+
+
 def _contexto_proyecto(nombre: Nombre) -> dict[str, str]:
     return {
         "secret_key": "cambiar-por-una-clave-larga-y-secreta",
@@ -292,7 +415,7 @@ STACK = Stack(
     senal="manage.py y config/settings.py",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"recurso": RECURSO},
+    piezas={"recurso": RECURSO, "login": LOGIN},
     ejemplo_proyecto="mi-api",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",
