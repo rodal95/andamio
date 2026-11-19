@@ -35,8 +35,9 @@ def _armar(clave: str, variante: str, carpeta: Path, monkeypatch) -> Path:
 def _aplicar(clave: str, variante: str, combinacion: dict, raiz: Path, monkeypatch) -> list[Path]:
     """Genera las piezas de la combinación y copia su código. Devuelve los archivos escritos."""
     monkeypatch.chdir(raiz)
-    for _, comando in combinacion["pasos"]:
-        if comando.startswith("nuevo "):
+    for lugar, comando in combinacion["pasos"]:
+        # Los pasos con otro lugar ("En la app de React Native") se hacen en otro proyecto.
+        if comando.startswith("nuevo ") and lugar in ("", "En este proyecto"):
             assert main(shlex.split(comando)) == 0, comando
     escritos = []
     for ruta, ejemplo in sitio.archivos_combinacion(combinacion, variante):
@@ -59,13 +60,13 @@ def test_python(en_carpeta, monkeypatch):
 @pytest.mark.lento
 @requiere_node
 @pytest.mark.parametrize("variante", ["ts", "js"])
-@pytest.mark.parametrize("clave", ["react", "next"])
+@pytest.mark.parametrize("clave", ["react", "next", "next-fullstack"])
 def test_web(clave, variante, en_carpeta, monkeypatch):
     raiz = _armar(clave, variante, en_carpeta, monkeypatch)
     npm_install(raiz)
     for combinacion in sitio.COMBINACIONES[clave]:
         _aplicar(clave, variante, combinacion, raiz, monkeypatch)
-        # El crud instala react-router si hace falta (React ya lo trae); npm run build compila y revisa tipos.
+        # npm run build compila y revisa tipos (en el full stack, también las rutas de la API).
         ejecutar([NPM, "run", "build"], raiz, env={"NEXT_TELEMETRY_DISABLED": "1"})
 
 
