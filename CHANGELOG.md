@@ -5,6 +5,8 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.4.0] - 2026-11-19
+
 ### Agregado
 - Piezas de estilos en web, Django con plantillas, Vue, React y Next.js:
   - `nuevo tema [<color>] [--modo auto|claro|oscuro]`: variables CSS (colores, letra,
