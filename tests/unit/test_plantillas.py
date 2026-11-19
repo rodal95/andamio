@@ -65,6 +65,25 @@ def test_el_servicio_es_igual_en_react_y_react_native(variante, archivo):
     assert react.read_text(encoding="utf-8") == nativo.read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("variante, extension", [("ts", "ts"), ("js", "js")])
+def test_el_crud_trae_el_mismo_servicio_que_la_pieza_servicio(variante, extension):
+    base = plantillas.carpeta_incorporada("react") / variante
+    for archivo in ("http", "@@nombreCamel@@Service"):
+        servicio = base / "servicio" / "src" / "services" / f"{archivo}.{extension}"
+        crud = base / "crud" / "src" / "services" / f"{archivo}.{extension}"
+        assert crud.read_text(encoding="utf-8") == servicio.read_text(encoding="utf-8"), archivo
+
+
+@pytest.mark.parametrize("variante", ["ts", "js"])
+def test_la_version_del_router_coincide(variante):
+    import json
+
+    from andamio.stacks._js import VERSION_ROUTER
+
+    paquete = json.loads((plantillas.carpeta_incorporada("react") / variante / "_proyecto" / "package.json").read_text(encoding="utf-8"))
+    assert paquete["dependencies"]["react-router"] == VERSION_ROUTER
+
+
 @pytest.mark.parametrize("stack", [s for s in stacks.REGISTRO if s.variantes], ids=lambda s: s.clave)
 def test_las_plantillas_js_no_tienen_sintaxis_de_typescript(stack):
     import re

@@ -116,6 +116,9 @@ const tareas = JSON.parse(process.argv[2]);
     }
     await pagina.goto(t.url, { waitUntil: 'networkidle' });
     if (t.esperar) await pagina.waitForSelector(t.esperar, { timeout: 30000 });
+    for (const [etiqueta, valor] of Object.entries(t.llenar || {})) await pagina.getByLabel(etiqueta).fill(valor);
+    if (t.enviar) await pagina.getByRole('button', { name: t.enviar }).click();
+    if (t.esperar_despues) await pagina.waitForSelector(t.esperar_despues, { timeout: 30000 });
     await pagina.waitForTimeout(800);
     await pagina.screenshot({ path: t.archivo, type: 'jpeg', quality: 88 });
     console.log('  foto:', t.archivo);
@@ -178,18 +181,28 @@ def react(base: Path) -> None:
     print("React")
     andamio(base, "crear", "react", "mi-web")
     web = base / "mi-web"
-    for argumentos in (["componente", "Tarjeta"], ["pagina", "Productos"], ["hook", "contador"], ["servicio", "producto", *CAMPOS]):
+    for argumentos in (["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["crud", "producto", *CAMPOS]):
         andamio(web, "nuevo", *argumentos)
     ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], web)
-    entorno = {"VITE_API_URL": "http://127.0.0.1:8000/api"}
-    ejecutar([NPM, "run", "build"], web, entorno)
+    ejecutar([NPM, "run", "build"], web, {"VITE_API_URL": "http://127.0.0.1:8000/api"})
     with servir(web / "dist", 5173) as url:
-        fotos([{"url": url, "archivo": str(IMAGENES / "react-inicio.jpg"), "ancho": 1000, "alto": 420}], base)
-    shutil.copy(EJEMPLOS / "react-App.tsx", web / "src" / "App.tsx")
-    shutil.copy(EJEMPLOS / "react-Tarjeta.module.css", web / "src" / "components" / "Tarjeta" / "Tarjeta.module.css")
-    ejecutar([NPM, "run", "build"], web, entorno)
-    with servir(web / "dist", 5173) as url:
-        fotos([{"url": url, "archivo": str(IMAGENES / "react-final.jpg"), "ancho": 1000, "alto": 640, "esperar": "h3"}], base)
+        fotos(
+            [
+                {"url": url, "archivo": str(IMAGENES / "react-inicio.jpg"), "ancho": 1000, "alto": 420},
+                {"url": f"{url}/productos", "archivo": str(IMAGENES / "react-crud-lista.jpg"), "ancho": 1000, "alto": 480, "esperar": "text=Mate de calabaza"},
+                {"url": f"{url}/productos/1", "archivo": str(IMAGENES / "react-crud-detalle.jpg"), "ancho": 1000, "alto": 520, "esperar": "dd"},
+                {
+                    "url": f"{url}/productos/nuevo",
+                    "archivo": str(IMAGENES / "react-crud-formulario.jpg"),
+                    "ancho": 1000,
+                    "alto": 640,
+                    "llenar": {"Nombre": "Termo de acero", "Precio": "123456789012", "Stock": "3"},
+                    "enviar": "Guardar",
+                    "esperar_despues": "small",
+                },
+            ],
+            base,
+        )
 
 
 def react_native(base: Path) -> None:

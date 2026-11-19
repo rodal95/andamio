@@ -159,3 +159,112 @@ MARCADORES_PANTALLA = {
     "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto",
     "url_pantalla": "ruta para navegar: /productos/detalle-producto",
 }
+
+
+# --- Router (React) ---------------------------------------------------------------------
+
+# Rama 7: funciona con Node 20 (la 8 pide Node 22.22). Tiene que coincidir con package.json
+# de la plantilla del proyecto (hay un test que lo controla).
+VERSION_ROUTER = "7.18.6"
+
+
+def _leer_app(raiz: Path) -> str:
+    for nombre in ("App.tsx", "App.jsx"):
+        archivo = raiz / "src" / nombre
+        if archivo.is_file():
+            try:
+                return archivo.read_text(encoding="utf-8-sig")
+            except (OSError, UnicodeDecodeError):
+                return ""
+    return ""
+
+
+def validar_ruta_libre(ruta: Callable[[Nombre], str]) -> Callable[[Path, Nombre], None]:
+    """Rechaza una pieza si su ruta ya está registrada en src/App."""
+
+    def validar(raiz: Path, nombre: Nombre) -> None:
+        camino = ruta(nombre)
+        if f'path="{camino}"' in _leer_app(raiz):
+            raise AndamioError(
+                f"Ya hay una página en la ruta {camino} (src/App).",
+                "Elegí otro nombre, o borrá esa ruta de src/App si ya no la usás.",
+            )
+
+    return validar
+
+
+def pasos_router(pasos: list[str]) -> Callable[[Solicitud], list[str]]:
+    """Agrega la instalación del router si el proyecto todavía no lo tiene."""
+
+    def calcular(sol: Solicitud) -> list[str]:
+        if "react-router" in dependencias_npm(sol.raiz):
+            return list(pasos)
+        return [
+            "# Tu proyecto todavía no tiene el router (react-router). Instalalo una vez:",
+            f"npm install react-router@{VERSION_ROUTER}",
+            *pasos,
+        ]
+
+    return calcular
+
+
+def _contexto_crud(sol: Solicitud) -> dict[str, str]:
+    contexto = contexto_servicio(sol)
+    variable = sol.nombre.camel
+    para_texto = next((c for c in sol.campos if c.tipo in ("str", "email")), None)
+    contexto["texto_item"] = f"item.{para_texto.nombre}" if para_texto else f"`{sol.nombre.pascal} ${{item.id}}`"
+
+    detalle, vacios, copiar, formulario = [], [], [], []
+    for c in sol.campos:
+        valor = f"{variable}.{c.nombre}"
+        detalle += [f"<dt>{c.titulo}</dt>", f"<dd>{{{valor} ? 'Sí' : 'No'}}</dd>" if c.tipo == "bool" else f"<dd>{{{valor}}}</dd>"]
+        vacios.append(f"{c.nombre}: {_VACIOS[c.tipo]},")
+        copiar.append(f"{c.nombre}: registro.{c.nombre}{'.slice(0, 16)' if c.tipo == 'datetime' else ''},")
+        formulario += _campo_formulario(c)
+    contexto.update(
+        campos_detalle="\n".join(detalle),
+        valores_vacios="\n".join(vacios),
+        campos_copiar="\n".join(copiar),
+        campos_formulario="\n".join(formulario),
+    )
+    return contexto
+
+
+_VACIOS = {"str": "''", "text": "''", "email": "''", "date": "''", "datetime": "''", "int": "0", "decimal": "0", "float": "0", "bool": "false"}
+
+_PASOS_NUMERICOS = {"int": "1", "decimal": "0.01", "float": "any"}
+
+
+def _campo_formulario(campo) -> list[str]:
+    n = campo.nombre
+    if campo.tipo == "bool":
+        control = f"<input type=\"checkbox\" checked={{datos.{n}}} onChange={{(e) => cambiar('{n}', e.target.checked)}} />"
+    elif campo.tipo in _PASOS_NUMERICOS:
+        control = (
+            f"<input type=\"number\" step=\"{_PASOS_NUMERICOS[campo.tipo]}\" required "
+            f"value={{Number.isNaN(datos.{n}) ? '' : datos.{n}}} onChange={{(e) => cambiar('{n}', e.target.valueAsNumber)}} />"
+        )
+    elif campo.tipo == "text":
+        control = f"<textarea required value={{datos.{n}}} onChange={{(e) => cambiar('{n}', e.target.value)}} />"
+    else:
+        tipo = {"email": "email", "date": "date", "datetime": "datetime-local"}.get(campo.tipo, "text")
+        control = f"<input type=\"{tipo}\" required value={{datos.{n}}} onChange={{(e) => cambiar('{n}', e.target.value)}} />"
+    return [
+        "<label className={styles.campo}>",
+        f"  {campo.titulo}",
+        f"  {control}",
+        f"  {{errores.{n} && <small className={{styles.error}}>{{errores.{n}.join(' ')}}</small>}}",
+        "</label>",
+    ]
+
+
+MARCADORES_CRUD = {
+    **MARCADORES_SERVICIO,
+    "texto_item": "lo que se muestra de cada registro en la lista: item.nombre",
+    "campos_detalle": "un <dt> y un <dd> por campo, para el componente de detalle",
+    "valores_vacios": "valores iniciales del formulario: nombre: '',",
+    "campos_copiar": "copia un registro de la API a los datos del formulario: nombre: registro.nombre,",
+    "campos_formulario": "un <label> con su <input> (según el tipo) y su error, por campo",
+}
+
+contexto_crud = _contexto_crud

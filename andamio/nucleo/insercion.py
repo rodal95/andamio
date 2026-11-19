@@ -15,6 +15,8 @@ import re
 
 
 def linea_marcador(clave: str, comentario: str = "#") -> str:
+    if comentario == "{/*":  # comentario dentro de JSX
+        return f"{{/* --- andamio:{clave} (no borrar esta línea) --- */}}"
     return f"{comentario} --- andamio:{clave} (no borrar esta línea) ---"
 
 

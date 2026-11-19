@@ -24,10 +24,11 @@ def proyecto(en_carpeta, monkeypatch):
 @pytest.fixture
 def con_piezas(proyecto):
     assert main(["nuevo", "componente", "tarjeta producto"]) == 0
-    assert main(["nuevo", "pagina", "ProductosPage"]) == 0
+    assert main(["nuevo", "pagina", "ContactoPage"]) == 0
     assert main(["nuevo", "hook", "useContador"]) == 0
     assert main(["nuevo", "servicio", "producto", "nombre:str", "precio:decimal", "stock:int", "activo:bool", "vence:date"]) == 0
     assert main(["nuevo", "servicio", "cliente", "nombre", "email:email"]) == 0
+    assert main(["nuevo", "crud", "producto", "nombre:str", "precio:decimal", "stock:int", "activo:bool", "vence:date"]) == 0
     return proyecto
 
 
@@ -35,6 +36,7 @@ def test_estructura_del_proyecto(proyecto):
     for archivo in [
         "package.json", "vite.config.ts", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json", "index.html",
         "src/main.tsx", "src/App.tsx", "src/components/index.ts", ".env", ".env.example", ".gitignore",
+        "src/pages/InicioPage/InicioPage.tsx",
     ]:  # fmt: skip
         assert (proyecto / archivo).is_file(), archivo
     for carpeta in ["src/components", "src/hooks", "src/pages", "src/services"]:
@@ -43,7 +45,11 @@ def test_estructura_del_proyecto(proyecto):
     assert paquete["name"] == "mi-web"
     versiones = {**paquete["dependencies"], **paquete["devDependencies"]}
     assert all(v[0].isdigit() for v in versiones.values()), "las versiones tienen que ser fijas"
-    assert {"react", "react-dom", "vite", "typescript", "@vitejs/plugin-react"} <= set(versiones)
+    assert {"react", "react-dom", "react-router", "vite", "typescript", "@vitejs/plugin-react"} <= set(versiones)
+    app = leer(proyecto / "src/App.tsx")
+    for marcador in ("andamio:imports", "andamio:rutas", "andamio:enlaces"):
+        assert marcador in app
+    assert "Mi web" in leer(proyecto / "src/pages/InicioPage/InicioPage.tsx")
     assert "VITE_API_URL=http://localhost:8000/api" in leer(proyecto / ".env")
     assert not (proyecto / "node_modules").exists(), "andamio no ejecuta npm install"
 
@@ -54,14 +60,14 @@ def test_componente(con_piezas):
     assert "styles.root" in leer(carpeta / "TarjetaProducto.tsx")
     assert ".root {" in leer(carpeta / "TarjetaProducto.module.css")
     assert "export { TarjetaProducto } from './TarjetaProducto';" in leer(carpeta / "index.ts")
-    assert leer(con_piezas / "src/components/index.ts").endswith("export { TarjetaProducto } from './TarjetaProducto';\n")
+    assert "export { TarjetaProducto } from './TarjetaProducto';\n" in leer(con_piezas / "src/components/index.ts")
 
 
 def test_hook_y_pagina_no_duplican_prefijos(con_piezas):
     assert (con_piezas / "src/hooks/useContador.ts").is_file()
     assert "export function useContador<T>" in leer(con_piezas / "src/hooks/useContador.ts")
-    assert (con_piezas / "src/pages/ProductosPage/ProductosPage.tsx").is_file()
-    assert not (con_piezas / "src/pages/ProductosPagePage").exists()
+    assert (con_piezas / "src/pages/ContactoPage/ContactoPage.tsx").is_file()
+    assert not (con_piezas / "src/pages/ContactoPagePage").exists()
 
 
 def test_el_hook_se_llama_igual_con_o_sin_use(proyecto, capsys):
@@ -133,15 +139,82 @@ def test_menu_interactivo(proyecto, respuestas, capsys):
     assert (proyecto / "src/components/BotonGrande/BotonGrande.tsx").is_file()
 
 
-APP_QUE_USA_TODO = """\
-import { useEffect, useState } from 'react';
-import { TarjetaProducto } from './components';
-import { useContador } from './hooks/useContador';
-import { ProductosPage } from './pages/ProductosPage';
-import { clienteService } from './services/clienteService';
-import { productoService, type Producto } from './services/productoService';
+def test_pagina_registra_su_ruta_y_su_enlace(con_piezas):
+    app = leer(con_piezas / "src/App.tsx")
+    assert "import { ContactoPage } from './pages/ContactoPage';" in app
+    assert '<Route path="/contacto" element={<ContactoPage />} />' in app
+    assert '<Link to="/contacto">Contacto</Link>' in app
 
-function App() {
+
+def test_crud(con_piezas):
+    raiz = con_piezas
+    for archivo in [
+        "src/pages/productos/ProductoListaPage.tsx", "src/pages/productos/ProductoDetallePage.tsx",
+        "src/pages/productos/ProductoFormPage.tsx", "src/pages/productos/productos.module.css",
+        "src/pages/productos/index.ts", "src/components/ProductoDetalle/ProductoDetalle.tsx",
+        "src/hooks/useConsulta.ts",
+    ]:  # fmt: skip
+        assert (raiz / archivo).is_file(), archivo
+    app = leer(raiz / "src/App.tsx")
+    assert "import { ProductoDetallePage, ProductoFormPage, ProductoListaPage } from './pages/productos';" in app
+    for ruta in ('"/productos"', '"/productos/nuevo"', '"/productos/:id"', '"/productos/:id/editar"'):
+        assert f"<Route path={ruta}" in app
+    assert '<Link to="/productos">Productos</Link>' in app
+    assert "export { ProductoDetalle } from './ProductoDetalle';" in leer(raiz / "src/components/index.ts")
+    formulario = leer(raiz / "src/pages/productos/ProductoFormPage.tsx")
+    assert "<input type=\"checkbox\" checked={datos.activo}" in formulario
+    assert "<input type=\"date\" required value={datos.vence}" in formulario
+    assert 'step="0.01"' in formulario
+    assert "e.estado === 400" in formulario
+    detalle = leer(raiz / "src/components/ProductoDetalle/ProductoDetalle.tsx")
+    assert "<dd>{producto.activo ? 'Sí' : 'No'}</dd>" in detalle
+    assert "productoService." not in detalle, "el componente no tiene que llamar a la API (solo usa el tipo)"
+    assert "{item.nombre}" in leer(raiz / "src/pages/productos/ProductoListaPage.tsx")
+
+
+def test_crud_reusa_el_servicio_que_ya_existe(proyecto, capsys):
+    main(["nuevo", "servicio", "producto", "nombre"])
+    servicio = proyecto / "src/services/productoService.ts"
+    servicio.write_text(leer(servicio) + "// mío\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "crud", "producto", "nombre"]) == 0
+    assert leer(servicio).endswith("// mío\n")
+    assert "Ya existen y no se tocan" in capsys.readouterr().out
+
+
+def test_ruta_repetida(proyecto, capsys):
+    assert main(["nuevo", "pagina", "Productos"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "crud", "producto", "nombre"]) == 1
+    assert "Ya hay una página en la ruta /productos" in capsys.readouterr().err
+    assert not (proyecto / "src/pages/productos").exists()
+
+
+def test_proyecto_sin_router(proyecto, capsys):
+    """Un proyecto creado antes del router (o con npm create vite): genera igual y explica."""
+    import json
+
+    paquete = json.loads(leer(proyecto / "package.json"))
+    del paquete["dependencies"]["react-router"]
+    (proyecto / "package.json").write_text(json.dumps(paquete), encoding="utf-8")
+    (proyecto / "src/App.tsx").write_text("function App() {\n  return <h1>Hola</h1>;\n}\nexport default App;\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "crud", "producto", "nombre"]) == 0
+    salida = capsys.readouterr().out
+    assert (proyecto / "src/pages/productos/ProductoListaPage.tsx").is_file()
+    assert "npm install react-router@7.18.6" in salida
+    assert "dentro de <Routes>" in salida
+    assert '<Route path="/productos" element={<ProductoListaPage />} />' in salida
+
+
+USO_DE_LAS_PIEZAS = """\
+import { useEffect, useState } from 'react';
+import { TarjetaProducto } from '../components';
+import { useContador } from '../hooks/useContador';
+import { clienteService } from '../services/clienteService';
+import { productoService, type Producto } from '../services/productoService';
+
+export function PruebaUso() {
   const { valor, setValor, reiniciar } = useContador(0);
   const [productos, setProductos] = useState<Producto[]>([]);
 
@@ -152,31 +225,23 @@ function App() {
   }, []);
 
   return (
-    <>
-      <ProductosPage />
-      <TarjetaProducto>
-        <button onClick={() => setValor(valor + 1)}>{valor}</button>
-        <button onClick={reiniciar}>0</button>
-        <ul>
-          {productos.map((p) => (
-            <li key={p.id}>
-              {p.nombre} {p.precio.toFixed(2)}
-            </li>
-          ))}
-        </ul>
-      </TarjetaProducto>
-    </>
+    <TarjetaProducto>
+      <button onClick={() => setValor(valor + 1)}>{valor}</button>
+      <button onClick={reiniciar}>0</button>
+      {productos.map((p) => (
+        <p key={p.id}>{p.nombre} {p.precio.toFixed(2)}</p>
+      ))}
+    </TarjetaProducto>
   );
 }
-
-export default App;
 """
 
 
 @pytest.mark.lento
 @requiere_node
 def test_npm_install_y_build(con_piezas):
-    (con_piezas / "src/App.tsx").write_text(APP_QUE_USA_TODO, encoding="utf-8")
+    # App queda como lo generó andamio (router, página y CRUD); además se usa cada pieza.
+    (con_piezas / "src/pages/PruebaUso.tsx").write_text(USO_DE_LAS_PIEZAS, encoding="utf-8")
     npm_install(con_piezas)
     ejecutar([NPM, "run", "build"], con_piezas)
     assert (con_piezas / "dist/index.html").is_file()

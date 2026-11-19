@@ -154,12 +154,20 @@ export default App;
 """
 
 
+def test_react_js_crud(web_js):
+    assert main(["nuevo", "crud", "producto", "nombre:str", "precio:decimal", "activo:bool"]) == 0
+    for archivo in ["src/pages/productos/ProductoFormPage.jsx", "src/components/ProductoDetalle/ProductoDetalle.jsx", "src/hooks/useConsulta.js", "src/services/productoService.js"]:
+        assert (web_js / archivo).is_file(), archivo
+    assert '<Route path="/productos/:id/editar" element={<ProductoFormPage />} />' in leer(web_js / "src/App.jsx")
+    assert "export { ProductoDetalle } from './ProductoDetalle';" in leer(web_js / "src/components/index.js")
+
+
 @pytest.mark.lento
 @requiere_node
 def test_react_js_npm_install_y_build(web_js):
-    for argumentos in (["componente", "Tarjeta"], ["pagina", "Productos"], ["hook", "contador"], ["servicio", "producto", "nombre"]):
+    for argumentos in (["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["servicio", "producto", "nombre"], ["crud", "producto", "nombre"]):
         assert main(["nuevo", *argumentos]) == 0
-    (web_js / "src/App.jsx").write_text(APP_JS, encoding="utf-8")
+    (web_js / "src/pages/PruebaUso.jsx").write_text(APP_JS.replace("function App()", "export function PruebaUso()").replace("export default App;\n", "").replace("./", "../").replace("import { ProductosPage } from '../pages/ProductosPage';\n", "").replace("      <ProductosPage />\n", ""), encoding="utf-8")
     npm_install(web_js)
     ejecutar([NPM, "run", "build"], web_js)
     assert (web_js / "dist/index.html").is_file()

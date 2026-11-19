@@ -7,7 +7,7 @@ componentes, pantallas) para que te concentres en la lógica. Funciona con
 **Instalar** (en Windows, en CMD o PowerShell):
 
 ```
-python -m pip install https://github.com/rodal95/andamio/releases/download/v1.0.1/andamio-1.0.1-py3-none-any.whl
+python -m pip install https://github.com/rodal95/andamio/releases/download/v1.1.0/andamio-1.1.0-py3-none-any.whl
 ```
 
 En Linux o Mac, escribí `python3` en lugar de `python`.
@@ -36,8 +36,15 @@ en tu proyecto, escribí `python -m andamio info`.
 |---|---|---|
 | Python + SQLite (consola) | `python` | `entidad` |
 | Django REST | `django` | `recurso` |
-| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio` |
+| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
+
+**`crud` (React):** con un comando genera la lista, el detalle (con eliminar) y el
+formulario para crear y editar, conectados a la API de Django y con sus rutas
+(`/productos`, `/productos/nuevo`, `/productos/3`, `/productos/3/editar`). Las
+páginas usan el servicio; el componente `ProductoDetalle` solo muestra los datos y
+avisa con `onEditar` / `onEliminar`. Cada `pagina` también queda con su ruta y su
+enlace en el menú.
 
 React y React Native se crean en **TypeScript** (por defecto) o en **JavaScript**
 con `--js`: `python -m andamio crear react mi-web --js`. En un proyecto que ya existe (por
@@ -49,6 +56,7 @@ Ejemplos:
 ```
 python -m andamio nuevo entidad cliente nombre:str telefono:str
 python -m andamio nuevo componente Tarjeta
+python -m andamio nuevo crud producto nombre:str precio:decimal stock:int
 python -m andamio nuevo pantalla detalle-producto --carpeta productos
 python -m andamio nuevo servicio producto nombre:str precio:decimal stock:int
 ```

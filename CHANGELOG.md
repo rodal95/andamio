@@ -5,9 +5,21 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
-## [1.0.1] - 2026-11-19
+## [1.1.0] - 2026-11-19
 
 ### Agregado
+- Pieza `crud` para React: `python -m andamio nuevo crud producto <campos>`
+  genera la lista, el detalle (con eliminar) y el formulario para crear y
+  editar (con los errores de validación de Django en cada campo), el
+  componente `ProductoDetalle` (muestra y avisa, no llama a la API), el hook
+  genérico `useConsulta` y el servicio, y registra las rutas y el enlace en
+  `App`. Funciona en TypeScript y JavaScript.
+- Los proyectos React traen `react-router` (7.x, compatible con Node 20):
+  `App` tiene el menú y las rutas, y la página de inicio pasa a
+  `src/pages/InicioPage/`. `nuevo pagina` registra también su ruta y su enlace.
+- Se rechaza una página o un CRUD si su ruta ya existe en `App`. En proyectos
+  sin router, andamio genera igual e indica el `npm install` y qué pegar.
+- Test en el navegador (Playwright) del CRUD generado contra la API de Django.
 - `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
   usuario (sin permisos de administrador) para poder escribir solo `andamio`.
   En Linux y Mac explica qué línea agregar. Es opcional.
@@ -51,6 +63,6 @@ Primera versión.
   en cada Release.
 - Licencia MIT.
 
-[Sin publicar]: https://github.com/rodal95/andamio/compare/v1.0.1...HEAD
-[1.0.1]: https://github.com/rodal95/andamio/compare/v1.0.0...v1.0.1
+[Sin publicar]: https://github.com/rodal95/andamio/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/rodal95/andamio/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/rodal95/andamio/releases/tag/v1.0.0

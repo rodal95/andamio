@@ -39,17 +39,100 @@ HOOK = Pieza(
     siguiente_paso=["# Usalo en src/App.tsx:", "import { use@@Nombre@@ } from './hooks/use@@Nombre@@';"],
 )
 
+_RUTA_PAGINA = _js.validar_ruta_libre(lambda nombre: f"/{nombre.kebab}")
+
+
+def _validar_pagina(raiz, nombre) -> None:
+    _js.validar_componente(raiz, nombre)
+    _RUTA_PAGINA(raiz, nombre)
+
+
+def _insercion_app(texto: str, marcador: str, descripcion: str, ubicacion: str, comentario: str) -> Insercion:
+    return Insercion("src/App.@@extx@@", texto, marcador=marcador, descripcion=descripcion, ubicacion=ubicacion, comentario=comentario)
+
+
 PAGINA = Pieza(
     clave="pagina",
     titulo="Página",
-    descripcion="página con sus estilos",
-    ejemplo="Productos",
+    descripcion="página con su ruta y su enlace en el menú",
+    ejemplo="Contacto",
     formas=("@@Nombre@@Page",),
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
-    validar_nombre=_js.validar_componente,
+    validar_nombre=_validar_pagina,
     marcadores=_js.MARCADORES_EXTENSION,
     existe_si=("src/pages/@@Nombre@@Page",),
-    siguiente_paso=["# Mostrala en src/App.tsx:", "import { @@Nombre@@Page } from './pages/@@Nombre@@Page';"],
+    inserciones=(
+        _insercion_app("import { @@Nombre@@Page } from './pages/@@Nombre@@Page';", "imports", "import", "arriba, junto a los otros import", "//"),
+        _insercion_app('<Route path="/@@nombreKebab@@" element={<@@Nombre@@Page />} />', "rutas", "ruta /@@nombreKebab@@", "dentro de <Routes>", "{/*"),
+        _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*"),
+    ),
+    siguiente_paso=_js.pasos_router(["npm run dev", "http://localhost:5173/@@nombreKebab@@"]),
+)
+
+_RUTA_CRUD = _js.validar_ruta_libre(lambda nombre: "/" + "-".join(nombre.plural_palabras))
+
+
+def _validar_crud(raiz, nombre) -> None:
+    _js.validar_componente(raiz, nombre)
+    _RUTA_CRUD(raiz, nombre)
+
+
+CRUD = Pieza(
+    clave="crud",
+    titulo="CRUD completo",
+    descripcion="lista, detalle y formulario conectados a la API, con sus rutas",
+    ejemplo="producto nombre:str precio:decimal stock:int",
+    formas=("@@Nombre@@", "ruta /@@pluralKebab@@"),
+    usa_campos=True,
+    usa_plural=True,
+    contexto=_js.contexto_crud,
+    validar_nombre=_validar_crud,
+    marcadores=_js.MARCADORES_CRUD,
+    existe_si=("src/pages/@@pluralKebab@@", "src/components/@@Nombre@@Detalle"),
+    si_no_existe=frozenset(
+        {
+            "src/services/http.ts",
+            "src/services/http.js",
+            "src/services/@@nombreCamel@@Service.ts",
+            "src/services/@@nombreCamel@@Service.js",
+            "src/hooks/useConsulta.ts",
+            "src/hooks/useConsulta.js",
+        }
+    ),
+    inserciones=(
+        _insercion_app(
+            "import { @@Nombre@@DetallePage, @@Nombre@@FormPage, @@Nombre@@ListaPage } from './pages/@@pluralKebab@@';",
+            "imports",
+            "import",
+            "arriba, junto a los otros import",
+            "//",
+        ),
+        _insercion_app(
+            '<Route path="/@@pluralKebab@@" element={<@@Nombre@@ListaPage />} />\n'
+            '<Route path="/@@pluralKebab@@/nuevo" element={<@@Nombre@@FormPage />} />\n'
+            '<Route path="/@@pluralKebab@@/:id" element={<@@Nombre@@DetallePage />} />\n'
+            '<Route path="/@@pluralKebab@@/:id/editar" element={<@@Nombre@@FormPage />} />',
+            "rutas",
+            "rutas /@@pluralKebab@@",
+            "dentro de <Routes>",
+            "{/*",
+        ),
+        _insercion_app('<Link to="/@@pluralKebab@@">@@titulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*"),
+        Insercion(
+            "src/components/index.@@ext@@",
+            "export { @@Nombre@@Detalle } from './@@Nombre@@Detalle';",
+            descripcion="export de @@Nombre@@Detalle",
+            comentario="//",
+            crear_si_falta=True,
+        ),
+    ),
+    siguiente_paso=_js.pasos_router(
+        [
+            "npm run dev",
+            "http://localhost:5173/@@pluralKebab@@",
+            "# Necesita la API de Django andando, con el recurso /api/@@plural@@/ generado con los mismos campos.",
+        ]
+    ),
 )
 
 SERVICIO = Pieza(
@@ -77,7 +160,7 @@ STACK = Stack(
     senal="package.json con vite y react",
     detectar=_js.detectar_dependencias("vite", "react"),
     tipos=_js.TIPOS,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},

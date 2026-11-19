@@ -20,15 +20,12 @@
       },
     },
     react: {
-      marcha: [{ src: "img/react-inicio.jpg", url: "http://localhost:5173", titulo: "La app recién creada", texto: "Lo que ves al abrir el navegador después de npm run dev." }],
-      final: {
-        src: "img/react-final.jpg",
-        url: "http://localhost:5173",
-        titulo: "Página, componente, hook y servicio trabajando juntos",
-        texto: "La lista de productos llega desde la API de Django a través del servicio generado. Esto es lo que escribiste vos:",
-        ejemplos: [
-          ["react-App.tsx", "src/App.tsx"],
-          ["react-Tarjeta.module.css", "src/components/Tarjeta/Tarjeta.module.css"],
+      marcha: [{ src: "img/react-inicio.jpg", url: "http://localhost:5173", titulo: "La app recién creada", texto: "El menú y la página de inicio, al abrir el navegador después de npm run dev." }],
+      piezas: {
+        crud: [
+          { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API de Django. Cada uno enlaza a su detalle." },
+          { src: "img/react-crud-detalle.jpg", url: "http://localhost:5173/productos/1", titulo: "El detalle", texto: "Con los botones Editar y Eliminar." },
+          { src: "img/react-crud-formulario.jpg", url: "http://localhost:5173/productos/nuevo", titulo: "El formulario", texto: "Si Django rechaza un dato, el error aparece debajo del campo." },
         ],
       },
     },
@@ -90,7 +87,7 @@
   const e = A.escapar;
 
   function captura(c) {
-    const imagen = `<img src="${c.src}" alt="${e(c.titulo)}" loading="lazy" width="${c.telefono ? 390 : 1200}" height="${c.telefono ? 760 : 700}">`;
+    const imagen = `<a href="${c.src}" target="_blank" rel="noopener" title="Ver en tamaño completo"><img src="${c.src}" alt="${e(c.titulo)}" loading="lazy" width="${c.telefono ? 390 : 1200}" height="${c.telefono ? 760 : 700}"></a>`;
     const marco = c.telefono
       ? `<div class="telefono">${imagen}</div>`
       : `<div class="navegador"><div class="navegador__barra"><span class="terminal__puntos" aria-hidden="true"><i></i><i></i><i></i></span><span class="navegador__url">${e(c.url || "")}</span></div>${imagen}</div>`;
