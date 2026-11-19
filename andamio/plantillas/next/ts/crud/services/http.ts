@@ -1,0 +1,45 @@
+/**
+ * Funciones para hablar con la API.
+ *
+ * La dirección de la API sale de NEXT_PUBLIC_API_URL (archivo .env); si no está, se usa
+ * @@api_por_defecto@@. Si cambiás el .env, reiniciá "npm run dev".
+ */
+
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '@@api_por_defecto@@').replace(/\/+$/, '');
+
+/** Error que devuelve la API (ej.: 400 con los errores de validación de cada campo). */
+export class ErrorApi extends Error {
+  readonly estado: number;
+  readonly detalle: unknown;
+
+  constructor(estado: number, detalle: unknown) {
+    super(`La API respondió con el error ${estado}`);
+    this.estado = estado;
+    this.detalle = detalle;
+  }
+}
+
+async function pedir<T>(metodo: string, ruta: string, datos?: unknown): Promise<T> {
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    method: metodo,
+    headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: datos === undefined ? undefined : JSON.stringify(datos),
+  });
+  if (!respuesta.ok) {
+    const detalle = await respuesta.json().catch(() => null);
+    throw new ErrorApi(respuesta.status, detalle);
+  }
+  // DELETE responde 204: sin contenido.
+  if (respuesta.status === 204) {
+    return undefined as T;
+  }
+  return (await respuesta.json()) as T;
+}
+
+export const http = {
+  get: <T>(ruta: string) => pedir<T>('GET', ruta),
+  post: <T>(ruta: string, datos: unknown) => pedir<T>('POST', ruta, datos),
+  put: <T>(ruta: string, datos: unknown) => pedir<T>('PUT', ruta, datos),
+  patch: <T>(ruta: string, datos: unknown) => pedir<T>('PATCH', ruta, datos),
+  delete: (ruta: string) => pedir<void>('DELETE', ruta),
+};

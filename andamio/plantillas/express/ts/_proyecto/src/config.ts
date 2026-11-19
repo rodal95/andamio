@@ -22,10 +22,10 @@ export const PUERTO = Number(process.env.PORT || 8000);
 // Base de datos: por defecto, el archivo datos.db.
 export const DATABASE_URL = process.env.DATABASE_URL || 'file:./datos.db';
 
-// Páginas web que pueden usar la API (React con Vite, Expo web).
+// Páginas web que pueden usar la API (React con Vite, Next.js, Expo web).
 export const CORS_ALLOWED_ORIGINS = leerLista(
   'CORS_ALLOWED_ORIGINS',
-  'http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081',
+  'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:8081',
 );
 
 // Zona horaria de las fechas con hora (como TIME_ZONE en Django). Se aplica a todo

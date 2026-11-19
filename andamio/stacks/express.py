@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 from andamio.nucleo import consola
 from andamio.nucleo.errores import AndamioError
@@ -107,7 +108,7 @@ def _verificacion(sol: Solicitud) -> str:
     return f"assert.equal({actual}, {_valor_prueba(campo.tipo, 1)});"
 
 
-def _contexto_recurso(sol: Solicitud) -> dict[str, str]:
+def contexto_recurso(sol: Solicitud) -> dict[str, str]:
     campos = sol.campos
     variable = sol.nombre.camel
     tipos = {c.tipo for c in campos}
@@ -144,18 +145,26 @@ def _leer(ruta: Path) -> str:
         return ""
 
 
-def _validar_nombre(raiz: Path, nombre: Nombre) -> None:
-    motivo = None
-    if nombre.plural == "generated":
-        motivo = "es la carpeta del cliente de Prisma (src/generated)"
-    elif re.search(rf"^\s*model\s+{re.escape(nombre.pascal)}\s*\{{", _leer(raiz / "prisma" / "schema.prisma"), re.M):
-        motivo = f"ya existe el modelo {nombre.pascal} en prisma/schema.prisma"
-    else:
-        for app in ("app.ts", "app.js"):
-            if f"./{nombre.plural}/router" in _leer(raiz / "src" / app):
-                motivo = f"ya está registrado en src/{app}"
-    if motivo:
-        raise AndamioError(f"No se puede crear el recurso '{nombre.plural}': {motivo}.", "Elegí otro nombre, o indicá otro plural con --plural.")
+def validar_nombre_recurso(carpeta: str, apps: tuple[str, ...] = ()) -> Callable[[Path, Nombre], None]:
+    """Rechaza un recurso si choca con la carpeta del cliente de Prisma, con un modelo que
+    ya existe en prisma/schema.prisma o con un router ya registrado en alguna de `apps`."""
+
+    def validar(raiz: Path, nombre: Nombre) -> None:
+        motivo = None
+        if nombre.plural == "generated":
+            motivo = f"es la carpeta del cliente de Prisma ({carpeta}/generated)" if carpeta == "src" else "es la carpeta del cliente de Prisma"
+        elif re.search(rf"^\s*model\s+{re.escape(nombre.pascal)}\s*\{{", _leer(raiz / "prisma" / "schema.prisma"), re.M):
+            motivo = f"ya existe el modelo {nombre.pascal} en prisma/schema.prisma"
+        else:
+            for app in apps:
+                if f"./{nombre.plural}/router" in _leer(raiz / app):
+                    motivo = f"ya está registrado en {app}"
+        if motivo:
+            raise AndamioError(
+                f"No se puede crear el recurso '{nombre.plural}': {motivo}.", "Elegí otro nombre, o indicá otro plural con --plural."
+            )
+
+    return validar
 
 
 def _campos_reservados(nombre: Nombre) -> dict[str, str]:
@@ -194,9 +203,25 @@ def _migrar(sol: Solicitud) -> None:
     sol.opciones["migrado"] = True
 
 
-def _pasos_recurso(sol: Solicitud) -> list[str]:
-    pasos = [] if sol.opciones.get("migrado") else ["npx prisma migrate dev --name @@plural@@"]
-    return [*pasos, "npm run dev", "http://localhost:8000/docs", "# Los tests del recurso se ejecutan con: npm test"]
+def pasos_recurso(siguientes: list[str]) -> Callable[[Solicitud], list[str]]:
+    """La migración (si no se hizo con --migrar), los pasos indicados y cómo ejecutar los tests."""
+
+    def calcular(sol: Solicitud) -> list[str]:
+        pasos = [] if sol.opciones.get("migrado") else ["npx prisma migrate dev --name @@plural@@"]
+        return [*pasos, *siguientes, "# Los tests del recurso se ejecutan con: npm test"]
+
+    return calcular
+
+
+# El modelo del recurso, al final de prisma/schema.prisma.
+INSERCION_MODELO = Insercion(
+    "prisma/schema.prisma",
+    "@@modelo_prisma@@",
+    marcador="modelos",
+    descripcion="modelo @@Nombre@@ (tabla @@plural@@)",
+    ubicacion="al final del archivo",
+    comentario="//",
+)
 
 
 RECURSO = Pieza(
@@ -208,7 +233,7 @@ RECURSO = Pieza(
     usa_campos=True,
     usa_plural=True,
     opciones=frozenset({"migrar"}),
-    contexto=_contexto_recurso,
+    contexto=contexto_recurso,
     campos_reservados=_campos_reservados,
     marcadores={
         **_js.MARCADORES_EXTENSION,
@@ -226,16 +251,9 @@ RECURSO = Pieza(
         "verificacion": "lo que controla el test de modificación",
     },
     existe_si=("src/@@plural@@",),
-    validar_nombre=_validar_nombre,
+    validar_nombre=validar_nombre_recurso("src", ("src/app.ts", "src/app.js")),
     inserciones=(
-        Insercion(
-            "prisma/schema.prisma",
-            "@@modelo_prisma@@",
-            marcador="modelos",
-            descripcion="modelo @@Nombre@@ (tabla @@plural@@)",
-            ubicacion="al final del archivo",
-            comentario="//",
-        ),
+        INSERCION_MODELO,
         Insercion(
             "src/app.@@ext@@",
             "import { @@pluralCamel@@Docs, @@pluralCamel@@Router } from './@@plural@@/router.@@ext@@';",
@@ -261,7 +279,7 @@ RECURSO = Pieza(
             comentario="//",
         ),
     ),
-    siguiente_paso=_pasos_recurso,
+    siguiente_paso=pasos_recurso(["npm run dev", "http://localhost:8000/docs"]),
     despues=_migrar,
     confirmaciones={"migrar": "¿Crear ahora la migración de la base de datos (npx prisma migrate dev)?"},
 )

@@ -29,8 +29,8 @@ jobs:
         run: python -m pytest
 
   # Instala las dependencias de los proyectos generados y los compila:
-  # npm install + build (React), tsc (React Native), npm test y tsc (Express), y servicios y CRUD
-  # contra las APIs de Django, FastAPI y Express.
+  # npm install + build (React y Next.js), tsc (React Native), npm test (Express y Next.js full
+  # stack), y servicios y CRUD en el navegador contra las APIs de Django, FastAPI, Express y Next.js.
   lento:
     name: Proyectos generados (--lento)
     runs-on: ubuntu-latest

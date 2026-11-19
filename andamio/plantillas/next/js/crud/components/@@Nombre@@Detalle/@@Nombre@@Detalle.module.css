@@ -1,0 +1,27 @@
+/* Estilos de @@Nombre@@Detalle. */
+.root {
+  max-width: 480px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0 0 16px;
+}
+
+.datos dt {
+  font-weight: 600;
+}
+
+.datos dd {
+  margin: 0;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}

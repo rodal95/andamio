@@ -25,12 +25,12 @@ andamio/
 ├── stacks/
 │   ├── __init__.py     REGISTRO (orden de detección) y ORDEN_MENU
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
-│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py
-│   └── _js.py          ayudas compartidas por express, react y react-native
+│   ├── python.py  django.py  fastapi.py  express.py  react.py  react_native.py  next.py
+│   └── _js.py          ayudas compartidas por los stacks de JavaScript
 └── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
     └── <pieza>/        lo que genera "andamio nuevo <pieza>"
-                        (express, react y react-native tienen las variantes ts/ y js/)
+                        (los de JavaScript tienen las variantes ts/ y js/)
 tests/unit/             núcleo, CLI, menú, control de plantillas
 tests/integracion/      un archivo por stack, exportación, empaquetado, coherencia
 scripts/empaquetar.py   arma andamio.pyz y el .zip de la Release
@@ -248,6 +248,12 @@ Insercion(
 4. Agregá `tests/integracion/test_<clave>.py`: crear el proyecto, generar cada
    pieza y verificar los archivos; con `@pytest.mark.lento`, instalar y compilar.
 5. Sumalo a las tablas del README (hay un test que lo controla).
+Un stack puede **extender** a otro con `extiende="<clave>"` (así hace
+`next-fullstack` con `next`): su proyecto junta los archivos de `_proyecto` de los
+dos (si se repiten, gana el suyo: por ejemplo, su `package.json`), y las piezas que
+no tiene en su carpeta (componente, página, crud...) se toman de las del otro. Así
+las dos formas de Next.js comparten las mismas plantillas de interfaz.
+
 6. En la página: `sitio/<clave>.html` (copiá otra guía y cambiá
    `data-tecnologia`), el enlace en `PAGINAS` de `sitio/comun.js`, y sus textos en
    `TECNOLOGIAS` y `DESCRIPCIONES` de `scripts/sitio.py` (los tests del sitio
@@ -270,7 +276,9 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   ambos y el `crud` en Chromium ejecutados contra la API generada en Django, en
   FastAPI **y** en Express (`tests/integracion/apis.py` levanta cualquiera de las
   tres). En Express, además, `npm install`, la migración de Prisma, `npm test` y
-  `tsc` del proyecto generado, en TypeScript y en JavaScript.
+  `tsc` del proyecto generado, en TypeScript y en JavaScript. En Next.js, `next build`
+  (que revisa los tipos), `next start` y el mismo CRUD en Chromium: el frontend
+  contra FastAPI y el full stack contra su propia API (después de `npm test`).
 - Las tres APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
   lista sin paginación, decimales como número, fechas con hora en hora local con su
   zona, errores 400 `{campo: [mensajes]}` en español, 404 `{"detail": ...}`, 204 al
@@ -286,6 +294,10 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   funcionar con Python 3.10 (Django 6 ya pide 3.12).
 - FastAPI: `andamio/plantillas/fastapi/_proyecto/requirements.txt`, también con
   Python 3.10. `fastapi-offline` sirve la documentación (`/docs`) sin internet.
+- Next.js: `andamio/plantillas/next/{ts,js}/_proyecto/package.json` y el de
+  `next-fullstack`. Guiarse por `npx create-next-app@<versión>`, pero sin
+  `next/font/google` (descarga fuentes al compilar: falla sin internet). Next.js
+  usa TypeScript 5.x (no la 7). Las APIs aceptan pedidos de `localhost:3000` (CORS).
 - Express: `andamio/plantillas/express/{ts,js}/_proyecto/package.json` (versiones
   exactas). Ojo: en npm, `prisma@latest` puede apuntar a una versión candidata
   (`8.0.0-rc...`); usá la última estable (`npm view prisma dist-tags`). Prisma 7
@@ -333,7 +345,7 @@ JavaScript, sin librerías):
 | Archivo | Qué es |
 |---|---|
 | `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
-| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `python.html`, `django.html`, `fastapi.html`, `express.html`, `react.html`, `react-native.html`, `next.html`, `next-fullstack.html` | una guía por tecnología, armada por `tecnologia.js` |
 | `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
@@ -360,8 +372,8 @@ cambia algo en `sitio/` o en `andamio/`.
 
 **Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
 (API de Django con datos y panel de administración, APIs de FastAPI y de Express
-con su Swagger, web de React compilada, app de Expo exportada para web) y les saca
-fotos con Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
+con su Swagger, webs de React y Next.js compiladas, Next.js full stack, app de Expo
+exportada para web) y les saca fotos con Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
 se suben al repositorio. Necesita las dependencias de Django y de FastAPI en ese
 Python, Node 22.13+ y Playwright para Node.
 

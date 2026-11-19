@@ -1,0 +1,12 @@
+# Dependencias (se instalan con npm install)
+node_modules/
+
+# Lo que genera Next.js (npm run dev, npm run build)
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Configuración local con datos privados
+.env
+.env.local

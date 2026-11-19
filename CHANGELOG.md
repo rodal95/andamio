@@ -23,6 +23,15 @@ Todos los cambios importantes de andamio. El proyecto usa
   propia base `test.db`). Mismo contrato y mismo puerto (8000) que Django y
   FastAPI; Swagger en `/docs` sin internet. `--migrar` ejecuta
   `npx prisma migrate dev`.
+- Stacks de Next.js 16 (App Router), en TypeScript o JavaScript:
+  - `next`: frontend que usa una API hecha con andamio, con piezas `componente`,
+    `pagina`, `hook`, `servicio` y `crud` (lista, detalle y formulario en sus
+    carpetas de `app/`, y el enlace en el menú).
+  - `next-fullstack`: lo mismo más su propia API y base de datos. La pieza
+    `recurso` crea los Route Handlers en `app/api/<recurso>/` con Prisma y Zod,
+    con el mismo contrato que las otras APIs (también la puede usar React
+    Native), 5 tests (`npm test`) y `--migrar`. `proxy.ts` habilita CORS.
+- Un stack puede extender a otro (`Stack.extiende`) y reutilizar sus plantillas.
 - Pieza `crud` para React: `python -m andamio nuevo crud producto <campos>`
   genera la lista, el detalle (con eliminar) y el formulario para crear y
   editar (con los errores de validación de la API en cada campo), el
@@ -34,13 +43,15 @@ Todos los cambios importantes de andamio. El proyecto usa
   `src/pages/InicioPage/`. `nuevo pagina` registra también su ruta y su enlace.
 - Se rechaza una página o un CRUD si su ruta ya existe en `App`. En proyectos
   sin router, andamio genera igual e indica el `npm install` y qué pegar.
-- Test en el navegador (Playwright) del CRUD generado contra las APIs de Django,
-  FastAPI y Express.
+- Test en el navegador (Playwright) del CRUD generado (React y Next.js) contra las
+  APIs de Django, FastAPI, Express y Next.js full stack.
 - `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
   usuario (sin permisos de administrador) para poder escribir solo `andamio`.
   En Linux y Mac explica qué línea agregar. Es opcional.
 
 ### Cambiado
+- Las APIs (Django, FastAPI y Express) aceptan por defecto pedidos de
+  `localhost:3000` (Next.js), además de Vite y Expo.
 - Los servicios y el `crud` de React y React Native ya no hablan solo de
   Django: los comentarios y los `.env` explican cómo usarlos con cualquiera
   de las tres APIs.

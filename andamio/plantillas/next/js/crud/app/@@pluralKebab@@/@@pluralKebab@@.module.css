@@ -1,0 +1,41 @@
+/* Estilos de las páginas de @@titulo@@ (lista, detalle y formulario). */
+.encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.lista {
+  padding-left: 1.2rem;
+  line-height: 2;
+}
+
+.formulario {
+  display: grid;
+  gap: 14px;
+  max-width: 480px;
+}
+
+.campo {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.campo input:not([type='checkbox']),
+.campo textarea {
+  font: inherit;
+  font-weight: normal;
+  padding: 6px 8px;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.error {
+  color: #b42318;
+  font-weight: normal;
+}

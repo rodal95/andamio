@@ -29,7 +29,7 @@ async def ciclo_de_vida(app: FastAPI):
 # FastAPIOffline es FastAPI con la documentación (/docs) incluida: funciona sin internet.
 app = FastAPIOffline(title="API de @@proyectoTitulo@@", lifespan=ciclo_de_vida)
 
-# Qué páginas web pueden usar la API (React con Vite, Expo web). Se configura en el .env.
+# Qué páginas web pueden usar la API (React con Vite, Next.js, Expo web). Se configura en el .env.
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ALLOWED_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 # Errores de validación con el mismo formato que Django REST Framework:

@@ -2,7 +2,8 @@
 
 Genera el código repetitivo de tus proyectos (carpetas, tablas, menús, APIs,
 componentes, pantallas) para que te concentres en la lógica. Funciona con
-**Python + SQLite**, **Django REST**, **FastAPI**, **Express**, **React** y **React Native (Expo)**.
+**Python + SQLite**, **Django REST**, **FastAPI**, **Express**, **React**, **React Native (Expo)**
+y **Next.js** (como frontend o full stack).
 
 **Instalar** (en Windows, en CMD o PowerShell):
 
@@ -40,15 +41,21 @@ en tu proyecto, escribí `python -m andamio info`.
 | Express + Prisma (TS o JS) | `express` | `recurso` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio` |
+| Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud` |
+| Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio` |
 
-**`crud` (React):** con un comando genera la lista, el detalle (con eliminar) y el
+**`crud` (React y Next.js):** con un comando genera la lista, el detalle (con eliminar) y el
 formulario para crear y editar, conectados a la API (Django, FastAPI o Express) y con sus rutas
 (`/productos`, `/productos/nuevo`, `/productos/3`, `/productos/3/editar`). Las
 páginas usan el servicio; el componente `ProductoDetalle` solo muestra los datos y
 avisa con `onEditar` / `onEliminar`. Cada `pagina` también queda con su ruta y su
 enlace en el menú.
 
-React, React Native y Express se crean en **TypeScript** (por defecto) o en
+**Next.js full stack:** `recurso` crea la API en `app/api/` (Route Handlers, con su
+tabla de Prisma) y `crud` las páginas que la usan; generalos con los mismos campos.
+La API tiene la misma forma que las otras, así que también la puede usar React Native.
+
+React, React Native, Express y Next.js se crean en **TypeScript** (por defecto) o en
 **JavaScript** con `--js`: `python -m andamio crear react mi-web --js`. En un proyecto que ya existe (por
 ejemplo, uno creado con `npm create vite`), andamio se da cuenta solo: si tiene
 `tsconfig.json` genera `.tsx`; si no, `.jsx`.
@@ -67,8 +74,8 @@ Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
 - `--plural`: indica el plural cuando el automático no sirve (`--plural paises`).
-- `--migrar` (Django y Express): después de generar el recurso, crea y aplica la migración
-  (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en Express).
+- `--migrar` (Django, Express y Next.js full stack): después de generar el recurso, crea y
+  aplica la migración (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en los otros).
 - `--carpeta` (React Native): crea la pantalla dentro de una carpeta de `app/`.
 
 Los nombres se escriben como quieras (`Línea Venta`, `linea-venta`) y andamio
@@ -78,7 +85,7 @@ los adapta (`LineaVenta`, `linea_venta`). Van **en singular**: `producto`, no `p
 
 Los campos se escriben `nombre:tipo`. Si no ponés el tipo, se usa `str`.
 
-| Tipo | Python + SQLite | Django, FastAPI, Express, React y React Native |
+| Tipo | Python + SQLite | Django, FastAPI, Express, React, React Native y Next.js |
 |---|---|---|
 | `str` | texto | texto corto (hasta 200 caracteres) |
 | `text` | — | texto largo |
@@ -134,7 +141,7 @@ No necesita instalación ni internet.
 Tenés que estar dentro de la carpeta del proyecto (o de una subcarpeta). Entrá con
 `cd mi-proyecto`. Si todavía no lo creaste: `python -m andamio crear <tipo> <nombre>`.
 
-**Cambié `prisma/schema.prisma` (Express) y la API no ve el cambio.**
+**Cambié `prisma/schema.prisma` (Express o Next.js) y la API no ve el cambio.**
 Creá una migración con `npx prisma migrate dev --name <qué cambió>` y volvé a
 ejecutar `npm run dev` (genera el cliente de Prisma de nuevo).
 
@@ -164,7 +171,7 @@ dice qué campo falta o está mal.
 
 **`npm install` falla.**
 Revisá la versión de Node con `node --version`: React necesita 20.19 o más
-nueva, Express 22.12 o más nueva, y React Native (Expo) 22.13 o más nueva.
+nueva, Next.js 20.9 (22.12 el full stack), Express 22.12, y React Native (Expo) 22.13.
 
 **¿Cómo actualizo andamio?**
 Repetí el comando de instalación con la dirección de la versión nueva, que está

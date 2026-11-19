@@ -64,6 +64,8 @@ jobs:
           test -f api-rapida/app/main.py && test -f api-rapida/.gitignore
           python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear express api-node --js
           test -f api-node/src/app.js && test -f api-node/prisma/schema.prisma && test -f api-node/.gitignore
+          python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear next-fullstack app-next
+          test -f app-next/app/layout.tsx && test -f app-next/prisma/schema.prisma && test -f app-next/proxy.ts
 
       - name: Crear la Release
         env:

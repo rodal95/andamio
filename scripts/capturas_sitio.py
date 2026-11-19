@@ -2,9 +2,9 @@
 
     python scripts/capturas_sitio.py
 
-Genera con andamio un proyecto de Django, uno de FastAPI, uno de Express, uno de
-React y uno de React Native, los pone en marcha de verdad (APIs con datos, web
-compilada, app de Expo exportada para web) y les saca fotos con Chromium
+Genera con andamio un proyecto de cada tecnología (Django, FastAPI, Express, React,
+React Native y Next.js en sus dos formas), los pone en marcha de verdad (APIs con
+datos, webs compiladas, app de Expo exportada para web) y les saca fotos con Chromium
 (Playwright). Se ejecuta a mano cuando cambian las plantillas, y las imágenes se
 suben al repositorio.
 
@@ -285,6 +285,75 @@ def react(base: Path) -> None:
         )
 
 
+@contextlib.contextmanager
+def next_en_marcha(carpeta: Path, puerto: int):
+    """next start en un solo proceso (así terminate() lo cierra)."""
+    servidor = subprocess.Popen(
+        ["node", "node_modules/next/dist/bin/next", "start", "-p", str(puerto)],
+        cwd=carpeta,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        esperar_url(f"http://localhost:{puerto}/")
+        yield f"http://localhost:{puerto}"
+    finally:
+        servidor.terminate()
+        servidor.wait(timeout=30)
+
+
+def next_frontend(base: Path) -> None:
+    """La web de Next.js usando la API de Django (que ya está andando en el 8000)."""
+    print("Next.js (frontend)")
+    carpeta = base / "next"
+    carpeta.mkdir()
+    andamio(carpeta, "crear", "next", "mi-web")
+    web = carpeta / "mi-web"
+    for argumentos in (["pagina", "Contacto"], ["crud", "producto", *CAMPOS]):
+        andamio(web, "nuevo", *argumentos)
+    ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], web)
+    ejecutar([NPM, "run", "build"], web, {"NEXT_PUBLIC_API_URL": "http://127.0.0.1:8000/api"})
+    with next_en_marcha(web, 3000) as url:
+        fotos(
+            [
+                {"url": url, "archivo": str(IMAGENES / "next-inicio.jpg"), "ancho": 1000, "alto": 420},
+                {"url": f"{url}/productos", "archivo": str(IMAGENES / "next-crud-lista.jpg"), "ancho": 1000, "alto": 480, "esperar": "text=Mate de calabaza"},
+            ],
+            base,
+        )
+
+
+def next_fullstack(base: Path) -> None:
+    """La aplicación full stack: sus páginas usan su propia API y su base de datos."""
+    print("Next.js full stack")
+    carpeta = base / "next-fullstack"
+    carpeta.mkdir()
+    andamio(carpeta, "crear", "next-fullstack", "mi-app")
+    app = carpeta / "mi-app"
+    for argumentos in (["recurso", "producto", *CAMPOS], ["crud", "producto", *CAMPOS]):
+        andamio(app, "nuevo", *argumentos)
+    ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], app)
+    ejecutar([NPX, "prisma", "migrate", "dev", "--name", "productos"], app)
+    ejecutar([NPM, "run", "build"], app)
+    with next_en_marcha(app, 3001) as url:
+        _cargar_productos(f"{url}/api/productos/")
+        fotos(
+            [
+                {"url": f"{url}/productos/2/", "archivo": str(IMAGENES / "next-fullstack-crud-detalle.jpg"), "ancho": 1000, "alto": 520, "esperar": "dd"},
+                {
+                    "url": f"{url}/productos/nuevo/",
+                    "archivo": str(IMAGENES / "next-fullstack-crud-formulario.jpg"),
+                    "ancho": 1000,
+                    "alto": 640,
+                    "llenar": {"Nombre": "Termo de acero", "Precio": "123456789012", "Stock": "3"},
+                    "enviar": "Guardar",
+                    "esperar_despues": "small",
+                },
+            ],
+            base,
+        )
+
+
 def react_native(base: Path) -> None:
     print("React Native")
     andamio(base, "crear", "react-native", "mi-app")
@@ -319,6 +388,8 @@ def principal() -> None:
             fastapi(base)
             express(base)
             react(base)
+            next_frontend(base)
+            next_fullstack(base)
             react_native(base)
         finally:
             servidor.terminate()

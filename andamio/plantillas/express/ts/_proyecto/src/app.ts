@@ -16,7 +16,7 @@ import { manejarErrores, rutaNoEncontrada } from './errores.ts';
 export const app = express();
 app.disable('x-powered-by'); // no anunciar en cada respuesta que la API usa Express
 
-// Qué páginas web pueden usar la API (React con Vite, Expo web). Se configura en el .env.
+// Qué páginas web pueden usar la API (React con Vite, Next.js, Expo web). Se configura en el .env.
 app.use(cors({ origin: CORS_ALLOWED_ORIGINS }));
 // Lee el JSON que llega en los pedidos (POST, PUT, PATCH) y lo deja en req.body.
 app.use(express.json());

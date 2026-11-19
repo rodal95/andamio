@@ -1,4 +1,5 @@
-// Prueba en el navegador del CRUD generado por andamio (React) contra la API generada (Django o FastAPI).
+// Prueba en el navegador del CRUD generado por andamio (React o Next.js) contra la API generada.
+// Las direcciones pueden terminar con barra (Next.js full stack usa trailingSlash).
 // La ejecuta tests/integracion/test_crud_navegador.py: node crud_navegador.js http://127.0.0.1:PUERTO
 const { chromium } = require('playwright');
 const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok -', m); };
@@ -13,22 +14,23 @@ const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok 
   await p.getByText('Todavía no hay registros.').waitFor();
   ok(true, 'lista vacía');
   await p.getByRole('link', { name: 'Agregar' }).click();
-  ok(p.url().endsWith('/productos/nuevo'), 'botón Agregar lleva al formulario');
+  await p.waitForURL(/\/productos\/nuevo\/?$/);
+  ok(true, 'botón Agregar lleva al formulario');
   const campos = { Nombre: 'Yerba mate', Descripcion: '1 kg', Precio: '4850.5', Stock: '24', Peso: '1', Vence: '2026-12-01', Publicado: '2026-11-19T10:30', Contacto: 'ventas@ejemplo.com' };
   for (const [etiqueta, valor] of Object.entries(campos)) await p.getByLabel(etiqueta).fill(valor);
   await p.getByLabel('Activo').check();
   await p.getByRole('button', { name: 'Guardar' }).click();
-  await p.waitForURL(/\/productos\/\d+$/);
+  await p.waitForURL(/\/productos\/\d+\/?$/);
   await p.getByText('Yerba mate').waitFor();
   ok((await p.locator('dd').allInnerTexts()).includes('4850.5'), 'crear y ver el detalle (precio como número)');
   ok((await p.locator('dd').allInnerTexts()).includes('Sí'), 'booleano mostrado como Sí');
   await p.getByRole('button', { name: 'Editar' }).click();
-  await p.waitForURL(/\/editar$/);
+  await p.waitForURL(/\/editar\/?$/);
   await p.waitForFunction(() => document.querySelector('input')?.value === 'Yerba mate');
   ok(await p.getByLabel('Publicado').inputValue() === '2026-11-19T10:30', 'el formulario de edición trae los datos (fecha y hora incluida)');
   await p.getByLabel('Stock').fill('7');
   await p.getByRole('button', { name: 'Guardar' }).click();
-  await p.waitForURL(/\/productos\/\d+$/);
+  await p.waitForURL(/\/productos\/\d+\/?$/);
   await p.waitForFunction(() => [...document.querySelectorAll('dd')].some((d) => d.textContent === '7'));
   ok(true, 'editar (stock 24 → 7)');
   await p.goto(base + '/productos/nuevo');
@@ -39,10 +41,11 @@ const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok 
   await error.first().waitFor();
   ok(/dígitos/.test(await error.first().innerText()), 'error de validación de la API debajo del campo: ' + await error.first().innerText());
   await p.getByRole('link', { name: 'Productos' }).click();
-  ok(p.url().endsWith('/productos'), 'enlace del menú');
+  await p.waitForURL(/\/productos\/?$/);
+  ok(true, 'enlace del menú');
   await p.getByRole('link', { name: 'Yerba mate' }).click();
   await p.getByRole('button', { name: 'Eliminar' }).click();
-  await p.waitForURL(/\/productos$/);
+  await p.waitForURL(/\/productos\/?$/);
   await p.getByText('Todavía no hay registros.').waitFor();
   ok(true, 'eliminar y volver a la lista');
   ok(errores.length === 0, 'sin errores de JavaScript ' + errores.join(' '));

@@ -1,4 +1,4 @@
-/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react y react-native .html). */
+/* andamio · sitio: guía de una tecnología (python, django, fastapi, express, react, react-native, next y next-fullstack .html). */
 (function () {
   "use strict";
 
@@ -46,6 +46,20 @@
           { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API (Django, FastAPI o Express). Cada uno enlaza a su detalle." },
           { src: "img/react-crud-detalle.jpg", url: "http://localhost:5173/productos/1", titulo: "El detalle", texto: "Con los botones Editar y Eliminar." },
           { src: "img/react-crud-formulario.jpg", url: "http://localhost:5173/productos/nuevo", titulo: "El formulario", texto: "Si la API rechaza un dato, el error aparece debajo del campo." },
+        ],
+      },
+    },
+    next: {
+      marcha: [{ src: "img/next-inicio.jpg", url: "http://localhost:3000", titulo: "La app recién creada", texto: "El menú y la página de inicio, al abrir el navegador después de npm run dev." }],
+      piezas: {
+        crud: [{ src: "img/next-crud-lista.jpg", url: "http://localhost:3000/productos", titulo: "La lista", texto: "Los productos llegan de la API (acá, la de Django). Cada uno enlaza a su detalle, y el menú tiene un enlace por página." }],
+      },
+    },
+    "next-fullstack": {
+      piezas: {
+        crud: [
+          { src: "img/next-fullstack-crud-detalle.jpg", url: "http://localhost:3000/productos/2/", titulo: "El detalle", texto: "Con los datos que guardó la API de este mismo proyecto, y los botones Editar y Eliminar." },
+          { src: "img/next-fullstack-crud-formulario.jpg", url: "http://localhost:3000/productos/nuevo/", titulo: "El formulario", texto: "Si la API rechaza un dato, el error aparece debajo del campo, en español." },
         ],
       },
     },
@@ -97,6 +111,18 @@
       ["Cambié el .env y no toma el valor nuevo", "Cortá npm run dev con Ctrl+C y volvé a ejecutarlo: el .env se lee al arrancar."],
       ["Error 400 al crear", "Los campos del servicio no coinciden con los del recurso de la API: el error dice qué campo falta o está mal."],
       ["Mi proyecto lo creé con npm create vite", "andamio lo reconoce igual: si tiene tsconfig.json genera TypeScript; si no, JavaScript."],
+    ],
+    next: [
+      ["npm install falla", "Revisá la versión de Node con node --version: Next.js necesita 20.9 o más nueva."],
+      ["La lista dice Failed to fetch", "La API tiene que estar andando y NEXT_PUBLIC_API_URL del .env tiene que apuntar a ella. Si cambiaste el .env, reiniciá npm run dev."],
+      ["React no puede leer la API (error de CORS)", "La dirección de la web (http://localhost:3000) tiene que estar en CORS_ALLOWED_ORIGINS del .env de la API (las APIs nuevas de andamio ya la traen)."],
+      ["Error: useState only works in Client Components", "El componente usa estado o eventos: agregá 'use client'; como primera línea del archivo."],
+    ],
+    "next-fullstack": [
+      ["npm install falla", "Revisá la versión de Node con node --version: el full stack (con Prisma) necesita 22.12 o más nueva."],
+      ["The table `main.productos` does not exist", "Falta la migración: npx prisma migrate dev --name productos (o generá el recurso con --migrar)."],
+      ["Cambié prisma/schema.prisma y no se ve el cambio", "Creá una migración (npx prisma migrate dev --name <qué cambió>) y volvé a ejecutar npm run dev, que genera el cliente de Prisma de nuevo."],
+      ["Quiero usar esta API desde React Native", "En el celular usá http://IP-DE-TU-PC:3000/api en EXPO_PUBLIC_API_URL. Para Expo en el navegador, agregá su dirección a CORS_ALLOWED_ORIGINS."],
     ],
     "react-native": [
       ["Network request failed", "En el emulador de Android tu PC es 10.0.2.2 (ya viene en el .env). En un celular real, poné la IP de tu PC en EXPO_PUBLIC_API_URL y hacé que la API escuche en la red: python manage.py runserver 0.0.0.0:8000 (Django) o python -m uvicorn app.main:app --host 0.0.0.0 (FastAPI)."],

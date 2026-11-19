@@ -12,6 +12,8 @@
     { href: "express.html", texto: "Express" },
     { href: "react.html", texto: "React" },
     { href: "react-native.html", texto: "React Native" },
+    { href: "next.html", texto: "Next.js" },
+    { href: "next-fullstack.html", texto: "Next full stack" },
   ];
 
   // --- Texto y HTML ------------------------------------------------------------

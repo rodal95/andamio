@@ -104,5 +104,10 @@ class Stack:
     detectar_variante: Callable[[Path], str] | None = None
     # Marcadores propios de cada variante: {"ts": {"ext": "ts", "extx": "tsx"}, "js": {...}}.
     marcadores_variante: dict[str, dict[str, str]] = field(default_factory=dict)
+    # Clave de otro stack cuyas plantillas se reutilizan: el proyecto nuevo junta los
+    # archivos de _proyecto de los dos (si se repiten, gana el de este stack), y las
+    # piezas que este stack no tiene en su carpeta se toman de la del otro.
+    # Ej.: next-fullstack extiende next (mismas páginas y componentes, más la API).
+    extiende: str = ""
     # Solo para tests: carpeta de plantillas alternativa a la incorporada.
     plantillas: Traversable | None = None

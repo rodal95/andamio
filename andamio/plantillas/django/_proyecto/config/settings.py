@@ -151,10 +151,10 @@ SPECTACULAR_SETTINGS = {
 
 
 # --- CORS: qué páginas web pueden usar la API ------------------------------------
-# 5173 es el puerto de Vite (React) y 8081 el de Expo en el navegador.
+# 5173 es el puerto de Vite (React), 3000 el de Next.js y 8081 el de Expo en el navegador.
 # Las apps de celular no usan CORS, así que no hace falta agregarlas.
 
 CORS_ALLOWED_ORIGINS = leer_lista(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:8081",
 )

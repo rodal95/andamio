@@ -4,7 +4,7 @@ import pytest
 
 from andamio import stacks
 from andamio.nucleo import plantillas
-from andamio.nucleo.generador import carpeta_plantillas
+from andamio.nucleo.generador import carpeta_pieza, carpeta_plantillas
 from andamio.nucleo.motor import marcadores_usados
 from andamio.nucleo.nombres import MARCADORES_NOMBRE
 
@@ -30,7 +30,7 @@ def _piezas():
 def test_cada_marcador_de_una_pieza_esta_declarado(stack, variante, pieza):
     """Si falla: agregá el marcador a `marcadores` de la Pieza (así aparece en el LEEME)."""
     declarados = set(MARCADORES_NOMBRE) | set(pieza.marcadores)
-    carpeta = carpeta_plantillas(stack, variante) / pieza.clave
+    carpeta = carpeta_pieza(stack, pieza, variante)  # la propia o la del stack que extiende
     assert carpeta.is_dir(), f"falta la carpeta {stack.clave}/{variante}/{pieza.clave}"
     usados = set()
     for archivo in plantillas.leer_arbol(carpeta):

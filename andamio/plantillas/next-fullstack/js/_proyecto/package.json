@@ -1,0 +1,31 @@
+{
+  "name": "@@proyecto@@",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "predev": "prisma generate",
+    "dev": "next dev",
+    "prebuild": "prisma generate",
+    "build": "next build",
+    "start": "next start",
+    "pretest": "node --eval \"require('node:fs').rmSync('test.db', { force: true })\" && prisma generate && prisma db push --url file:./test.db",
+    "test": "tsx --tsconfig jsconfig.json --test --test-concurrency=1 \"tests/**/*.test.js\""
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "prisma": "7.10.1",
+    "tsx": "4.23.15"
+  }
+}

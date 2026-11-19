@@ -132,6 +132,99 @@ TECNOLOGIAS = {
             ("npm run tipos", "Solo en TypeScript: revisa los tipos de todo el proyecto."),
         ],
     },
+    "next": {
+        "carpeta": "mi-web",
+        "resumen": "Aplicación web con Next.js (App Router), en TypeScript o JavaScript, que usa una API hecha con andamio (Django, FastAPI o Express). Cada carpeta de app/ es una dirección: no hace falta configurar rutas.",
+        "requisitos": ["Node.js 20.9 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
+        "piezas": {
+            "componente": {
+                "comando": "nuevo componente Tarjeta",
+                "explicacion": "Un componente es una parte reutilizable de la interfaz: una tarjeta, un botón, un formulario. Se genera con sus propios estilos, que no afectan al resto de la página, y queda exportado para importarlo desde cualquier lado.",
+                "uso": "import { Tarjeta } from '@/components';\n\n<Tarjeta>\n  <h3>Yerba</h3>\n  <p>$ 1500</p>\n</Tarjeta>",
+                "uso_lenguaje": "ts",
+            },
+            "pagina": {
+                "comando": "nuevo pagina Contacto",
+                "explicacion": "Una página es una pantalla completa. En Next.js, la carpeta app/contacto con su page es la dirección /contacto: no hay que registrar nada. andamio además agrega el enlace en el menú (app/layout).",
+                "uso": "// Ya queda en el menú. Para enlazarla desde otra página:\nimport Link from 'next/link';\n\n<Link href=\"/contacto\">Escribinos</Link>",
+                "uso_lenguaje": "ts",
+            },
+            "hook": {
+                "comando": "nuevo hook contador",
+                "explicacion": "Un hook guarda estado y lógica para reutilizarlos en varios componentes. Se usa en componentes que empiezan con 'use client' (los que se ejecutan en el navegador).",
+                "uso": "'use client';\nimport { useContador } from '@/hooks/useContador';\n\nconst { valor, setValor } = useContador(0);",
+                "uso_lenguaje": "ts",
+            },
+            "servicio": {
+                "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
+                "explicacion": "Un servicio conecta la aplicación con un recurso de la API: funciones para listar, obtener, crear, modificar y eliminar. La dirección de la API sale de NEXT_PUBLIC_API_URL (.env). Generalo con los mismos campos que el recurso de la API.",
+                "uso": "import { productoService } from '@/services/productoService';\n\nconst productos = await productoService.listar();\nawait productoService.crear({ nombre: 'Yerba', precio: 1500, stock: 10 });",
+                "uso_lenguaje": "ts",
+            },
+            "crud": {
+                "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
+                "explicacion": "Genera de una vez la interfaz completa de un recurso de la API: la lista, el detalle con eliminar y el formulario para crear y editar (con los errores de validación de la API en cada campo), cada uno en su carpeta de app/, y el enlace en el menú. Las páginas son 'use client' y hablan con el servicio.",
+                "uso": "app/productos/page              /productos              listar()\napp/productos/nuevo/page        /productos/nuevo        crear()\napp/productos/[id]/page         /productos/3            obtener(3), eliminar(3)\napp/productos/[id]/editar/page  /productos/3/editar     obtener(3), actualizar(3)",
+                "uso_lenguaje": "texto",
+            },
+        },
+        "extra": [
+            ("npm install", "Instala las dependencias (una vez, o cuando cambia package.json)."),
+            ("npm run dev", "Levanta la aplicación en http://localhost:3000 y la actualiza sola cuando guardás un cambio."),
+            ("npm run build", "Arma la versión para publicar (y revisa los tipos en TypeScript). Después: npm start."),
+        ],
+    },
+    "next-fullstack": {
+        "carpeta": "mi-app",
+        "resumen": "Next.js full stack: las páginas y la API en el mismo proyecto, con base de datos (Prisma + SQLite) y validación (Zod), en TypeScript o JavaScript. La API tiene la misma forma que las de Django, FastAPI y Express: también la puede usar React Native.",
+        "requisitos": ["Node.js 22.12 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
+        "piezas": {
+            "recurso": {
+                "comando": "nuevo recurso producto nombre:str precio:decimal stock:int",
+                "explicacion": "La API de un recurso en app/api/productos/: route (listar y crear) y [id]/route (ver, reemplazar, modificar y eliminar), con el modelo en prisma/schema.prisma, la validación con mensajes en español y 5 tests. Con --migrar, andamio también crea la tabla.",
+                "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena",
+                "uso_lenguaje": "texto",
+            },
+            "crud": {
+                "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
+                "explicacion": "Las páginas del recurso (lista, detalle con eliminar y formulario para crear y editar), conectadas a la API de este mismo proyecto. Generalo con los mismos campos que el recurso.",
+                "uso": "/productos              lista           listar()\n/productos/nuevo        agregar         crear()\n/productos/3            detalle         obtener(3), eliminar(3)\n/productos/3/editar     editar          obtener(3), actualizar(3)",
+                "uso_lenguaje": "texto",
+            },
+            "pagina": {
+                "comando": "nuevo pagina Contacto",
+                "explicacion": "Una página: la carpeta app/contacto es la dirección /contacto, con su enlace en el menú.",
+                "uso": "import Link from 'next/link';\n\n<Link href=\"/contacto\">Escribinos</Link>",
+                "uso_lenguaje": "ts",
+            },
+            "componente": {
+                "comando": "nuevo componente Tarjeta",
+                "explicacion": "Una parte reutilizable de la interfaz, con sus propios estilos.",
+                "uso": "import { Tarjeta } from '@/components';\n\n<Tarjeta>Yerba</Tarjeta>",
+                "uso_lenguaje": "ts",
+            },
+            "hook": {
+                "comando": "nuevo hook contador",
+                "explicacion": "Estado y lógica para reutilizar en componentes 'use client'.",
+                "uso": "const { valor, setValor } = useContador(0);",
+                "uso_lenguaje": "ts",
+            },
+            "servicio": {
+                "comando": "nuevo servicio cliente nombre:str email:email",
+                "explicacion": "Funciones para usar un recurso de la API de este proyecto desde las páginas (el crud ya trae el suyo).",
+                "uso": "import { clienteService } from '@/services/clienteService';\n\nconst clientes = await clienteService.listar();",
+                "uso_lenguaje": "ts",
+            },
+        },
+        "extra": [
+            ("npm install", "Instala las dependencias y genera el cliente de Prisma."),
+            ("npx prisma migrate dev --name productos", "Crea la migración con los cambios de prisma/schema.prisma y la aplica a la base."),
+            ("npm run dev", "Levanta la aplicación y la API en http://localhost:3000 y las actualiza solas cuando guardás un cambio."),
+            ("npm test", "Ejecuta los tests de la API, con otra base (test.db): no toca tus datos."),
+            ("npm run build", "Arma la versión para publicar (después: npm start)."),
+            ("npx prisma studio", "Abre una página para ver y editar los datos de la base."),
+        ],
+    },
     "react": {
         "carpeta": "mi-web",
         "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks, servicios y CRUDs completos para usar tu API (Django, FastAPI o Express).",
@@ -229,6 +322,11 @@ CARPETAS = {
         "src/pages/.gitkeep": "Carpeta para las páginas: acá las crea python -m andamio nuevo pagina.",
         "src/services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
     },
+    "next": {
+        "public/.gitkeep": "Carpeta para archivos que se sirven tal cual: imágenes, íconos, fuentes.",
+        "hooks/.gitkeep": "Carpeta para los hooks: acá los crea python -m andamio nuevo hook.",
+        "services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
+    },
     "react-native": {
         "hooks/.gitkeep": "Carpeta para los hooks: acá los crea python -m andamio nuevo hook.",
         "services/.gitkeep": "Carpeta para los servicios: acá los crea python -m andamio nuevo servicio.",
@@ -293,6 +391,48 @@ DESCRIPCIONES = {
         ("tests/api.*", "Ayuda para los tests: arranca la API con otra base de datos (test.db), para no tocar tus datos."),
         ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
     ],
+    "next": [
+        ("package.json", "Dependencias (Next.js y React) con versiones fijas, y los comandos npm run dev, build y start."),
+        ("tsconfig.json", "Configuración de TypeScript, con el atajo @/ para importar desde la raíz (import { Tarjeta } from '@/components')."),
+        ("jsconfig.json", "Configura el atajo @/ para importar desde la raíz (import { Tarjeta } from '@/components')."),
+        ("next.config.*", "Configuración de Next.js."),
+        ("app/layout.module.css", "Estilos del layout: el menú y el contenedor de las páginas."),
+        ("app/layout.*", "Layout principal: envuelve a todas las páginas y tiene el menú. andamio agrega un enlace por cada página."),
+        ("app/page.module.css", "Estilos de la página de inicio."),
+        ("app/page.*", "La página de inicio (la dirección /)."),
+        ("app/globals.css", "Estilos globales de toda la aplicación."),
+        ("app/*/page.module.css", "Estilos propios de la página."),
+        ("app/*/*.module.css", "Estilos de las páginas del recurso (lista, detalle y formulario)."),
+        ("app/*/*Formulario.*", "El formulario para crear y editar: usa crear() o actualizar() y muestra los errores de validación de la API. Lo usan las páginas nuevo y editar."),
+        ("app/*/nuevo/page.*", "Agregar (la dirección /…/nuevo): muestra el formulario vacío."),
+        ("app/*/[[]id]/editar/page.*", "Editar (la dirección /…/3/editar): muestra el formulario con los datos actuales."),
+        ("app/*/[[]id]/page.*", "El detalle (la dirección /…/3): pide el registro con obtener(id) y lo elimina con eliminar(id). [id] es la parte variable."),
+        ("app/*/page.*", "Una página: la carpeta es la dirección. Si es la de un recurso, la lista: pide los registros con listar()."),
+        ("components/index.*", "Exporta todos los componentes desde un lugar: import { Tarjeta } from '@/components'."),
+        ("components/*/index.*", "Permite importar el componente por el nombre de su carpeta."),
+        ("components/*Detalle/*Detalle.?sx", "Muestra un registro con los botones Editar y Eliminar. No llama a la API: recibe los datos y avisa con onEditar y onEliminar."),
+        ("components/*.module.css", "Estilos propios del componente: no afectan al resto."),
+        ("components/*", "El componente: una función que recibe props y devuelve lo que se ve."),
+        ("hooks/useConsulta.*", "Hook genérico para pedir datos a la API: guarda el resultado, si está cargando y el error. Lo usan las páginas del CRUD."),
+        ("hooks/use*", "Un hook: estado y lógica para reutilizar en componentes 'use client'."),
+        ("services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa NEXT_PUBLIC_API_URL del .env."),
+        ("services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
+    ],
+    "next-fullstack": [
+        ("package.json", "Dependencias (Next.js, React, Prisma, Zod) con versiones fijas, y los comandos npm run dev, build y test."),
+        ("prisma.config.*", "Configuración de Prisma: dónde están el esquema, las migraciones y la base de datos (DATABASE_URL del .env)."),
+        ("prisma/schema.prisma", "Las tablas de la base de datos: un model por tabla (andamio agrega uno por recurso). Después de cambiarlo: npx prisma migrate dev."),
+        ("proxy.*", "Permite que otras páginas (React con Vite, Expo web) usen la API de este proyecto (CORS). Se configura con CORS_ALLOWED_ORIGINS."),
+        ("lib/db.*", "Conexión a la base de datos con Prisma: prisma.producto.findMany(), create(), update(), delete()."),
+        ("lib/errores.*", "Errores con el formato de Django REST (400 {campo: [mensaje]}, 404 {detail}) y responder(), que los convierte en la respuesta de cada ruta."),
+        ("lib/fechas.*", "Cómo salen y se leen las fechas: \"2026-11-19\", y las fechas con hora en hora local con su zona, igual que Django."),
+        ("lib/validacion.*", "Funciones para validar los datos con Zod (texto, entero, decimal, fecha...), con los mensajes en español de Django."),
+        ("app/api/*/[[]id]/route.*", "La API de un registro: GET (ver), PUT (reemplazar), PATCH (modificar) y DELETE (eliminar) en /api/productos/3/."),
+        ("app/api/*/route.*", "La API del recurso: GET (listar, con búsqueda, orden y filtros) y POST (crear) en /api/productos/."),
+        ("app/api/*/esquema.*", "Qué datos acepta el recurso (validación con Zod) y cómo se ve cada registro en el JSON."),
+        ("tests/api.*", "Ayuda para los tests: llama a las funciones de app/api/ sin levantar el servidor, con otra base (test.db)."),
+        ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
+    ],
     "react": [
         ("package.json", "Dependencias (React, Vite) con versiones fijas, y los comandos npm run dev y npm run build."),
         ("index.html", 'La página que carga el navegador: React se dibuja dentro de <div id="root">.'),
@@ -342,9 +482,13 @@ LENGUAJES = {".py": "python", ".ts": "ts", ".tsx": "ts", ".js": "ts", ".jsx": "t
 
 
 def descripcion(clave: str, ruta: str) -> str | None:
-    if ruta in CARPETAS.get(clave, {}):
-        return CARPETAS[clave][ruta]
-    for patron, texto in DESCRIPCIONES[clave] + _COMUNES:
+    # Un stack que extiende a otro (next-fullstack -> next) usa también sus explicaciones.
+    stack = stacks.por_clave(clave)
+    claves = [clave, stack.extiende] if stack and stack.extiende else [clave]
+    for k in claves:
+        if ruta in CARPETAS.get(k, {}):
+            return CARPETAS[k][ruta]
+    for patron, texto in [e for k in claves for e in DESCRIPCIONES[k]] + _COMUNES:
         if fnmatch.fnmatchcase(ruta, patron):
             return texto
     return None

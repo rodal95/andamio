@@ -179,6 +179,15 @@ h3 {
   color: var(--tenue);
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Con muchas guías, en pantallas medianas el menú se achica (y si no entra, se desliza). */
+@media (max-width: 1180px) {
+  .barra__nav {
+    gap: 14px;
+    font-size: 0.94rem;
+  }
 }
 
 .barra__nav a:hover {

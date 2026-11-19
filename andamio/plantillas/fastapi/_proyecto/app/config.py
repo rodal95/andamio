@@ -18,9 +18,9 @@ def leer_lista(nombre, defecto=""):
 # Base de datos: por defecto, el archivo datos.db. Para usar otra, definí DATABASE_URL en el .env.
 DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///" + (RAIZ / "datos.db").as_posix()
 
-# Páginas web que pueden usar la API (React con Vite, Expo web).
+# Páginas web que pueden usar la API (React con Vite, Next.js, Expo web).
 CORS_ALLOWED_ORIGINS = leer_lista(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:8081"
 )
 
 # Zona horaria de las fechas con hora (igual que TIME_ZONE en Django).

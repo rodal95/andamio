@@ -72,12 +72,44 @@ def carpeta_plantillas(stack: Stack, variante: str = "") -> Traversable:
     return base / variante if variante else base
 
 
+def stack_base(stack: Stack) -> Stack | None:
+    """El stack que este extiende (Stack.extiende), o None."""
+    if not stack.extiende:
+        return None
+    from andamio.stacks import por_clave
+
+    base = por_clave(stack.extiende)
+    if base is None:
+        raise AndamioError(f"El stack '{stack.clave}' extiende a '{stack.extiende}', que no existe.")
+    return base
+
+
+def carpeta_pieza(stack: Stack, pieza: Pieza, variante: str = "") -> Traversable:
+    """Carpeta incorporada de una pieza: la del stack o, si no la tiene, la del stack que extiende."""
+    propia = carpeta_plantillas(stack, variante) / pieza.clave
+    base = stack_base(stack)
+    if base is not None and not propia.is_dir():
+        return carpeta_pieza(base, pieza, variante)
+    return propia
+
+
+def archivos_proyecto(stack: Stack, variante: str = "") -> list[plantillas.ArchivoPlantilla]:
+    """Los archivos de _proyecto: los del stack que extiende (si hay) y después los propios."""
+    archivos: dict[str, plantillas.ArchivoPlantilla] = {}
+    base = stack_base(stack)
+    if base is not None:
+        archivos.update((a.ruta, a) for a in archivos_proyecto(base, variante))
+    carpeta = carpeta_plantillas(stack, variante) / plantillas.CARPETA_PROYECTO
+    archivos.update((a.ruta, a) for a in plantillas.leer_arbol(carpeta, ignorar_leeme=False))
+    return [archivos[ruta] for ruta in sorted(archivos)]
+
+
 def ubicar_plantilla(stack: Stack, pieza: Pieza, raiz: Path, variante: str = "") -> tuple[Traversable, bool]:
     """Devuelve la carpeta de plantillas a usar y si es la personalizada por el alumno."""
     propia = plantillas.carpeta_personalizada(raiz, stack.clave, pieza.clave)
     if propia.is_dir():
         return propia, True
-    return carpeta_plantillas(stack, variante) / pieza.clave, False
+    return carpeta_pieza(stack, pieza, variante), False
 
 
 # --- Variantes --------------------------------------------------------------
@@ -189,7 +221,7 @@ def planificar_proyecto(stack: Stack, texto: str, padre: Path, variante: str = "
     plan = Plan(padre)
     plan.crear_carpeta(nombre_carpeta)
     base = PurePosixPath(nombre_carpeta)
-    for archivo in plantillas.leer_arbol(carpeta_plantillas(stack, variante) / plantillas.CARPETA_PROYECTO, ignorar_leeme=False):
+    for archivo in archivos_proyecto(stack, variante):
         origen = f"{stack.clave}/{plantillas.CARPETA_PROYECTO}/{archivo.ruta}"
         destino_rel = base / renderizar_ruta(archivo.partes, contexto, origen)
         texto_plantilla = archivo.texto

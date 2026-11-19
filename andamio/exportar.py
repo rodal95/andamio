@@ -13,7 +13,7 @@ from andamio import acciones
 from andamio.nucleo import consola, plantillas
 from andamio.nucleo.campos import parsear_campo
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.generador import carpeta_plantillas, contexto_pieza, nombre_para_pieza, variante_del_proyecto
+from andamio.nucleo.generador import carpeta_pieza, contexto_pieza, nombre_para_pieza, variante_del_proyecto
 from andamio.nucleo.motor import renderizar
 from andamio.nucleo.nombres import MARCADORES_NOMBRE
 from andamio.nucleo.plan import Plan
@@ -90,7 +90,7 @@ def exportar(cwd: Path, clave_pieza: str | None = None) -> int:
     plan = Plan(raiz)
     base = PurePosixPath(*plantillas.CARPETA_USUARIO.parts) / stack.clave
     for pieza in piezas:
-        origen = carpeta_plantillas(stack, variante_del_proyecto(stack, raiz)) / pieza.clave
+        origen = carpeta_pieza(stack, pieza, variante_del_proyecto(stack, raiz))
         if not origen.is_dir():
             raise AndamioError(f"No encontré las plantillas incorporadas de '{pieza.clave}'.")
         destino = base / pieza.clave
