@@ -189,3 +189,8 @@ def test_error_inesperado_no_oculta_el_detalle(stack_prueba, en_carpeta, monkeyp
     error = capsys.readouterr().err
     assert "error de andamio" in error
     assert "ZeroDivisionError" in error
+
+
+def test_plantillas_sin_accion(capsys):
+    assert main(["plantillas"]) == 1
+    assert "andamio plantillas exportar" in capsys.readouterr().err

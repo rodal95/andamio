@@ -43,6 +43,7 @@ EJEMPLOS = """ejemplos:
   andamio crear django mi-api               crea un proyecto
   andamio nuevo recurso producto nombre:str precio:decimal
   andamio info                              qué se puede generar acá
+  andamio plantillas exportar               copia las plantillas para modificarlas
 """
 
 
@@ -79,7 +80,7 @@ def construir_parser() -> argparse.ArgumentParser:
     sub.add_parser("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
 
     plantillas = sub.add_parser("plantillas", help="exporta las plantillas para modificarlas")
-    plantillas_sub = plantillas.add_subparsers(dest="accion", metavar="accion", parser_class=_Parser, required=True)
+    plantillas_sub = plantillas.add_subparsers(dest="accion", metavar="accion", parser_class=_Parser)
     exportar = plantillas_sub.add_parser("exportar", help="copia las plantillas a .andamio/plantillas/")
     exportar.add_argument("pieza", nargs="?", help="solo esta pieza (por defecto, todas)")
     return parser
@@ -97,6 +98,11 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
     if args.comando == "info":
         return acciones.info(cwd)
     if args.comando == "plantillas":
+        if args.accion != "exportar":
+            raise AndamioError(
+                "Indicá qué hacer con las plantillas.",
+                "Para copiarlas a tu proyecto y modificarlas: andamio plantillas exportar",
+            )
         from andamio import exportar
 
         return exportar.exportar(cwd, args.pieza)

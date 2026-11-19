@@ -149,6 +149,8 @@ export default function PruebaUso() {
 @requiere_node
 def test_npm_install_y_tsc(con_piezas):
     (con_piezas / "app/prueba-uso.tsx").write_text(PANTALLA_QUE_USA_TODO, encoding="utf-8")
+    # Las plantillas exportadas (.andamio/) no son TypeScript válido: tsc tiene que ignorarlas.
+    assert main(["plantillas", "exportar"]) == 0
     npm_install(con_piezas)
     ejecutar([NPX, "tsc", "--noEmit"], con_piezas)
     ejecutar([NPX, "expo", "install", "--check"], con_piezas, env={"EXPO_OFFLINE": "1"})
