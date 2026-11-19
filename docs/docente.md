@@ -356,13 +356,15 @@ JavaScript, sin librerías):
 | `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
-| `ejemplos/` | el código "que escribe el alumno" en las capturas finales |
+| `ejemplos/` | el código de las combinaciones de cada guía (lo que escribe el alumno), en TypeScript y JavaScript |
 
-Cada guía tiene los mismos pasos: instalar, crear el proyecto (con lo que
-muestra la terminal y para qué sirve cada archivo), ponerlo en marcha, generar
-cada pieza (qué crea, qué modifica, cómo se usa y una captura), el proyecto
-completo, todos los comandos y problemas comunes. React y React Native tienen un
-selector TypeScript / JavaScript.
+Cada guía tiene un índice lateral (en el celular, plegable arriba) que sigue la
+línea: **Empezar** (instalar, crear el proyecto, ponerlo en marcha), **Paso a paso**
+(una lección por pieza, en el orden de `CAMINO`, con temas como el router
+intercalados), **Combinaciones** (recetas que usan varias piezas juntas, con su
+código) y **Referencia** (el proyecto completo, todos los comandos y problemas
+comunes). Cada lección termina con enlaces a la anterior y la siguiente. Las guías de
+las tecnologías con variantes tienen un selector TypeScript / JavaScript.
 
 **Nada se escribe a mano.** `scripts/sitio.py` ejecuta andamio de verdad: crea un
 proyecto de cada tipo y variante, genera cada pieza, simula una sesión del menú y
@@ -373,6 +375,17 @@ la página. Lo único escrito a mano en ese archivo es:
 - `DESCRIPCIONES` y `CARPETAS`: para qué sirve cada archivo generado. **Si agregás
   un archivo a una plantilla, agregale su descripción**: hay un test que falla si
   algún archivo generado queda sin explicación.
+- `CAMINO`: el orden de las lecciones de cada guía (el índice lateral). Tiene que
+  tener todas las piezas del stack (hay un test); `"tema:router"` intercala una
+  lección de un concepto, definida en `TEMAS`, que muestra archivos reales del
+  proyecto (si un archivo deja de existir, `sitio.py` falla).
+- `COMBINACIONES`: las recetas del final de cada guía (página + servicio, componente
+  con datos, hook propio...). Su código está en `sitio/ejemplos/<tecnología>/<ts|js>/`,
+  numerado por paso, porque cada receta se arma sobre la anterior.
+  `tests/integracion/test_combinaciones.py` arma el proyecto como dice la guía, aplica
+  cada receta y compila después de cada una (`npm run build`, `tsc`, `reflex compile`
+  o la ejecución, según la tecnología). **Si cambiás una plantilla, ese test te avisa
+  si alguna receta dejó de funcionar.**
 
 El workflow `Sitio` ejecuta `scripts/sitio.py` y publica la página cada vez que
 cambia algo en `sitio/` o en `andamio/`.

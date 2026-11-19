@@ -30,8 +30,8 @@
               componentes y pantallas) para que te concentres en lo que importa.
             </p>
             <div class="portada__acciones">
-              <a class="boton" href="#tecnologias">Elegí tu tecnología</a>
-              <a class="boton boton--borde" href="#instalar">Instalar</a>
+              <a class="boton" href="#como-funciona">Cómo funciona</a>
+              <a class="boton boton--borde" href="#tecnologias">Elegí tu tecnología</a>
             </div>
           </div>
 
@@ -49,46 +49,43 @@
         </div>
       </section>
 
-      <!-- Tecnologías -->
-      <section class="seccion" id="tecnologias">
-        <div class="contenedor">
-          <h2>Elegí tu tecnología</h2>
-          <p class="seccion__bajada">
-            Cada guía te muestra, con comandos y archivos reales, cómo crear el proyecto, ponerlo en marcha y generar
-            cada pieza: qué crea, para qué sirve y cómo se usa.
-          </p>
-          <div class="tecnologias" id="lista-tecnologias"></div>
-        </div>
-      </section>
-
       <!-- Cómo funciona -->
       <section class="seccion seccion--suave" id="como-funciona">
         <div class="contenedor">
           <h2>Cómo funciona</h2>
-          <p class="seccion__bajada">Tres pasos. Lo demás lo escribís vos.</p>
-          <ol class="pasos">
+          <p class="seccion__bajada">
+            Con andamio trabajás con dos cosas: un <b>proyecto</b> (se crea una vez) y sus <b>piezas</b> (las agregás
+            adentro todas las veces que quieras). andamio escribe el código repetitivo; la lógica la escribís vos.
+          </p>
+          <ol class="pasos pasos--cuatro">
             <li class="paso">
               <span class="paso__numero">1</span>
               <h3>Instalalo una vez</h3>
-              <p>Un solo comando, sin configurar nada. Funciona en las PC del laboratorio sin permisos de administrador.</p>
+              <p>Un solo comando en cada PC, sin permisos de administrador.</p>
               <code class="paso__comando">python -m pip install …andamio.whl</code>
             </li>
             <li class="paso">
               <span class="paso__numero">2</span>
-              <h3>Creá el proyecto</h3>
-              <p>Carpetas, configuración y archivos base listos para ejecutar, con el siguiente paso exacto.</p>
+              <h3>Creá un proyecto</h3>
+              <p>Elegís la tecnología y andamio arma la carpeta con todo listo para ejecutar.</p>
               <code class="paso__comando">python -m andamio crear react mi-web</code>
             </li>
             <li class="paso">
               <span class="paso__numero">3</span>
-              <h3>Generá las piezas</h3>
-              <p>Adentro del proyecto, andamio detecta qué tipo es y genera el código que corresponde.</p>
-              <code class="paso__comando">python -m andamio nuevo componente Tarjeta</code>
+              <h3>Generá piezas adentro</h3>
+              <p>Un componente, una página, un servicio, una tabla con su API… andamio la crea y la conecta (rutas, menú, imports).</p>
+              <code class="paso__comando">python -m andamio nuevo pagina Contacto</code>
+            </li>
+            <li class="paso">
+              <span class="paso__numero">4</span>
+              <h3>Combinalas</h3>
+              <p>Cada guía termina con recetas: un servicio en una página, un componente con datos, un hook propio…</p>
+              <code class="paso__comando">página + servicio + componente</code>
             </li>
           </ol>
+          <p class="seccion__pie">Cada tecnología tiene su guía paso a paso, con un índice para seguirla en orden. <a href="#tecnologias">Elegí la tuya ↓</a></p>
         </div>
       </section>
-
       <!-- Instalar -->
       <section class="seccion" id="instalar">
         <div class="contenedor contenedor--angosto">
@@ -127,7 +124,40 @@
           </div>
         </div>
       </section>
-
+      <!-- Tecnologías -->
+      <section class="seccion seccion--suave" id="tecnologias">
+        <div class="contenedor">
+          <h2>Elegí tu tecnología</h2>
+          <p class="seccion__bajada">
+            Agrupadas según lo que vas a construir. Cada guía va en orden: crear el proyecto, una lección por pieza
+            (componentes, páginas, rutas, servicios…) y al final cómo combinarlas, con comandos y archivos reales.
+          </p>
+          <div id="lista-tecnologias"></div>
+        </div>
+      </section>
+      <!-- Punta a punta -->
+      <section class="seccion" id="punta-a-punta">
+        <div class="contenedor">
+          <h2>Del servidor al celular, con el mismo comando</h2>
+          <p class="seccion__bajada">
+            Generá un recurso en Django, FastAPI o Express y el servicio (o el CRUD) en React, React Native, Next.js o Reflex con los mismos
+            campos: se conectan sin tocar nada. Las tres APIs responden igual, así que podés cambiar una por otra.
+          </p>
+          <div class="flujo">
+            <div class="flujo__caja">
+              <span class="flujo__etiqueta">Django · FastAPI · Express</span>
+              <code>python -m andamio nuevo recurso producto nombre:str precio:decimal</code>
+              <span class="flujo__detalle">API en <code>/api/productos/</code></span>
+            </div>
+            <div class="flujo__flecha" aria-hidden="true">→</div>
+            <div class="flujo__caja">
+              <span class="flujo__etiqueta">React · React Native · Next.js · Reflex</span>
+              <code>python -m andamio nuevo servicio producto nombre:str precio:decimal</code>
+              <span class="flujo__detalle"><code>productoService.listar()</code>, <code>crear()</code>, …</span>
+            </div>
+          </div>
+        </div>
+      </section>
       <!-- Cómo se escriben los comandos -->
       <section class="seccion seccion--suave" id="comandos">
         <div class="contenedor">
@@ -160,32 +190,12 @@
         </div>
       </section>
 
-      <!-- Punta a punta -->
-      <section class="seccion" id="punta-a-punta">
-        <div class="contenedor">
-          <h2>Del servidor al celular, con el mismo comando</h2>
-          <p class="seccion__bajada">
-            Generá un recurso en Django, FastAPI o Express y el servicio (o el CRUD) en React, React Native, Next.js o Reflex con los mismos
-            campos: se conectan sin tocar nada. Las tres APIs responden igual, así que podés cambiar una por otra.
-          </p>
-          <div class="flujo">
-            <div class="flujo__caja">
-              <span class="flujo__etiqueta">Django · FastAPI · Express</span>
-              <code>python -m andamio nuevo recurso producto nombre:str precio:decimal</code>
-              <span class="flujo__detalle">API en <code>/api/productos/</code></span>
-            </div>
-            <div class="flujo__flecha" aria-hidden="true">→</div>
-            <div class="flujo__caja">
-              <span class="flujo__etiqueta">React · React Native · Next.js · Reflex</span>
-              <code>python -m andamio nuevo servicio producto nombre:str precio:decimal</code>
-              <span class="flujo__detalle"><code>productoService.listar()</code>, <code>crear()</code>, …</span>
-            </div>
-          </div>
-        </div>
-      </section>
+
+
+
 
       <!-- Ventajas -->
-      <section class="seccion seccion--suave" id="ventajas">
+      <section class="seccion" id="ventajas">
         <div class="contenedor">
           <h2>Pensado para aprender</h2>
           <div class="ventajas">
@@ -200,7 +210,7 @@
       </section>
 
       <!-- Preguntas -->
-      <section class="seccion" id="preguntas">
+      <section class="seccion seccion--suave" id="preguntas">
         <div class="contenedor contenedor--angosto">
           <h2>Preguntas frecuentes</h2>
           <details><summary>¿Por qué los comandos empiezan con "python -m"?</summary><p>Porque andamio es un programa de Python, y así funciona en cualquier PC. Si preferís escribir solo <code>andamio</code>, ejecutá una vez <code>python -m andamio configurar</code> y abrí una terminal nueva.</p></details>

@@ -1803,3 +1803,322 @@ section[id] {
 .paso-guia.seccion--oscura > .contenedor > p {
   color: #b4bec9;
 }
+
+/* --- Guía: índice lateral y lecciones ----------------------------------------- */
+
+.guia {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding-block: 32px 64px;
+}
+
+.guia__lateral {
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 92px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.indice-lateral__plegable {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.indice-lateral__plegable > summary {
+  display: none;
+}
+
+.indice-lateral__grupo {
+  margin: 18px 0 6px;
+  padding-left: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+
+.indice-lateral__grupo:first-of-type {
+  margin-top: 0;
+}
+
+.indice-lateral ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.indice-lateral a {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 10px;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  color: var(--tenue);
+  text-decoration: none;
+  font-size: 0.93rem;
+  line-height: 1.35;
+}
+
+.indice-lateral a:hover {
+  color: var(--texto);
+  background: var(--fondo-suave);
+}
+
+.indice-lateral a[aria-current] {
+  color: var(--texto);
+  font-weight: 700;
+  background: var(--fondo-suave);
+  border-left-color: var(--acento);
+}
+
+.indice-lateral b,
+.leccion__ante b {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 0.75rem;
+}
+
+.indice-lateral a[aria-current] b,
+.leccion__ante b {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--boton-texto);
+}
+
+.guia .leccion {
+  margin: 0 0 48px;
+  padding: 0 0 48px;
+  border-bottom: 1px solid var(--borde);
+  scroll-margin-top: 84px;
+}
+
+.leccion__ante {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--acento-texto);
+}
+
+.leccion h2 {
+  margin: 0 0 12px;
+}
+
+.leccion h3 {
+  margin: 28px 0 10px;
+}
+
+.leccion__intro,
+.leccion__texto p {
+  max-width: 46em;
+}
+
+.leccion__intro {
+  font-size: 1.08rem;
+  color: var(--tenue);
+}
+
+.leccion details {
+  margin: 10px 0;
+}
+
+.leccion summary {
+  cursor: pointer;
+  color: var(--acento-texto);
+  font-weight: 600;
+}
+
+.combinacion__usa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--tenue);
+  font-size: 0.9rem;
+}
+
+.combinacion__usa a,
+.combinacion__usa span {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.combinacion__usa a:hover {
+  border-color: var(--acento);
+}
+
+.combinacion__archivo {
+  margin: 18px 0 6px;
+  font-weight: 600;
+}
+
+.combinacion__claves li {
+  margin-bottom: 6px;
+  max-width: 46em;
+}
+
+.pasos-marcha .paso-lugar {
+  margin: 0 0 6px;
+  color: var(--texto);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.leccion__nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.leccion__nav a {
+  display: block;
+  padding: 12px 16px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.leccion__nav a:hover {
+  border-color: var(--acento);
+}
+
+.leccion__nav a span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tenue);
+}
+
+.leccion__anterior span::before {
+  content: "← ";
+}
+
+.leccion__siguiente {
+  grid-column: 2;
+  text-align: right;
+}
+
+.leccion__siguiente span::after {
+  content: " →";
+}
+
+/* Celular y tableta: el índice se pliega arriba del contenido y queda a mano. */
+@media (max-width: 999px) {
+  .guia {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-top: 0;
+  }
+
+  .guia__lateral {
+    top: 61px;
+    z-index: 4;
+    max-height: none;
+    overflow: visible;
+    margin: 0 -16px 24px;
+    padding: 0 16px;
+    background: var(--fondo);
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .indice-lateral__plegable > summary {
+    display: list-item;
+    padding: 12px 0;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .indice-lateral__plegable[open] {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding-bottom: 12px;
+  }
+
+  .leccion__nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .leccion__siguiente {
+    grid-column: auto;
+  }
+
+  .guia .leccion {
+    scroll-margin-top: 120px;
+  }
+}
+
+/* --- Portada: cómo funciona en cuatro pasos y tecnologías agrupadas --------------- */
+
+.pasos--cuatro {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1000px) {
+  .pasos--cuatro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pasos--cuatro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.seccion__pie {
+  margin: 24px 0 0;
+  color: var(--tenue);
+}
+
+.grupo-tecnologias + .grupo-tecnologias {
+  margin-top: 36px;
+}
+
+.grupo-tecnologias h3 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+}
+
+.grupo-tecnologias > p {
+  margin: 0 0 16px;
+  color: var(--tenue);
+}
+
+.tecnologia h4 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+@media (min-width: 1001px) {
+  .grupo-tecnologias .tecnologias {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -32,6 +32,12 @@ Todos los cambios importantes de andamio. El proyecto usa
     con el mismo contrato que las otras APIs (también la puede usar React
     Native), 5 tests (`npm test`) y `--migrar`. `proxy.ts` habilita CORS.
 - Un stack puede extender a otro (`Stack.extiende`) y reutilizar sus plantillas.
+- Sitio: cada guía tiene un índice lateral que sigue la línea (empezar, una lección
+  por pieza con el router y las rutas explicadas, combinaciones y referencia), y
+  termina con recetas para combinar piezas (un servicio en una página, un componente
+  con datos, un hook propio, enlazar páginas) cuyo código se compila en los tests.
+  La portada se ordenó: qué es, cómo funciona (proyecto y piezas), instalar y las
+  tecnologías agrupadas según lo que se construye.
 - Stack `reflex` (Reflex 0.11, web hecha solo con Python; pide Python 3.11+): piezas
   `crud` (tabla con SQLModel en su propia base, migraciones con `reflex db` y
   `--migrar`, y una página para listar, agregar, editar y eliminar con los errores

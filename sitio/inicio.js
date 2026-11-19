@@ -64,22 +64,40 @@
     }
   }
 
-  // --- Tarjetas de tecnologías --------------------------------------------------------
+  // --- Tarjetas de tecnologías, agrupadas por lo que se construye ----------------------
 
-  function tarjetas() {
-    const lista = document.getElementById("lista-tecnologias");
-    lista.innerHTML = datos.tecnologias
-      .map((t) => {
-        const variante = t.variantes[0];
-        const lenguajes = t.variantes.length > 1 ? `<p><b>${t.variantes.map((v) => e(v.nombre)).join(" o ")}</b></p>` : "";
-        return `<a class="tecnologia" href="${t.clave}.html">
-          <h3>${e(t.titulo)}</h3>
+  const GRUPOS = [
+    { titulo: "La API (el servidor)", texto: "Guarda los datos y los entrega en /api/. La usan las webs y las apps.", claves: ["django", "fastapi", "express"] },
+    { titulo: "La interfaz (web y celular)", texto: "Lo que ve el usuario. Pide los datos a una API.", claves: ["react", "next", "react-native"] },
+    { titulo: "Todo en uno (full stack)", texto: "La interfaz y la API en el mismo proyecto.", claves: ["next-fullstack", "reflex"] },
+    { titulo: "Para empezar", texto: "Un programa de consola con base de datos: solo Python.", claves: ["python"] },
+  ];
+
+  function tarjeta(t) {
+    const variante = t.variantes[0];
+    const lenguajes = t.variantes.length > 1 ? `<p><b>${t.variantes.map((v) => e(v.nombre)).join(" o ")}</b></p>` : "";
+    return `<a class="tecnologia" href="${t.clave}.html">
+          <h4>${e(t.titulo)}</h4>
           <p>${e(t.resumen)}</p>
           ${lenguajes}
           <ul class="tecnologia__piezas" aria-label="Piezas">${variante.piezas.map((p) => `<li>${e(p.clave)}</li>`).join("")}</ul>
-          <span class="tecnologia__ir">Ver la guía →</span>
+          <span class="tecnologia__ir">Ver la guía paso a paso →</span>
         </a>`;
-      })
+  }
+
+  function tarjetas() {
+    const porClave = Object.fromEntries(datos.tecnologias.map((t) => [t.clave, t]));
+    const usadas = new Set(GRUPOS.flatMap((g) => g.claves));
+    // Una tecnología nueva que nadie agrupó igual se muestra (al final).
+    const otras = datos.tecnologias.filter((t) => !usadas.has(t.clave)).map((t) => t.clave);
+    const grupos = otras.length ? [...GRUPOS, { titulo: "Otras", texto: "", claves: otras }] : GRUPOS;
+    document.getElementById("lista-tecnologias").innerHTML = grupos
+      .map(
+        (g) => `<div class="grupo-tecnologias">
+          <h3>${e(g.titulo)}</h3>${g.texto ? `<p>${e(g.texto)}</p>` : ""}
+          <div class="tecnologias">${g.claves.filter((c) => porClave[c]).map((c) => tarjeta(porClave[c])).join("")}</div>
+        </div>`,
+      )
       .join("");
   }
 

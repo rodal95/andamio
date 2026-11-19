@@ -387,6 +387,384 @@ CARPETAS = {
     },
 }
 
+# --- El camino de cada guía ------------------------------------------------------------
+
+# Las piezas en el orden en que conviene aprenderlas. "tema:x" intercala una lección de un
+# concepto que no es una pieza (por ejemplo, el router), definida en TEMAS.
+CAMINO = {
+    "python": ["entidad", "tema:menu"],
+    "django": ["recurso", "tema:rutas"],
+    "fastapi": ["recurso", "tema:rutas"],
+    "express": ["recurso", "tema:rutas"],
+    "react": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
+    "react-native": ["pantalla", "tema:router", "componente", "hook", "servicio"],
+    "next": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
+    "next-fullstack": ["recurso", "crud", "componente", "pagina", "tema:router", "hook", "servicio"],
+    "reflex": ["pagina", "tema:router", "componente", "estado", "crud", "servicio", "crud-api"],
+}
+
+# Lecciones de conceptos. "archivos" son archivos del proyecto completo de la guía (se
+# muestran tal cual quedan); {ext} y {extx} cambian según el lenguaje.
+_ROUTER_NEXT = {
+    "titulo": "Las rutas: cada carpeta es una dirección",
+    "texto": [
+        "En Next.js no se escriben rutas: la carpeta de app/ es la dirección. app/contacto/page es /contacto, y una carpeta entre corchetes es una parte variable: app/productos/[id]/page es /productos/3.",
+        "El menú está en app/layout, que envuelve a todas las páginas: andamio agrega un <Link> por cada página que generes.",
+        "Para ir a otra página: <Link href=\"/contacto\"> o, desde el código, useRouter().push('/contacto'). Para leer la parte variable: useParams().",
+    ],
+    "archivos": ["app/layout.{extx}", "app/productos/[id]/page.{extx}"],
+}
+TEMAS = {
+    "python": {
+        "menu": {
+            "titulo": "El menú principal",
+            "texto": [
+                "main.py muestra el menú principal y llama al menú de cada entidad. El diccionario MENUS tiene una opción por entidad: andamio la agrega cuando generás una.",
+                "Para sumar una opción propia, agregá una línea a MENUS con el texto y la función que se ejecuta.",
+            ],
+            "archivos": ["main.py"],
+        }
+    },
+    "django": {
+        "rutas": {
+            "titulo": "Las rutas de la API",
+            "texto": [
+                "Cada recurso tiene su urls.py: un router de Django REST Framework arma /api/productos/ (listar y crear) y /api/productos/3/ (ver, modificar y eliminar).",
+                "config/urls.py junta todas las rutas: andamio agrega una línea por cada recurso. En /api/docs/ las ves todas, con Swagger.",
+            ],
+            "archivos": ["config/urls.py", "productos/urls.py"],
+        }
+    },
+    "fastapi": {
+        "rutas": {
+            "titulo": "Las rutas de la API",
+            "texto": [
+                "Cada recurso tiene su router.py: un APIRouter con prefix=\"/api/productos\" y una función por operación (@router.get, @router.post...).",
+                "app/main.py incluye cada router con app.include_router: andamio agrega la línea. En /docs las ves todas, con Swagger.",
+            ],
+            "archivos": ["app/main.py"],
+        }
+    },
+    "express": {
+        "rutas": {
+            "titulo": "Las rutas de la API",
+            "texto": [
+                "Cada recurso tiene su router (src/productos/router): una función por operación (router.get, router.post...).",
+                "src/app los monta con app.use('/api/productos', productosRouter): andamio agrega la línea, y también la suma a la documentación de /docs.",
+            ],
+            "archivos": ["src/app.{ext}"],
+        }
+    },
+    "react": {
+        "router": {
+            "titulo": "El router: rutas y menú",
+            "texto": [
+                "Una aplicación de React es una sola página: el router (react-router) decide qué componente mostrar según la dirección. andamio ya lo dejó configurado en src/App.",
+                "Cada <Route path=\"/contacto\" element={<ContactoPage />} /> asocia una dirección con una página, y <Link to=\"/contacto\"> navega sin recargar. pagina y crud agregan su ruta y su enlace solos.",
+                "Adentro de una página: useNavigate() para ir a otra dirección desde el código y useParams() para leer la parte variable de la ruta (el :id de /productos/:id).",
+            ],
+            "archivos": ["src/App.{extx}", "src/pages/productos/ProductoDetallePage.{extx}"],
+        }
+    },
+    "react-native": {
+        "router": {
+            "titulo": "Las rutas: Expo Router",
+            "texto": [
+                "Con Expo Router cada archivo de app/ es una pantalla y su ruta: app/productos/detalle-producto es /productos/detalle-producto. app/index es la pantalla de inicio.",
+                "app/_layout define cómo se muestran: en un Stack, una arriba de la otra, con el botón para volver.",
+                "Para ir a otra pantalla: <Link href=\"/productos/detalle-producto\"> o router.push(...). Para leer lo que llega en la ruta: useLocalSearchParams().",
+            ],
+            "archivos": ["app/_layout.{extx}"],
+        }
+    },
+    "next": {"router": _ROUTER_NEXT},
+    "next-fullstack": {"router": _ROUTER_NEXT},
+    "reflex": {
+        "router": {
+            "titulo": "Las rutas y el menú",
+            "texto": [
+                "Cada página es una función de Python. Se registra con app.add_page(funcion, route=\"/contacto\") en mi_app/mi_app.py: andamio agrega la línea, y también el enlace en la lista ENLACES de plantilla.py.",
+                "Para ir a otra página: rx.link(\"Contacto\", href=\"/contacto\"), o rx.redirect(\"/contacto\") desde una acción del estado.",
+            ],
+            "archivos": ["mi_app/mi_app.py", "mi_app/plantilla.py"],
+        }
+    },
+}
+
+# Combinaciones: cómo usar varias piezas juntas, con código real (sitio/ejemplos/). Cada
+# una se arma sobre la anterior. "archivos" son (ruta en el proyecto, ejemplo); {v} es la
+# variante y {ext}/{extx} sus extensiones. tests/integracion/test_combinaciones.py aplica
+# cada combinación a un proyecto generado y lo compila.
+_CAMPOS_PRODUCTO = "nombre:str precio:decimal stock:int"
+
+_COMBINACIONES_WEB = [
+    {
+        "id": "servicio-en-pagina",
+        "titulo": "Una página que muestra datos de la API",
+        "usa": ["pagina", "servicio"],
+        "texto": "Una página nueva que, al abrirse, pide los productos a la API con el servicio y los muestra en una lista.",
+        "pasos": [("", "nuevo pagina Catalogo"), ("", f"nuevo servicio producto {_CAMPOS_PRODUCTO}")],
+        "claves": [
+            "useState guarda los datos de la página: cuando cambian (setProductos), la página se vuelve a dibujar.",
+            "useEffect(..., []) se ejecuta una sola vez, al abrir la página: ahí se piden los datos.",
+            "productoService.listar() devuelve una promesa: .then recibe la lista y .catch el error.",
+        ],
+    },
+    {
+        "id": "componente-con-datos",
+        "titulo": "Mostrar cada producto con un componente",
+        "usa": ["componente"],
+        "texto": "La misma página, pero cada producto se muestra con un componente Tarjeta. El componente no sabe de la API: recibe lo que tiene que mostrar.",
+        "pasos": [("", "nuevo componente Tarjeta")],
+        "claves": [
+            "Lo que va entre <Tarjeta> y </Tarjeta> le llega al componente como children.",
+            "key={producto.id} le dice a React cuál tarjeta es cuál cuando la lista cambia.",
+            "Si mañana cambiás cómo se ve una tarjeta, se cambia en un solo lugar.",
+        ],
+    },
+    {
+        "id": "hook-propio",
+        "titulo": "Llevar la lógica a un hook",
+        "usa": ["hook", "servicio"],
+        "texto": "Pedir los datos (con su estado de cargando y su error) se lleva a un hook propio: useProductos. La página queda más corta y otras páginas pueden usar el mismo hook.",
+        "pasos": [("", "nuevo hook productos")],
+        "claves": [
+            "Un hook es una función que empieza con use y puede usar useState y useEffect.",
+            "Devuelve lo que la página necesita: { productos, cargando, error }.",
+            "andamio genera el esqueleto del hook; acá se reemplaza por el que pide los productos.",
+        ],
+    },
+]
+
+COMBINACIONES = {
+    "react": [
+        {**_COMBINACIONES_WEB[0], "archivos": [("src/pages/CatalogoPage/CatalogoPage.{extx}", "react/{v}/1-CatalogoPage.{extx}")]},
+        {**_COMBINACIONES_WEB[1], "archivos": [("src/pages/CatalogoPage/CatalogoPage.{extx}", "react/{v}/2-CatalogoPage.{extx}")]},
+        {
+            **_COMBINACIONES_WEB[2],
+            "archivos": [
+                ("src/hooks/useProductos.{ext}", "react/{v}/3-useProductos.{ext}"),
+                ("src/pages/CatalogoPage/CatalogoPage.{extx}", "react/{v}/3-CatalogoPage.{extx}"),
+            ],
+        },
+        {
+            "id": "enlazar-con-el-crud",
+            "titulo": "Enlazar con otra página (router)",
+            "usa": ["crud", "pagina"],
+            "texto": "Cada tarjeta del catálogo lleva al detalle del producto, que es una página del crud. El crud usa el servicio que ya tenías.",
+            "pasos": [("", f"nuevo crud producto {_CAMPOS_PRODUCTO}")],
+            "archivos": [("src/pages/CatalogoPage/CatalogoPage.{extx}", "react/{v}/4-CatalogoPage.{extx}")],
+            "claves": [
+                "<Link to={`/productos/${producto.id}`}> arma la dirección de cada producto: /productos/3.",
+                "Esa ruta la registró el crud en src/App; su página lee el 3 con useParams().",
+                "El crud no pisó tu servicio: usa el que ya existía, porque tiene los mismos campos.",
+            ],
+        },
+    ],
+    "next": [
+        {**_COMBINACIONES_WEB[0], "archivos": [("app/catalogo/page.{extx}", "next/{v}/1-page.{extx}")]},
+        {**_COMBINACIONES_WEB[1], "archivos": [("app/catalogo/page.{extx}", "next/{v}/2-page.{extx}")]},
+        {
+            **_COMBINACIONES_WEB[2],
+            "archivos": [("hooks/useProductos.{ext}", "next/{v}/3-useProductos.{ext}"), ("app/catalogo/page.{extx}", "next/{v}/3-page.{extx}")],
+        },
+        {
+            "id": "enlazar-con-el-crud",
+            "titulo": "Enlazar con otra página",
+            "usa": ["crud", "pagina"],
+            "texto": "Cada tarjeta del catálogo lleva al detalle del producto, que es una página del crud (la carpeta app/productos/[id]).",
+            "pasos": [("", f"nuevo crud producto {_CAMPOS_PRODUCTO}")],
+            "archivos": [("app/catalogo/page.{extx}", "next/{v}/4-page.{extx}")],
+            "claves": [
+                "<Link href={`/productos/${producto.id}`}> arma la dirección de cada producto: /productos/3.",
+                "No hay que registrar la ruta: la carpeta app/productos/[id] que generó el crud ya es esa dirección.",
+                "'use client' va en la primera línea porque la página usa un hook: se ejecuta en el navegador.",
+            ],
+        },
+    ],
+    "react-native": [
+        {
+            **_COMBINACIONES_WEB[0],
+            "titulo": "Una pantalla que muestra datos de la API",
+            "usa": ["servicio"],
+            "texto": "La pantalla de inicio pide los productos a la API con el servicio y los muestra en una lista (FlatList).",
+            "pasos": [("", f"nuevo servicio producto {_CAMPOS_PRODUCTO}")],
+            "archivos": [("app/index.{extx}", "react-native/{v}/1-index.{extx}")],
+            "claves": [
+                "useState guarda la lista: cuando cambia (setProductos), la pantalla se vuelve a dibujar.",
+                "useEffect(..., []) se ejecuta una sola vez, al abrir la pantalla: ahí se piden los datos.",
+                "FlatList dibuja solo las filas que se ven: sirve para listas largas.",
+            ],
+        },
+        {**_COMBINACIONES_WEB[1], "archivos": [("app/index.{extx}", "react-native/{v}/2-index.{extx}")]},
+        {
+            **_COMBINACIONES_WEB[2],
+            "archivos": [("hooks/useProductos.{ext}", "react-native/{v}/3-useProductos.{ext}"), ("app/index.{extx}", "react-native/{v}/3-index.{extx}")],
+        },
+        {
+            "id": "abrir-otra-pantalla",
+            "titulo": "Abrir otra pantalla con un dato (router)",
+            "usa": ["pantalla"],
+            "texto": "Al tocar una tarjeta se abre la pantalla de detalle, que recibe el id del producto en la ruta y lo pide a la API.",
+            "pasos": [("", "nuevo pantalla detalle-producto --carpeta productos")],
+            "archivos": [
+                ("app/index.{extx}", "react-native/{v}/4-index.{extx}"),
+                ("app/productos/detalle-producto.{extx}", "react-native/{v}/4-detalle-producto.{extx}"),
+            ],
+            "claves": [
+                "<Link href={{ pathname: '/productos/detalle-producto', params: { id: item.id } }}> abre la pantalla con el id.",
+                "En el detalle, useLocalSearchParams() lee ese id, y productoService.obtener(id) pide el producto.",
+                "asChild hace que el Link use el Pressable de adentro: toda la tarjeta se puede tocar.",
+            ],
+        },
+    ],
+    "next-fullstack": [
+        {
+            **_COMBINACIONES_WEB[0],
+            "titulo": "Una página que usa la API de este proyecto",
+            "usa": ["recurso", "pagina", "servicio"],
+            "texto": "El recurso crea la API en app/api/productos/; una página nueva la usa con el servicio, igual que si la API estuviera en otro lado.",
+            "pasos": [
+                ("", f"nuevo recurso producto {_CAMPOS_PRODUCTO} --migrar"),
+                ("", "nuevo pagina Catalogo"),
+                ("", f"nuevo servicio producto {_CAMPOS_PRODUCTO}"),
+            ],
+            "archivos": [("app/catalogo/page.{extx}", "next/{v}/1-page.{extx}")],
+        },
+        {**_COMBINACIONES_WEB[1], "archivos": [("app/catalogo/page.{extx}", "next/{v}/2-page.{extx}")]},
+        {
+            **_COMBINACIONES_WEB[2],
+            "archivos": [("hooks/useProductos.{ext}", "next/{v}/3-useProductos.{ext}"), ("app/catalogo/page.{extx}", "next/{v}/3-page.{extx}")],
+        },
+        {
+            "id": "desde-react-native",
+            "titulo": "Usar esta API desde React Native",
+            "usa": ["recurso"],
+            "texto": "La API de este proyecto tiene la misma forma que las de Django, FastAPI y Express: una app de React Native la usa con su servicio.",
+            "pasos": [
+                ("En la app de React Native", f"nuevo servicio producto {_CAMPOS_PRODUCTO}"),
+                ("En el .env de la app", "EXPO_PUBLIC_API_URL=http://IP-DE-TU-PC:3000/api"),
+                ("En este proyecto", "npm run dev"),
+            ],
+            "claves": [
+                "En un celular, localhost es el celular: usá la IP de tu PC (en Windows, ipconfig).",
+                "Next.js ya escucha en la red con npm run dev.",
+                "Para Expo en el navegador, agregá su dirección a CORS_ALLOWED_ORIGINS en el .env de este proyecto.",
+            ],
+        },
+    ],
+    "reflex": [
+        {
+            "id": "componente-en-pagina",
+            "titulo": "Usar un componente en una página",
+            "usa": ["pagina", "componente"],
+            "texto": "Una página nueva que muestra tarjetas con el componente tarjeta.",
+            "pasos": [("", "nuevo pagina Catalogo"), ("", "nuevo componente Tarjeta")],
+            "archivos": [("mi_app/paginas/catalogo.py", "reflex/1-catalogo.py")],
+            "claves": [
+                "Un componente es una función: tarjeta(...) recibe lo que va adentro y devuelve un componente.",
+                "rx.hstack los pone uno al lado del otro; spacing es el espacio entre ellos.",
+            ],
+        },
+        {
+            "id": "estado-en-pagina",
+            "titulo": "Una página con su estado",
+            "usa": ["estado"],
+            "texto": "La misma página con un botón que suma \"me gusta\": el valor vive en un estado y la página se actualiza sola.",
+            "pasos": [("", "nuevo estado contador")],
+            "archivos": [("mi_app/paginas/catalogo.py", "reflex/2-catalogo.py")],
+            "claves": [
+                "on_click=ContadorState.sumar ejecuta esa acción en Python cuando tocás el botón.",
+                "rx.text(ContadorState.valor) muestra el valor y cambia solo cuando el estado cambia.",
+            ],
+        },
+        {
+            "id": "servicio-en-pagina",
+            "titulo": "Una página que muestra datos de una API",
+            "usa": ["servicio", "componente"],
+            "texto": "La página pide los productos a una API hecha con andamio (Django, FastAPI o Express) y muestra una tarjeta por cada uno.",
+            "pasos": [("", f"nuevo servicio producto {_CAMPOS_PRODUCTO}"), ("En el .env", "API_URL=http://localhost:8000/api")],
+            "archivos": [("mi_app/paginas/catalogo.py", "reflex/3-catalogo.py")],
+            "claves": [
+                "CatalogoState.cargar es async: espera la respuesta de la API (await) sin trabar la página.",
+                "on_mount=CatalogoState.cargar pide los datos cuando la página se abre.",
+                "rx.foreach arma una tarjeta por producto: la lista vive en el estado, no en el navegador.",
+            ],
+        },
+    ],
+    "python": [
+        {
+            "id": "entidad-en-tu-codigo",
+            "titulo": "Usar una entidad desde tu propio programa",
+            "usa": ["entidad"],
+            "texto": "Las funciones de una entidad (crear, listar, obtener, actualizar y eliminar) se pueden usar desde cualquier archivo: por ejemplo, un reporte.",
+            "pasos": [("", "nuevo entidad producto nombre:str precio:float stock:int")],
+            "archivos": [("reporte.py", "python/1-reporte.py")],
+            "claves": [
+                "db.inicializar() crea las tablas si no existen (main.py lo hace al arrancar).",
+                "producto.listar() devuelve filas: se leen por nombre, como fila[\"precio\"].",
+                "Se ejecuta con python reporte.py, desde la carpeta del proyecto.",
+            ],
+        }
+    ],
+}
+
+# Las APIs se combinan con los frontends: son pasos en los dos proyectos.
+for _api, _marcha in (
+    ("django", "python manage.py runserver"),
+    ("fastapi", "python -m uvicorn app.main:app --reload"),
+    ("express", "npm run dev"),
+):
+    _migrar = " --migrar" if _api in ("django", "express") else ""
+    COMBINACIONES[_api] = [
+        {
+            "id": "desde-una-web",
+            "titulo": "Usar el recurso desde React o Next.js",
+            "usa": ["recurso"],
+            "texto": "La web pide y guarda los datos en esta API. Generá el recurso acá y el crud en la web, con los mismos campos.",
+            "pasos": [
+                ("En la API", f"nuevo recurso producto {_CAMPOS_PRODUCTO}{_migrar}"),
+                ("En la API", _marcha),
+                ("En la web (React o Next.js)", f"nuevo crud producto {_CAMPOS_PRODUCTO}"),
+                ("En la web", "npm run dev"),
+            ],
+            "claves": [
+                "Los campos tienen que ser los mismos en los dos lados: si no, la API responde 400 y dice cuál falta.",
+                "La web ya apunta a http://localhost:8000/api (VITE_API_URL o NEXT_PUBLIC_API_URL en su .env).",
+                "La API ya acepta pedidos de React (puerto 5173) y Next.js (3000): CORS_ALLOWED_ORIGINS en el .env.",
+            ],
+        },
+        {
+            "id": "desde-el-celular",
+            "titulo": "Usarlo desde el celular (React Native)",
+            "usa": ["recurso"],
+            "texto": "La app de React Native usa la misma API con su servicio.",
+            "pasos": [
+                ("En la app", f"nuevo servicio producto {_CAMPOS_PRODUCTO}"),
+                ("En el .env de la app", "EXPO_PUBLIC_API_URL=http://IP-DE-TU-PC:8000/api"),
+                ("En la API", {"django": "python manage.py runserver 0.0.0.0:8000", "fastapi": "python -m uvicorn app.main:app --reload --host 0.0.0.0", "express": "npm run dev"}[_api]),
+            ],
+            "claves": [
+                "En el emulador de Android tu PC es 10.0.2.2 (ya viene en el .env de la app).",
+                "En un celular real, poné la IP de tu PC (en Windows: ipconfig) y que la API escuche en la red.",
+            ]
+            + (["En Django, agregá también esa IP a ALLOWED_HOSTS en el .env."] if _api == "django" else []),
+        },
+        {
+            "id": "buscar-ordenar-filtrar",
+            "titulo": "Buscar, ordenar y filtrar",
+            "usa": ["recurso"],
+            "texto": "La lista acepta parámetros en la dirección. Probalos en el navegador o desde la web.",
+            "pasos": [
+                ("Buscar en los campos de texto", "http://localhost:8000/api/productos/?search=yerba"),
+                ("Ordenar (con - es de mayor a menor)", "http://localhost:8000/api/productos/?ordering=-precio"),
+                ("Filtrar por igualdad", "http://localhost:8000/api/productos/?stock=10"),
+            ],
+            "claves": ["Se pueden combinar: ?search=mate&ordering=precio.", "Funciona igual en las tres APIs de andamio."],
+        },
+    ]
+
+
 DESCRIPCIONES = {
     "python": [
         ("main.py", "Punto de entrada: muestra el menú principal. El diccionario MENUS tiene una opción por entidad (andamio las agrega solo)."),
@@ -669,7 +1047,67 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
         "piezas": piezas,
         "archivos": archivos,
         "comandos_andamio": [{"comando": c, "descripcion": d} for c, d in comandos],
+        "camino": camino(stack.clave, variante, archivos),
+        "combinaciones": combinaciones(stack.clave, variante),
     }
+
+
+EJEMPLOS = RAIZ / "sitio" / "ejemplos"
+
+
+def extensiones(variante: str) -> dict[str, str]:
+    """Las extensiones de los archivos de código según el lenguaje: ts/tsx, js/jsx (o py)."""
+    return {"ts": {"ext": "ts", "extx": "tsx"}, "js": {"ext": "js", "extx": "jsx"}}.get(variante, {"ext": "py", "extx": "py"})
+
+
+def camino(clave: str, variante: str, archivos: list[dict]) -> list[dict]:
+    """Las lecciones de la guía en orden: piezas y temas, con los archivos reales de cada tema."""
+    rutas = {a["ruta"] for a in archivos}
+    lecciones = []
+    for item in CAMINO[clave]:
+        if not item.startswith("tema:"):
+            lecciones.append({"tipo": "pieza", "clave": item})
+            continue
+        tema = TEMAS[clave][item.removeprefix("tema:")]
+        mostrados = [ruta.format(**extensiones(variante)) for ruta in tema["archivos"]]
+        faltan = [ruta for ruta in mostrados if ruta not in rutas]
+        if faltan:
+            raise SystemExit(f"{clave}/{variante}: el tema {item} muestra archivos que el proyecto no tiene: {faltan}")
+        lecciones.append({"tipo": "tema", "id": item.removeprefix("tema:"), "titulo": tema["titulo"], "texto": tema["texto"], "archivos": mostrados})
+    return lecciones
+
+
+def archivos_combinacion(combinacion: dict, variante: str) -> list[tuple[str, Path]]:
+    """(ruta en el proyecto, archivo de ejemplo) de una combinación, para esa variante."""
+    valores = {**extensiones(variante), "v": variante}
+    return [(ruta.format(**valores), EJEMPLOS / ejemplo.format(**valores)) for ruta, ejemplo in combinacion.get("archivos", [])]
+
+
+def combinaciones(clave: str, variante: str) -> list[dict]:
+    resultado = []
+    for combinacion in COMBINACIONES.get(clave, []):
+        archivos = []
+        for ruta, ejemplo in archivos_combinacion(combinacion, variante):
+            if not ejemplo.is_file():
+                raise SystemExit(f"Falta el ejemplo {ejemplo.relative_to(RAIZ)} ({clave}, {combinacion['id']})")
+            lenguaje = LENGUAJES.get(Path(ruta).suffix, "texto")
+            archivos.append({"ruta": ruta, "lenguaje": lenguaje, "contenido": ejemplo.read_text(encoding="utf-8")})
+        pasos = [
+            {"lugar": lugar, "comando": f"{PROGRAMA} {comando}" if comando.startswith("nuevo ") else comando}
+            for lugar, comando in combinacion["pasos"]
+        ]
+        resultado.append(
+            {
+                "id": combinacion["id"],
+                "titulo": combinacion["titulo"],
+                "usa": combinacion["usa"],
+                "texto": combinacion["texto"],
+                "pasos": pasos,
+                "archivos": archivos,
+                "claves": combinacion["claves"],
+            }
+        )
+    return resultado
 
 
 def _que_se_modifico(salida: str, ruta: str) -> str:
@@ -677,12 +1115,6 @@ def _que_se_modifico(salida: str, ruta: str) -> str:
     limpia = re.sub(r"\x1b\[[\d;]*m", "", salida).replace("\\", "/")
     encontrado = re.search(rf"~ {re.escape(ruta)}\s+\((.*)\)", limpia)
     return encontrado.group(1) if encontrado else ""
-
-
-def _ejemplos() -> dict[str, str]:
-    """Código de ejemplo que "escribe el alumno" (sitio/ejemplos/), usado en las capturas."""
-    carpeta = RAIZ / "sitio" / "ejemplos"
-    return {p.name: p.read_text(encoding="utf-8") for p in sorted(carpeta.glob("*")) if p.is_file()}
 
 
 def demo_tecnologia(base: Path, stack) -> dict:
@@ -784,7 +1216,7 @@ def generar() -> dict:
             _base_actual = str(proyectos.resolve())
             tecnologias = [demo_tecnologia(proyectos, stack) for stack in stacks.ORDEN_MENU]
             tecnologias[0]["ejecucion"] = ejecucion_python(proyectos)
-            return {"version": andamio.__version__, "menu": sesion, "tecnologias": tecnologias, "ejemplos": _ejemplos()}
+            return {"version": andamio.__version__, "menu": sesion, "tecnologias": tecnologias}
         finally:
             _base_actual = ""
             consola._usar_color = None

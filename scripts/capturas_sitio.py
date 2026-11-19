@@ -399,7 +399,13 @@ def react_native(base: Path) -> None:
     print("React Native")
     andamio(base, "crear", "react-native", "mi-app")
     app = base / "mi-app"
-    for argumentos in (["pantalla", "detalle producto", "--carpeta", "productos"], ["componente", "Tarjeta"], ["hook", "contador"], ["servicio", "producto", *CAMPOS]):
+    for argumentos in (
+        ["pantalla", "detalle producto", "--carpeta", "productos"],
+        ["componente", "Tarjeta"],
+        ["hook", "contador"],
+        ["hook", "productos"],
+        ["servicio", "producto", *CAMPOS],
+    ):
         andamio(app, "nuevo", *argumentos)
     ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], app)
     entorno = {"EXPO_PUBLIC_API_URL": "http://localhost:8000/api", "EXPO_OFFLINE": "1"}
@@ -413,7 +419,13 @@ def react_native(base: Path) -> None:
             ],
             base,
         )
-    shutil.copy(EJEMPLOS / "react-native-index.tsx", app / "app" / "index.tsx")
+    # El código de la última combinación de la guía (sitio/ejemplos/react-native/ts/).
+    for ejemplo, destino in (
+        ("3-useProductos.ts", "hooks/useProductos.ts"),
+        ("4-index.tsx", "app/index.tsx"),
+        ("4-detalle-producto.tsx", "app/productos/detalle-producto.tsx"),
+    ):
+        shutil.copy(EJEMPLOS / "react-native" / "ts" / ejemplo, app / destino)
     shutil.rmtree(app / "web")
     ejecutar([NPX, "expo", "export", "--platform", "web", "--output-dir", "web"], app, entorno)
     with servir(app / "web", 8081, "localhost") as url:

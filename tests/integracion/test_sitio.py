@@ -81,5 +81,41 @@ def test_existen_las_paginas_y_las_capturas():
     codigo = (SITIO / "tecnologia.js").read_text(encoding="utf-8")
     for imagen in re.findall(r"img/[\w.-]+\.jpg", codigo):
         assert (SITIO / imagen).is_file(), f"falta {imagen}: ejecutá python scripts/capturas_sitio.py"
-    for archivo in re.findall(r'\["([\w.-]+)", "[^"]+"\]', codigo):
-        assert (SITIO / "ejemplos" / archivo).is_file(), archivo
+    # Las capturas de una combinación tienen que ser de una combinación que existe.
+    ids = {c["id"] for combinaciones in sitio.COMBINACIONES.values() for c in combinaciones}
+    for bloque in re.findall(r"combinaciones: \{(.*?)\n      \},", codigo, re.S):
+        for clave in re.findall(r'"([\w-]+)": \{', bloque):
+            assert clave in ids, clave
+
+
+def test_el_camino_de_cada_guia_tiene_todas_las_piezas(datos):
+    """Si falla: agregá la pieza a CAMINO en scripts/sitio.py, en el orden en que conviene aprenderla."""
+    for tecnologia, stack in zip(datos["tecnologias"], stacks.ORDEN_MENU):
+        for variante in tecnologia["variantes"]:
+            piezas = [l["clave"] for l in variante["camino"] if l["tipo"] == "pieza"]
+            assert sorted(piezas) == sorted(stack.piezas), tecnologia["clave"]
+            rutas = {a["ruta"] for a in variante["archivos"]}
+            for tema in (l for l in variante["camino"] if l["tipo"] == "tema"):
+                assert tema["texto"] and set(tema["archivos"]) <= rutas, (tecnologia["clave"], tema["id"])
+
+
+def test_las_combinaciones_usan_piezas_de_la_guia(datos):
+    for tecnologia, stack in zip(datos["tecnologias"], stacks.ORDEN_MENU):
+        for variante in tecnologia["variantes"]:
+            for combinacion in variante["combinaciones"]:
+                assert set(combinacion["usa"]) <= set(stack.piezas), (tecnologia["clave"], combinacion["id"])
+                assert combinacion["claves"] and combinacion["pasos"]
+                for archivo in combinacion["archivos"]:
+                    assert archivo["contenido"].strip(), archivo["ruta"]
+                # Los comandos de este proyecto (sin "En la web", etc.) son piezas de este stack.
+                for paso in combinacion["pasos"]:
+                    if not paso["lugar"] and " nuevo " in paso["comando"]:
+                        pieza = paso["comando"].split(" nuevo ")[1].split()[0]
+                        assert pieza in stack.piezas, (tecnologia["clave"], paso["comando"])
+
+
+def test_los_ejemplos_no_tienen_restos_de_otra_variante():
+    for ejemplo in (SITIO / "ejemplos").rglob("*"):
+        if ejemplo.suffix in (".js", ".jsx"):
+            texto = ejemplo.read_text(encoding="utf-8")
+            assert "type " not in texto and ": unknown" not in texto and "<Producto" not in texto, ejemplo
