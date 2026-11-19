@@ -248,9 +248,12 @@ await fetch('http://localhost:8000/api/pedidos/', {
 });
 ```
 
-La web HTML de andamio (`crear web`) ya hace la segunda parte sola: `js/http.js`
-manda el token guardado. Receta completa con la página de ingreso:
-[combinaciones → login con JWT](combinaciones.md#login-con-jwt-desde-la-web-html).
+Las webs de andamio ya hacen la segunda parte solas: mandan el token guardado en
+`localStorage` (clave `token`). En React, Vue y Next.js se guarda con
+`guardarToken(tokens.access)` de `services/http`; en la web HTML, con
+`localStorage.setItem('token', ...)`. Recetas con la página de ingreso:
+[web HTML](combinaciones.md#login-con-jwt-desde-la-web-html) y
+[React, Vue o Next.js](combinaciones.md#login-con-jwt-desde-react-vue-o-nextjs).
 
 ## Problemas comunes
 

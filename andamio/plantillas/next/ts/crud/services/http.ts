@@ -13,16 +13,48 @@ export class ErrorApi extends Error {
   readonly detalle: unknown;
 
   constructor(estado: number, detalle: unknown) {
-    super(`La API respondió con el error ${estado}`);
+    // Si la API explica el error (detail), ese es el mensaje: "Las credenciales... no se proveyeron."
+    const explicacion = typeof detalle === 'object' && detalle !== null && 'detail' in detalle ? String(detalle.detail) : '';
+    super(explicacion || `La API respondió con el error ${estado}`);
     this.estado = estado;
     this.detalle = detalle;
   }
 }
 
+// --- Login con JWT (API de Django con: python -m andamio nuevo login) -------------------
+// Si guardás el token de acceso, cada pedido lo manda solo: Authorization: Bearer <token>.
+// Así funcionan los recursos generados con --protegido (crear, modificar y eliminar).
+
+const CLAVE_TOKEN = 'token';
+
+/** Guarda el token "access" que devuelve POST /api/token/. */
+export function guardarToken(token: string): void {
+  localStorage.setItem(CLAVE_TOKEN, token);
+}
+
+/** Cierra la sesión: los pedidos dejan de mandar el token. */
+export function borrarToken(): void {
+  localStorage.removeItem(CLAVE_TOKEN);
+}
+
+/** El token guardado, o null si no hay sesión. */
+export function leerToken(): string | null {
+  // Fuera del navegador (por ejemplo, en el servidor de Next.js) no hay localStorage.
+  return typeof localStorage === 'undefined' ? null : localStorage.getItem(CLAVE_TOKEN);
+}
+
+function encabezados(datos: unknown): Record<string, string> {
+  const resultado: Record<string, string> = {};
+  if (datos !== undefined) resultado['Content-Type'] = 'application/json';
+  const token = leerToken();
+  if (token) resultado.Authorization = `Bearer ${token}`;
+  return resultado;
+}
+
 async function pedir<T>(metodo: string, ruta: string, datos?: unknown): Promise<T> {
   const respuesta = await fetch(`${API_URL}${ruta}`, {
     method: metodo,
-    headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: encabezados(datos),
     body: datos === undefined ? undefined : JSON.stringify(datos),
   });
   if (!respuesta.ok) {

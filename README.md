@@ -205,7 +205,8 @@ http://localhost:5173 (los `import` de JavaScript necesitan un servidor).
 **La API responde 401 o 403 al crear.**
 El recurso se generó con `--protegido`: hay que mandar el token del login
 (`Authorization: Bearer <token>`). Pedilo con `POST /api/token/`; en Swagger, con el botón
-Authorize. Ver [la guía de Django + JWT](docs/guias/django-api-jwt.md).
+Authorize. Las webs de andamio lo mandan solas si lo guardaste (en React, Vue y Next.js, con
+`guardarToken()` de `services/http`). Ver [la guía de Django + JWT](docs/guias/django-api-jwt.md).
 
 **`npm install` falla.**
 Revisá la versión de Node con `node --version`: React y Vue necesitan 20.19 o más

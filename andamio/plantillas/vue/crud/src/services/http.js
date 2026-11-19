@@ -14,10 +14,53 @@ export class ErrorApi extends Error {
    * @param {unknown} detalle lo que respondió la API
    */
   constructor(estado, detalle) {
-    super(`La API respondió con el error ${estado}`);
+    // Si la API explica el error (detail), ese es el mensaje: "Las credenciales... no se proveyeron."
+    const explicacion = detalle && typeof detalle === 'object' && 'detail' in detalle ? String(detalle.detail) : '';
+    super(explicacion || `La API respondió con el error ${estado}`);
     this.estado = estado;
     this.detalle = detalle;
   }
+}
+
+// --- Login con JWT (API de Django con: python -m andamio nuevo login) -------------------
+// Si guardás el token de acceso, cada pedido lo manda solo: Authorization: Bearer <token>.
+// Así funcionan los recursos generados con --protegido (crear, modificar y eliminar).
+
+const CLAVE_TOKEN = 'token';
+
+/**
+ * Guarda el token "access" que devuelve POST /api/token/.
+ * @param {string} token
+ */
+export function guardarToken(token) {
+  localStorage.setItem(CLAVE_TOKEN, token);
+}
+
+/** Cierra la sesión: los pedidos dejan de mandar el token. */
+export function borrarToken() {
+  localStorage.removeItem(CLAVE_TOKEN);
+}
+
+/**
+ * El token guardado, o null si no hay sesión.
+ * @returns {string | null}
+ */
+export function leerToken() {
+  // Fuera del navegador (por ejemplo, en el servidor de Next.js) no hay localStorage.
+  return typeof localStorage === 'undefined' ? null : localStorage.getItem(CLAVE_TOKEN);
+}
+
+/**
+ * @param {unknown} datos
+ * @returns {Record<string, string>}
+ */
+function encabezados(datos) {
+  /** @type {Record<string, string>} */
+  const resultado = {};
+  if (datos !== undefined) resultado['Content-Type'] = 'application/json';
+  const token = leerToken();
+  if (token) resultado.Authorization = `Bearer ${token}`;
+  return resultado;
 }
 
 /**
@@ -28,7 +71,7 @@ export class ErrorApi extends Error {
 async function pedir(metodo, ruta, datos) {
   const respuesta = await fetch(`${API_URL}${ruta}`, {
     method: metodo,
-    headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: encabezados(datos),
     body: datos === undefined ? undefined : JSON.stringify(datos),
   });
   if (!respuesta.ok) {

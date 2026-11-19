@@ -255,6 +255,102 @@ autenticación no se proveyeron.").
 
 ---
 
+## Login con JWT desde React, Vue o Next.js
+
+El `http` que generan `servicio` y `crud` (en `services/http`) manda el token
+guardado en cada pedido, así que el `crud` funciona con recursos `--protegido` en
+cuanto iniciás sesión. Trae tres funciones: `guardarToken(token)`, `borrarToken()` y
+`leerToken()`.
+
+```
+python -m andamio nuevo login                                                 (en la API de Django)
+python -m andamio nuevo recurso producto nombre:str precio:decimal stock:int --protegido --migrar
+python -m andamio nuevo pagina Ingresar                                       (en la web)
+python -m andamio nuevo crud producto nombre:str precio:decimal stock:int
+```
+
+**Vue** (`src/pages/IngresarPage.vue`):
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { borrarToken, guardarToken, http } from '@/services/http';
+
+const router = useRouter();
+const usuario = ref('');
+const clave = ref('');
+const error = ref('');
+
+async function ingresar() {
+  try {
+    const tokens = await http.post('/token/', { username: usuario.value, password: clave.value });
+    guardarToken(tokens.access); // desde ahora, cada pedido lo manda solo
+    router.push('/productos');
+  } catch (e) {
+    error.value = e.message; // "No se encontró una cuenta activa con las credenciales proporcionadas."
+  }
+}
+</script>
+
+<template>
+  <h1>Ingresar</h1>
+  <form class="formulario" @submit.prevent="ingresar">
+    <label class="campo">Usuario <input v-model="usuario" autocomplete="username" required /></label>
+    <label class="campo">Contraseña <input v-model="clave" type="password" autocomplete="current-password" required /></label>
+    <p v-if="error" class="error">{{ error }}</p>
+    <button type="submit" class="boton">Ingresar</button>
+    <button type="button" class="boton boton--borde" @click="borrarToken()">Salir</button>
+  </form>
+</template>
+```
+
+**React** (`src/pages/IngresarPage/IngresarPage.jsx`; en Next.js, `app/ingresar/page`
+con `'use client'` arriba y `useRouter` de `next/navigation`):
+
+```jsx
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { guardarToken, http } from '../../services/http';
+
+export function IngresarPage() {
+  const navegar = useNavigate();
+  const [usuario, setUsuario] = useState('');
+  const [clave, setClave] = useState('');
+  const [error, setError] = useState('');
+
+  async function ingresar(evento) {
+    evento.preventDefault();
+    try {
+      const tokens = await http.post('/token/', { username: usuario, password: clave });
+      guardarToken(tokens.access);
+      navegar('/productos');
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  return (
+    <form onSubmit={ingresar}>
+      <input value={usuario} onChange={(e) => setUsuario(e.target.value)} placeholder="Usuario" />
+      <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Contraseña" />
+      {error && <p>{error}</p>}
+      <button type="submit">Ingresar</button>
+    </form>
+  );
+}
+```
+
+(En TypeScript: `http.post<{ access: string; refresh: string }>('/token/', ...)`.)
+
+- Sin token, el formulario del `crud` muestra el mensaje de la API: "Las credenciales
+  de autenticación no se proveyeron."
+- El token dura 60 minutos. Cuando vence, la API responde 401 ("El token proporcionado
+  no es válido..."): `borrarToken()` y volver a ingresar.
+- El token queda en `localStorage` con la clave `token`, la misma que usa la web HTML.
+
+---
+
 ## Una API y una app de celular (React Native)
 
 ```
