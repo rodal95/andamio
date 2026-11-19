@@ -1,4 +1,4 @@
-// Prueba en el navegador del CRUD generado por andamio (React) contra la API de Django.
+// Prueba en el navegador del CRUD generado por andamio (React) contra la API generada (Django o FastAPI).
 // La ejecuta tests/integracion/test_crud_navegador.py: node crud_navegador.js http://127.0.0.1:PUERTO
 const { chromium } = require('playwright');
 const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok -', m); };
@@ -37,7 +37,7 @@ const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok 
   await p.getByRole('button', { name: 'Guardar' }).click();
   const error = p.locator('small');
   await error.first().waitFor();
-  ok(/dígitos/.test(await error.first().innerText()), 'error de validación de Django debajo del campo: ' + await error.first().innerText());
+  ok(/dígitos/.test(await error.first().innerText()), 'error de validación de la API debajo del campo: ' + await error.first().innerText());
   await p.getByRole('link', { name: 'Productos' }).click();
   ok(p.url().endsWith('/productos'), 'enlace del menú');
   await p.getByRole('link', { name: 'Yerba mate' }).click();

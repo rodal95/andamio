@@ -130,7 +130,7 @@ CRUD = Pieza(
         [
             "npm run dev",
             "http://localhost:5173/@@pluralKebab@@",
-            "# Necesita la API de Django andando, con el recurso /api/@@plural@@/ generado con los mismos campos.",
+            "# Necesita la API andando (Django o FastAPI), con el recurso /api/@@plural@@/ generado con los mismos campos.",
         ]
     ),
 )
@@ -138,7 +138,7 @@ CRUD = Pieza(
 SERVICIO = Pieza(
     clave="servicio",
     titulo="Servicio",
-    descripcion="funciones para usar un recurso de la API de Django",
+    descripcion="funciones para usar un recurso de la API (Django o FastAPI)",
     ejemplo="producto nombre:str precio:decimal stock:int",
     formas=("@@Nombre@@", "@@nombreCamel@@Service"),
     usa_campos=True,
@@ -150,7 +150,7 @@ SERVICIO = Pieza(
     siguiente_paso=[
         "# Usalo en un componente:",
         "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",
-        "# Necesita la API de Django andando (python manage.py runserver) con el recurso /api/@@plural@@/",
+        "# Necesita la API andando (Django o FastAPI) con el recurso /api/@@plural@@/",
     ],
 )
 

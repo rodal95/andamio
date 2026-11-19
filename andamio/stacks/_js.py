@@ -12,7 +12,7 @@ from andamio.nucleo.nombres import Nombre, kebab, separar_palabras
 from andamio.stacks.base import Solicitud
 from andamio.stacks.django import TIPOS as TIPOS_API
 
-# Los servicios usan los mismos tipos que el recurso de Django, para que el
+# Los servicios usan los mismos tipos que el recurso de Django y de FastAPI, para que el
 # mismo comando sirva en los dos lados: nombre:str precio:decimal ...
 TIPOS = TIPOS_API
 
@@ -29,7 +29,7 @@ _TIPOS_TS = {
 }
 
 _COMENTARIOS_TS = {
-    "decimal": "  // Django lo envía como número (COERCE_DECIMAL_TO_STRING = False)",
+    "decimal": "  // La API lo envía como número (no como texto)",
     "date": '  // fecha: "2025-03-15"',
     "datetime": '  // fecha y hora: "2025-03-15T10:30:00Z"',
 }
@@ -70,7 +70,7 @@ MARCADORES_SERVICIO = {
 
 
 def contexto_servicio(sol: Solicitud) -> dict[str, str]:
-    # Los campos quedan en snake_case, igual que en el JSON que devuelve Django.
+    # Los campos quedan en snake_case, igual que en el JSON que devuelve la API.
     lineas_ts = [f"{c.nombre}: {_TIPOS_TS[c.tipo]};{_COMENTARIOS_TS.get(c.tipo, '')}" for c in sol.campos]
     lineas_jsdoc = [
         f"* @property {{{_TIPOS_TS[c.tipo]}}} {c.nombre}" + (f" {_COMENTARIOS_JSDOC[c.tipo]}" if c.tipo in _COMENTARIOS_JSDOC else "")

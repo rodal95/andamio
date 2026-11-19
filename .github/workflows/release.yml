@@ -40,6 +40,7 @@ jobs:
         run: |
           python -m pip install -e ".[dev]"
           python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
+          python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
           python -m pytest
 
       - name: Armar el .whl, andamio.pyz y el .zip
@@ -59,6 +60,8 @@ jobs:
           test -f web/.env.example && test -f web/src/hooks/.gitkeep
           python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear django api
           test -f api/.env.example
+          python "$GITHUB_WORKSPACE/dist/andamio.pyz" crear fastapi api-rapida
+          test -f api-rapida/app/main.py && test -f api-rapida/.gitignore
 
       - name: Crear la Release
         env:

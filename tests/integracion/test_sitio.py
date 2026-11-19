@@ -51,6 +51,15 @@ def test_sin_rutas_temporales(datos):
     assert "SECRET_KEY=(se genera al azar" in texto
 
 
+def test_la_terminal_es_la_de_windows(datos):
+    for tecnologia in datos["tecnologias"]:
+        for variante in tecnologia["variantes"]:
+            terminal = [variante["crear"]["salida"], *(p["salida"] for p in variante["piezas"])]
+            assert not any("source .venv/bin/activate" in t for t in terminal), tecnologia["clave"]
+    django = next(t for t in datos["tecnologias"] if t["clave"] == "django")
+    assert ".venv\\Scripts\\activate" in django["variantes"][0]["crear"]["salida"]
+
+
 def test_sesion_del_menu(datos):
     eventos = datos["menu"]
     assert any(e["tipo"] == "entrada" for e in eventos)

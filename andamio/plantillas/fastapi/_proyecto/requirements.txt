@@ -1,0 +1,13 @@
+# Dependencias del proyecto. Instalalas con:  pip install -r requirements.txt
+# Versiones elegidas para funcionar con Python 3.10 o más nuevo.
+fastapi~=0.162.5
+fastapi-offline~=1.7.7  # la documentación (/docs) sin internet
+sqlmodel==0.0.49
+uvicorn~=0.54.0
+email-validator~=2.4.0
+python-dotenv~=1.2.4
+tzdata>=2026.6  # zonas horarias (Windows no las trae)
+
+# Para los tests (python -m pytest)
+pytest~=9.2.0
+httpx2~=2.14

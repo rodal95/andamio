@@ -1,27 +1,23 @@
-"""El CRUD generado funciona en un navegador real contra la API generada en Django.
+"""El CRUD generado funciona en un navegador real contra la API generada (Django y FastAPI).
 
-Crea un recurso en Django y el CRUD con los mismos campos en React, compila la web y
+Crea un recurso en la API y el CRUD con los mismos campos en React, compila la web y
 la recorre con Chromium (Playwright): lista, agregar, detalle, editar, error de
-validación de Django y eliminar. Necesita Django, Node y Playwright: --lento.
+validación de la API y eliminar. Necesita la API, Node y Playwright: --lento.
 """
 
 import functools
 import http.server
-import os
 import subprocess
-import sys
 import threading
-import time
-import urllib.request
 from pathlib import Path
 
 import pytest
 
 from andamio.cli import main
 
+from .apis import BACKENDS, api_en_marcha, puerto_libre
 from .node import NPX, ejecutar, npm_install, requiere_node
-from .test_coherencia import CAMPOS, _puerto_libre
-from .test_django import requiere_django
+from .test_coherencia import CAMPOS
 
 SCRIPT = Path(__file__).with_name("crud_navegador.js")
 
@@ -49,51 +45,26 @@ class _SPA(http.server.SimpleHTTPRequestHandler):
 
 
 @pytest.mark.lento
-@pytest.mark.django
-@requiere_django
 @requiere_node
 @requiere_playwright
+@pytest.mark.parametrize("backend", BACKENDS)
 @pytest.mark.parametrize("variante", ["ts", "js"])
-def test_crud_en_el_navegador(variante, en_carpeta, monkeypatch):
-    puerto_api, puerto_web = _puerto_libre(), _puerto_libre()
-    while puerto_web == puerto_api:
-        puerto_web = _puerto_libre()
-
-    assert main(["crear", "django", "api"]) == 0
-    monkeypatch.chdir(en_carpeta / "api")
-    assert main(["nuevo", "recurso", "producto", *CAMPOS, "--migrar"]) == 0
-    servidor = subprocess.Popen(
-        [sys.executable, "manage.py", "runserver", f"127.0.0.1:{puerto_api}", "--noreload"],
-        cwd=en_carpeta / "api",
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        env={**os.environ, "CORS_ALLOWED_ORIGINS": f"http://127.0.0.1:{puerto_web}"},
-    )
-    web_servidor = None
-    try:
+def test_crud_en_el_navegador(variante, backend, en_carpeta, monkeypatch):
+    puerto_web = puerto_libre()
+    origen = f"http://127.0.0.1:{puerto_web}"
+    with api_en_marcha(backend, en_carpeta, monkeypatch, [["producto", *CAMPOS]], cors=origen) as url_api:
         monkeypatch.chdir(en_carpeta)
         assert main(["crear", "react", "web", "--variante", variante]) == 0
         web = en_carpeta / "web"
         monkeypatch.chdir(web)
         assert main(["nuevo", "crud", "producto", *CAMPOS]) == 0
         npm_install(web)
-        ejecutar([NPX, "vite", "build", "--logLevel", "error"], web, env={"VITE_API_URL": f"http://127.0.0.1:{puerto_api}/api"})
+        ejecutar([NPX, "vite", "build", "--logLevel", "error"], web, env={"VITE_API_URL": url_api})
 
-        web_servidor = http.server.ThreadingHTTPServer(
-            ("127.0.0.1", puerto_web), functools.partial(_SPA, directory=str(web / "dist"))
-        )
+        web_servidor = http.server.ThreadingHTTPServer(("127.0.0.1", puerto_web), functools.partial(_SPA, directory=str(web / "dist")))
         threading.Thread(target=web_servidor.serve_forever, daemon=True).start()
-        for _ in range(60):
-            try:
-                urllib.request.urlopen(f"http://127.0.0.1:{puerto_api}/api/productos/", timeout=2)
-                break
-            except OSError:
-                time.sleep(0.5)
-
-        resultado = ejecutar(["node", str(SCRIPT), f"http://127.0.0.1:{puerto_web}"], web, env={"NO_PROXY": "127.0.0.1,localhost"})
-        assert resultado.stdout.count("ok - ") == 10, resultado.stdout
-    finally:
-        if web_servidor:
+        try:
+            resultado = ejecutar(["node", str(SCRIPT), origen], web, env={"NO_PROXY": "127.0.0.1,localhost"})
+        finally:
             web_servidor.shutdown()
-        servidor.terminate()
-        servidor.wait(timeout=30)
+        assert resultado.stdout.count("ok - ") == 10, resultado.stdout

@@ -25,7 +25,7 @@ andamio/
 ├── stacks/
 │   ├── __init__.py     REGISTRO (orden de detección) y ORDEN_MENU
 │   ├── base.py         Stack, Pieza, Insercion, Solicitud
-│   ├── python.py  django.py  react.py  react_native.py
+│   ├── python.py  django.py  fastapi.py  react.py  react_native.py
 │   └── _js.py          ayudas compartidas por react y react-native
 └── plantillas/<stack>/[<variante>/]
     ├── _proyecto/      el proyecto que crea "andamio crear"
@@ -240,9 +240,18 @@ Insercion(
    `piezas` y `siguiente_paso_proyecto`.
 3. Registralo en `andamio/stacks/__init__.py`: en `REGISTRO`, en la posición
    correcta para la detección (lo más específico primero), y en `ORDEN_MENU`.
+   Ojo con las subcarpetas: la detección sube desde la carpeta actual, así que
+   una subcarpeta de tu proyecto no puede parecerse a otro stack (por ejemplo,
+   `app/` de FastAPI tiene `main.py` y `db.py`, igual que un proyecto de consola:
+   por eso el stack `python` mira que `main.py` no use FastAPI). Probalo con
+   `buscar_proyecto(raiz / "subcarpeta")`.
 4. Agregá `tests/integracion/test_<clave>.py`: crear el proyecto, generar cada
    pieza y verificar los archivos; con `@pytest.mark.lento`, instalar y compilar.
 5. Sumalo a las tablas del README (hay un test que lo controla).
+6. En la página: `sitio/<clave>.html` (copiá otra guía y cambiá
+   `data-tecnologia`), el enlace en `PAGINAS` de `sitio/comun.js`, y sus textos en
+   `TECNOLOGIAS` y `DESCRIPCIONES` de `scripts/sitio.py` (los tests del sitio
+   fallan hasta que esté todo).
 
 ## Tests
 
@@ -252,11 +261,19 @@ python -m pytest                    # rápido: no instala nada
 python -m pytest --lento            # además instala y compila los proyectos generados (Node)
 ```
 
-- Los tests de Django que ejecutan `manage.py` se saltean si Django no está
-  instalado: `pip install -r andamio/plantillas/django/_proyecto/requirements.txt`.
+- Los tests que ejecutan los proyectos de Django o de FastAPI se saltean si sus
+  dependencias no están instaladas:
+  `pip install -r andamio/plantillas/django/_proyecto/requirements.txt` (y lo mismo
+  con `andamio/plantillas/fastapi/_proyecto/requirements.txt`).
 - `--lento` necesita Node (22.13 o más nuevo, por Expo): `npm install` + `npm run build`
   en React, `tsc` y `expo install --check` en React Native, y los servicios de
-  ambos ejecutados contra la API generada en Django.
+  ambos y el `crud` en Chromium ejecutados contra la API generada en Django **y**
+  en FastAPI (`tests/integracion/apis.py` levanta cualquiera de las dos).
+- Las dos APIs cumplen el mismo contrato: rutas `/api/<plural>/` con barra final,
+  lista sin paginación, decimales como número, fechas con hora en hora local con su
+  zona, errores 400 `{campo: [mensajes]}` en español, 404 `{"detail": ...}`, 204 al
+  eliminar, y `?search=`, `?ordering=` y `?campo=valor`. Si cambiás una, cambiá la
+  otra: `test_coherencia.py` y `test_crud_navegador.py` lo controlan.
 - El CI (GitHub Actions) corre los tests en Ubuntu y Windows con Python 3.10 y
   3.13, y un trabajo aparte con `--lento`.
 
@@ -264,6 +281,8 @@ python -m pytest --lento            # además instala y compila los proyectos ge
 
 - Django: `andamio/plantillas/django/_proyecto/requirements.txt`. Tienen que
   funcionar con Python 3.10 (Django 6 ya pide 3.12).
+- FastAPI: `andamio/plantillas/fastapi/_proyecto/requirements.txt`, también con
+  Python 3.10. `fastapi-offline` sirve la documentación (`/docs`) sin internet.
 - React: `andamio/plantillas/react/_proyecto/package.json` (versiones exactas;
   guiarse por la plantilla oficial `npm create vite@latest -- --template react-ts`).
 - React Native: `andamio/plantillas/react-native/_proyecto/package.json`, todas
@@ -304,7 +323,7 @@ JavaScript, sin librerías):
 | Archivo | Qué es |
 |---|---|
 | `index.html` + `inicio.js` | portada: menú animado, elegir tecnología, instalar, cómo se escriben los comandos |
-| `python.html`, `django.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
+| `python.html`, `django.html`, `fastapi.html`, `react.html`, `react-native.html` | una guía por tecnología, armada por `tecnologia.js` |
 | `comun.js` | utilidades compartidas: barra, colores de la terminal, resaltado de código, visor de archivos |
 | `datos.js` | lo genera `scripts/sitio.py` (no se versiona) |
 | `img/` | capturas de los proyectos funcionando (las genera `scripts/capturas_sitio.py`) |
@@ -330,10 +349,11 @@ El workflow `Sitio` ejecuta `scripts/sitio.py` y publica la página cada vez que
 cambia algo en `sitio/` o en `andamio/`.
 
 **Capturas.** `scripts/capturas_sitio.py` genera los proyectos, los pone en marcha
-(API de Django con datos y panel de administración, web de React compilada, app de
-Expo exportada para web) y les saca fotos con Chromium. Se ejecuta a mano cuando
-cambia cómo se ven los proyectos, y las imágenes se suben al repositorio. Necesita
-las dependencias de Django en ese Python, Node 22.13+ y Playwright para Node.
+(API de Django con datos y panel de administración, API de FastAPI con su Swagger,
+web de React compilada, app de Expo exportada para web) y les saca fotos con
+Chromium. Se ejecuta a mano cuando cambia cómo se ven los proyectos, y las imágenes
+se suben al repositorio. Necesita las dependencias de Django y de FastAPI en ese
+Python, Node 22.13+ y Playwright para Node.
 
 ```
 python scripts/capturas_sitio.py

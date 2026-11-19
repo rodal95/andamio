@@ -1,5 +1,5 @@
 /**
- * Funciones para hablar con la API de Django.
+ * Funciones para hablar con la API (Django o FastAPI, hecha con andamio).
  *
  * La dirección de la API sale de VITE_API_URL (archivo .env). Si cambiás el .env,
  * reiniciá "npm run dev" para que tome el valor nuevo.

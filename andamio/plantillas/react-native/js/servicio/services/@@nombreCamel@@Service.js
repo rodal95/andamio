@@ -16,7 +16,7 @@ import { http } from './http';
  * @typedef {Omit<@@Nombre@@, 'id' | 'creado' | 'actualizado'>} @@Nombre@@Datos
  */
 
-// Con barra al final, como espera Django REST Framework.
+// Con barra al final: así son las rutas de las APIs que genera andamio.
 const RUTA = '/@@plural@@/';
 
 export const @@nombreCamel@@Service = {

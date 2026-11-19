@@ -1,4 +1,4 @@
-/* andamio · sitio: guía de una tecnología (python.html, django.html, react.html, react-native.html). */
+/* andamio · sitio: guía de una tecnología (python.html, django.html, fastapi.html, react.html, react-native.html). */
 (function () {
   "use strict";
 
@@ -19,13 +19,23 @@
         ],
       },
     },
+    fastapi: {
+      marcha: [
+        { src: "img/fastapi-swagger.jpg", url: "http://127.0.0.1:8000/docs", titulo: "Documentación interactiva (Swagger)", texto: "Ahí podés probar cada operación de la API desde el navegador." },
+      ],
+      piezas: {
+        recurso: [
+          { src: "img/fastapi-api.jpg", url: "http://127.0.0.1:8000/docs", titulo: "Probar el recurso en Swagger", texto: "GET /api/productos/ → Try it out → Execute: la lista en JSON, con la misma forma que la API de Django (los precios como número)." },
+        ],
+      },
+    },
     react: {
       marcha: [{ src: "img/react-inicio.jpg", url: "http://localhost:5173", titulo: "La app recién creada", texto: "El menú y la página de inicio, al abrir el navegador después de npm run dev." }],
       piezas: {
         crud: [
-          { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API de Django. Cada uno enlaza a su detalle." },
+          { src: "img/react-crud-lista.jpg", url: "http://localhost:5173/productos", titulo: "La lista", texto: "Los productos llegan de la API (Django o FastAPI). Cada uno enlaza a su detalle." },
           { src: "img/react-crud-detalle.jpg", url: "http://localhost:5173/productos/1", titulo: "El detalle", texto: "Con los botones Editar y Eliminar." },
-          { src: "img/react-crud-formulario.jpg", url: "http://localhost:5173/productos/nuevo", titulo: "El formulario", texto: "Si Django rechaza un dato, el error aparece debajo del campo." },
+          { src: "img/react-crud-formulario.jpg", url: "http://localhost:5173/productos/nuevo", titulo: "El formulario", texto: "Si la API rechaza un dato, el error aparece debajo del campo." },
         ],
       },
     },
@@ -38,7 +48,7 @@
         src: "img/react-native-final.jpg",
         telefono: true,
         titulo: "Componente y servicio trabajando juntos",
-        texto: "La pantalla de inicio lista los productos de la API de Django con el componente Tarjeta. Esto es lo que escribiste vos:",
+        texto: "La pantalla de inicio lista los productos de la API con el componente Tarjeta. Esto es lo que escribiste vos:",
         ejemplos: [["react-native-index.tsx", "app/index.tsx"]],
       },
     },
@@ -57,15 +67,22 @@
       ["React no puede leer la API (error de CORS)", "La dirección de la web tiene que estar en CORS_ALLOWED_ORIGINS del .env (ya vienen localhost:5173 y localhost:8081)."],
       ["Invalid HTTP_HOST header / 400 desde el celular", "Agregá la IP de tu PC a ALLOWED_HOSTS en el .env y ejecutá python manage.py runserver 0.0.0.0:8000."],
     ],
+    fastapi: [
+      ["No module named 'fastapi'", "No está activado el entorno virtual. Ejecutá .venv\\Scripts\\activate (Windows) o source .venv/bin/activate, y pip install -r requirements.txt."],
+      ["Agregué un campo al modelo y la tabla no lo tiene", "No hay migraciones: las tablas se crean al arrancar, pero no se modifican. Mientras desarrollás, borrá datos.db (se pierden los datos de prueba) y volvé a arrancar."],
+      ["React no puede leer la API (error de CORS)", "La dirección de la web tiene que estar en CORS_ALLOWED_ORIGINS del .env (ya vienen localhost:5173 y localhost:8081)."],
+      ["Desde el celular no conecta", "Arrancá la API escuchando en la red: python -m uvicorn app.main:app --reload --host 0.0.0.0, y poné la IP de tu PC en la app."],
+      ["La hora vuelve distinta de la que mandé", "Sin zona horaria se toma como hora local (ZONA_HORARIA del .env, por defecto Argentina) y vuelve con su zona: 10:30 sale como 10:30:00-03:00."],
+    ],
     react: [
       ["npm install falla", "Revisá la versión de Node con node --version: necesitás 20.19 o más nueva."],
-      ["El servicio no trae datos", "La API de Django tiene que estar andando (python manage.py runserver) y VITE_API_URL del .env tiene que apuntar a ella."],
+      ["El servicio no trae datos", "La API (Django o FastAPI) tiene que estar andando y VITE_API_URL del .env tiene que apuntar a ella."],
       ["Cambié el .env y no toma el valor nuevo", "Cortá npm run dev con Ctrl+C y volvé a ejecutarlo: el .env se lee al arrancar."],
-      ["Error 400 al crear", "Los campos del servicio no coinciden con los del recurso de Django: el error dice qué campo falta o está mal."],
+      ["Error 400 al crear", "Los campos del servicio no coinciden con los del recurso de la API: el error dice qué campo falta o está mal."],
       ["Mi proyecto lo creé con npm create vite", "andamio lo reconoce igual: si tiene tsconfig.json genera TypeScript; si no, JavaScript."],
     ],
     "react-native": [
-      ["Network request failed", "En el emulador de Android tu PC es 10.0.2.2 (ya viene en el .env). En un celular real, poné la IP de tu PC en EXPO_PUBLIC_API_URL y ejecutá Django con python manage.py runserver 0.0.0.0:8000."],
+      ["Network request failed", "En el emulador de Android tu PC es 10.0.2.2 (ya viene en el .env). En un celular real, poné la IP de tu PC en EXPO_PUBLIC_API_URL y hacé que la API escuche en la red: python manage.py runserver 0.0.0.0:8000 (Django) o python -m uvicorn app.main:app --host 0.0.0.0 (FastAPI)."],
       ["Cambié el .env y no toma el valor nuevo", "Cortá Expo y ejecutá npx expo start -c (la -c borra la caché)."],
       ["npm install falla", "Expo SDK 58 necesita Node 22.13 o más nuevo: revisalo con node --version."],
       ["La pantalla nueva no aparece", "Con Expo Router el nombre del archivo es la ruta: app/productos/detalle-producto.tsx se abre con router.push('/productos/detalle-producto')."],

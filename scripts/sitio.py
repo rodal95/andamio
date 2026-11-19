@@ -9,7 +9,7 @@ qué sirve cada uno. Así la página nunca muestra algo distinto de lo que hace 
 herramienta. El workflow del sitio lo ejecuta antes de publicar.
 
 Las capturas de pantalla de los proyectos funcionando (sitio/img/) las genera
-scripts/capturas_sitio.py, que necesita Django, Node y Chromium.
+scripts/capturas_sitio.py, que necesita Django, FastAPI, Node y Chromium.
 """
 
 from __future__ import annotations
@@ -91,9 +91,29 @@ TECNOLOGIAS = {
             ("python manage.py createsuperuser", "Crea un usuario para entrar al panel /admin/."),
         ],
     },
+    "fastapi": {
+        "carpeta": "mi-api",
+        "resumen": "API REST con FastAPI y SQLModel: más liviana que Django, con documentación interactiva (Swagger) y tests. Responde igual que la API de Django, así que React y React Native la usan sin cambios.",
+        "requisitos": ["Python 3.10 o más nuevo"],
+        "piezas": {
+            "recurso": {
+                "comando": "nuevo recurso producto nombre:str precio:decimal stock:int",
+                "explicacion": "Un recurso es una tabla publicada como API: con un solo comando tenés /api/productos/ para listar, crear, ver, modificar y eliminar, con filtros, búsqueda y orden. El modelo define la tabla y los datos que acepta la API (con sus validaciones), el router las rutas, y trae 5 tests automáticos. La tabla se crea sola al arrancar.",
+                "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena\nGET    /api/productos/?stock=10         filtra",
+                "uso_lenguaje": "texto",
+            },
+        },
+        "extra": [
+            ("python -m venv .venv", "Crea el entorno virtual del proyecto (una sola vez)."),
+            (".venv\\Scripts\\activate", "Activa el entorno virtual en Windows (en Linux o Mac: source .venv/bin/activate)."),
+            ("pip install -r requirements.txt", "Instala FastAPI, SQLModel y las demás librerías."),
+            ("python -m uvicorn app.main:app --reload", "Levanta la API en http://127.0.0.1:8000 y la reinicia sola cuando cambiás el código."),
+            ("python -m pytest", "Ejecuta los tests de todos los recursos (con una base de datos en memoria)."),
+        ],
+    },
     "react": {
         "carpeta": "mi-web",
-        "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks y servicios para usar la API de Django.",
+        "resumen": "Aplicación web con React y Vite, en TypeScript o JavaScript. Genera componentes, páginas, hooks, servicios y CRUDs completos para usar tu API (Django o FastAPI).",
         "requisitos": ["Node.js 20.19 o más nuevo", "Python 3.10 o más nuevo (para andamio)"],
         "piezas": {
             "componente": {
@@ -116,13 +136,13 @@ TECNOLOGIAS = {
             },
             "servicio": {
                 "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
-                "explicacion": "Un servicio conecta la aplicación con un recurso de la API de Django: funciones para listar, obtener, crear, modificar y eliminar. Generalo con los mismos campos que el recurso de Django.",
+                "explicacion": "Un servicio conecta la aplicación con un recurso de la API (Django o FastAPI): funciones para listar, obtener, crear, modificar y eliminar. Generalo con los mismos campos que el recurso de la API.",
                 "uso": "import { productoService } from './services/productoService';\n\nconst productos = await productoService.listar();\nawait productoService.crear({ nombre: 'Yerba', precio: 1500, stock: 10 });\nawait productoService.actualizar(1, { stock: 7 });",
                 "uso_lenguaje": "ts",
             },
             "crud": {
                 "comando": "nuevo crud producto nombre:str precio:decimal stock:int",
-                "explicacion": "Genera de una vez la interfaz completa de un recurso de la API de Django: la lista, el detalle con eliminar y el formulario para crear y editar (que muestra los errores de validación de Django en cada campo), con sus rutas y el enlace en el menú. Las páginas hablan con el servicio; el componente de detalle solo muestra los datos y avisa. Generalo con los mismos campos que el recurso de Django.",
+                "explicacion": "Genera de una vez la interfaz completa de un recurso de la API (Django o FastAPI): la lista, el detalle con eliminar y el formulario para crear y editar (que muestra los errores de validación de la API en cada campo), con sus rutas y el enlace en el menú. Las páginas hablan con el servicio; el componente de detalle solo muestra los datos y avisa. Generalo con los mismos campos que el recurso de la API.",
                 "uso": "/productos              lista           listar()\n/productos/nuevo        agregar         crear()\n/productos/3            detalle         obtener(3), eliminar(3)\n/productos/3/editar     editar          obtener(3), actualizar(3)",
                 "uso_lenguaje": "texto",
             },
@@ -158,7 +178,7 @@ TECNOLOGIAS = {
             },
             "servicio": {
                 "comando": "nuevo servicio producto nombre:str precio:decimal stock:int",
-                "explicacion": "Conecta la app con un recurso de la API de Django. http explica qué dirección usar en el emulador (10.0.2.2), en el navegador (localhost) o en un celular real (la IP de tu PC).",
+                "explicacion": "Conecta la app con un recurso de la API (Django o FastAPI). http explica qué dirección usar en el emulador (10.0.2.2), en el navegador (localhost) o en un celular real (la IP de tu PC).",
                 "uso": "import { productoService } from '@/services/productoService';\n\nconst productos = await productoService.listar();",
                 "uso_lenguaje": "ts",
             },
@@ -221,6 +241,19 @@ DESCRIPCIONES = {
         ("*/apps.py", "Configuración de la app (el nombre que muestra el panel de administración)."),
         ("*/tests.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python manage.py test."),
     ],
+    "fastapi": [
+        ("requirements.txt", "Librerías del proyecto con sus versiones. Se instalan con pip install -r requirements.txt."),
+        ("app/main.py", "La aplicación: CORS, errores en español y una línea por cada recurso (andamio las agrega solo). /api/ lleva a la documentación."),
+        ("app/config.py", "Configuración leída del .env: base de datos, páginas que pueden usar la API (CORS) y zona horaria."),
+        ("app/db.py", "Conexión a la base de datos (SQLite por defecto): crea las tablas al arrancar y abre una sesión por pedido."),
+        ("app/tipos.py", "Tipos que usan todos los recursos: decimales que salen como número y fechas con hora en hora local, igual que Django."),
+        ("app/errores.py", "Convierte los errores de validación al formato de Django REST: 400 con {campo: [mensaje]} en español."),
+        ("app/*/modelo.py", "El modelo: la tabla con sus campos y las formas de los datos para crear, modificar y leer, con sus validaciones."),
+        ("app/*/router.py", "Las rutas del recurso: listar (con búsqueda, orden y filtros), crear, ver, reemplazar, modificar y eliminar."),
+        ("*/__init__.py", "Convierte la carpeta en un paquete de Python, para poder hacer import desde ella."),
+        ("tests/conftest.py", "Prepara los tests: un cliente de la API con una base de datos en memoria (no toca tus datos)."),
+        ("tests/test_*.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python -m pytest."),
+    ],
     "react": [
         ("package.json", "Dependencias (React, Vite) con versiones fijas, y los comandos npm run dev y npm run build."),
         ("index.html", 'La página que carga el navegador: React se dibuja dentro de <div id="root">.'),
@@ -239,12 +272,12 @@ DESCRIPCIONES = {
         ("src/pages/InicioPage/InicioPage.?sx", "La página de inicio (la ruta /)."),
         ("src/pages/*/*ListaPage.*", "La lista: pide los registros a la API con listar() y enlaza al detalle de cada uno."),
         ("src/pages/*/*DetallePage.*", "El detalle (ruta /…/:id): pide el registro con obtener(id) y lo elimina con eliminar(id)."),
-        ("src/pages/*/*FormPage.*", "El formulario para crear y editar: usa crear() o actualizar() y muestra los errores de validación de Django."),
+        ("src/pages/*/*FormPage.*", "El formulario para crear y editar: usa crear() o actualizar() y muestra los errores de validación de la API."),
         ("src/pages/*.module.css", "Estilos propios de la página."),
         ("src/pages/*", "Una página completa de la aplicación."),
         ("src/hooks/useConsulta.*", "Hook genérico para pedir datos a la API: guarda el resultado, si está cargando y el error. Lo usan las páginas del CRUD."),
         ("src/hooks/use*", "Un hook: estado y lógica para reutilizar en varios componentes."),
-        ("src/services/http.*", "Funciones para pedir datos a la API de Django (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env."),
+        ("src/services/http.*", "Funciones para pedir datos a la API (GET, POST, PATCH, DELETE) con manejo de errores. Usa VITE_API_URL del .env."),
         ("src/services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
     ],
     "react-native": [
@@ -261,7 +294,7 @@ DESCRIPCIONES = {
         ("components/index.*", "Exporta todos los componentes desde un lugar: import { Tarjeta } from '@/components'."),
         ("components/*", "Componente con sus estilos en un StyleSheet (React Native no usa CSS)."),
         ("hooks/use*", "Un hook: estado y lógica para reutilizar en varias pantallas."),
-        ("services/http.*", "Funciones para pedir datos a la API de Django. Explica qué dirección usar en el emulador, el navegador o un celular."),
+        ("services/http.*", "Funciones para pedir datos a la API. Explica qué dirección usar en el emulador, el navegador o un celular."),
         ("services/*Service.*", "Funciones para un recurso de la API: listar, obtener, crear, actualizar y eliminar, con los tipos de cada campo."),
     ],
 }
@@ -282,6 +315,8 @@ def descripcion(clave: str, ruta: str) -> str | None:
 
 
 def _limpiar(texto: str) -> str:
+    # La página muestra la terminal de un alumno en Windows, aunque se genere en Linux.
+    texto = texto.replace("source .venv/bin/activate", ".venv\\Scripts\\activate")
     if _base_actual:
         texto = re.sub(
             re.escape(_base_actual) + r"[/\\]?([^\s]*)",
@@ -399,6 +434,11 @@ def _ejemplos() -> dict[str, str]:
 
 
 def demo_tecnologia(base: Path, stack) -> dict:
+    """Cada tecnología en su propia carpeta: Django y FastAPI usan el mismo nombre (mi-api)."""
+    global _base_actual
+    base = base / stack.clave
+    base.mkdir()
+    _base_actual = str(base.resolve())
     info = TECNOLOGIAS[stack.clave]
     variantes = list(stack.variantes) or [""]
     return {
@@ -415,7 +455,7 @@ def demo_tecnologia(base: Path, stack) -> dict:
 
 def ejecucion_python(base: Path) -> dict:
     """Ejecuta la app de consola generada, como si un alumno la usara."""
-    proyecto = base / TECNOLOGIAS["python"]["carpeta"]
+    proyecto = base / "python" / TECNOLOGIAS["python"]["carpeta"]
     respuestas = ["1", "2", "Yerba Mate", "1500,50", "diez", "10", "2", "Mate de calabaza", "4200", "3", "1", "0", "0"]
     codigo = (
         "import builtins, runpy\n"

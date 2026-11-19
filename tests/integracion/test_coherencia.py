@@ -1,23 +1,18 @@
-"""El mismo recurso funciona de punta a punta: Django <-> servicios de React y React Native.
+"""El mismo recurso funciona de punta a punta: API (Django y FastAPI) <-> servicios de React y React Native.
 
-Levanta la API generada en Django y ejecuta contra ella los servicios generados
-(empaquetados con Vite y ejecutados con Node). Necesita Django y Node: --lento.
+Levanta la API generada (una vez con Django y otra con FastAPI) y ejecuta contra ella
+los servicios generados (empaquetados con Vite y ejecutados con Node).
+Necesita las dependencias de la API y Node: --lento.
 """
 
-import os
 import shutil
-import socket
-import subprocess
-import sys
-import time
-import urllib.request
 
 import pytest
 
 from andamio.cli import main
 
+from .apis import BACKENDS, api_en_marcha
 from .node import NPX, ejecutar, npm_install, requiere_node
-from .test_django import requiere_django
 
 CAMPOS = ["nombre:str", "descripcion:text", "precio:decimal", "stock:int", "peso:float", "activo:bool", "vence:date", "publicado:datetime", "contacto:email"]
 
@@ -53,40 +48,11 @@ try {
 """
 
 
-def _puerto_libre():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-@pytest.fixture
-def api_django(en_carpeta, monkeypatch):
-    main(["crear", "django", "api"])
-    raiz = en_carpeta / "api"
-    monkeypatch.chdir(raiz)
-    assert main(["nuevo", "recurso", "producto", *CAMPOS, "--migrar"]) == 0
-    assert main(["nuevo", "recurso", "cliente", "nombre", "email:email", "--migrar"]) == 0
-    puerto = _puerto_libre()
-    servidor = subprocess.Popen(
-        [sys.executable, "manage.py", "runserver", f"127.0.0.1:{puerto}", "--noreload"],
-        cwd=raiz,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    url = f"http://127.0.0.1:{puerto}/api"
-    try:
-        for _ in range(60):
-            try:
-                urllib.request.urlopen(f"{url}/clientes/", timeout=2)
-                break
-            except OSError:
-                time.sleep(0.5)
-        else:
-            pytest.fail("El servidor de Django no arrancó")
+@pytest.fixture(params=BACKENDS)
+def api(request, en_carpeta, monkeypatch):
+    recursos = [["producto", *CAMPOS], ["cliente", "nombre", "email:email"]]
+    with api_en_marcha(request.param, en_carpeta, monkeypatch, recursos) as url:
         yield url
-    finally:
-        servidor.terminate()
-        servidor.wait(timeout=30)
 
 
 def _ejecutar_script(proyecto_web, base, url, nombre):
@@ -101,10 +67,8 @@ def _ejecutar_script(proyecto_web, base, url, nombre):
 
 
 @pytest.mark.lento
-@pytest.mark.django
-@requiere_django
 @requiere_node
-def test_servicios_de_react_y_react_native_contra_django(api_django, en_carpeta, monkeypatch):
+def test_servicios_de_react_y_react_native_contra_la_api(api, en_carpeta, monkeypatch):
     monkeypatch.chdir(en_carpeta)
     proyectos = {
         "web": ["react", "web"],
@@ -125,7 +89,7 @@ def test_servicios_de_react_y_react_native_contra_django(api_django, en_carpeta,
     shutil.copytree(en_carpeta / "movil" / "services", web / "scripts" / "rn")
     shutil.copytree(en_carpeta / "web-js" / "src" / "services", web / "scripts" / "web-js")
     shutil.copytree(en_carpeta / "movil-js" / "services", web / "scripts" / "rn-js")
-    _ejecutar_script(web, "../src/services", api_django, "react")
-    _ejecutar_script(web, "./rn", api_django, "react-native")
-    _ejecutar_script(web, "./web-js", api_django, "react-js")
-    _ejecutar_script(web, "./rn-js", api_django, "react-native-js")
+    _ejecutar_script(web, "../src/services", api, "react")
+    _ejecutar_script(web, "./rn", api, "react-native")
+    _ejecutar_script(web, "./web-js", api, "react-js")
+    _ejecutar_script(web, "./rn-js", api, "react-native-js")

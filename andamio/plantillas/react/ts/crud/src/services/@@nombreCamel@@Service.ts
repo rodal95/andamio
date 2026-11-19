@@ -11,7 +11,7 @@ export interface @@Nombre@@ {
 /** Datos para crear o modificar: todo menos lo que completa el servidor. */
 export type @@Nombre@@Datos = Omit<@@Nombre@@, 'id' | 'creado' | 'actualizado'>;
 
-// Con barra al final, como espera Django REST Framework.
+// Con barra al final: así son las rutas de las APIs que genera andamio.
 const RUTA = '/@@plural@@/';
 
 export const @@nombreCamel@@Service = {

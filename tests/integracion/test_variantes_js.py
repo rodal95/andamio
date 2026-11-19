@@ -115,7 +115,7 @@ def test_errores_de_variante(en_carpeta, capsys):
 
 
 def test_menu_pregunta_el_lenguaje(en_carpeta, respuestas, capsys):
-    preguntas = respuestas(["3", "2", "mi web", "s"])
+    preguntas = respuestas(["4", "2", "mi web", "s"])
     assert main([]) == 0
     salida = capsys.readouterr().out
     assert "¿En qué lenguaje?" in salida

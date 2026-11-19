@@ -2,14 +2,15 @@
 
     python scripts/capturas_sitio.py
 
-Genera con andamio un proyecto de Django, uno de React y uno de React Native, los
-pone en marcha de verdad (API con datos, web compilada, app de Expo exportada para
-web) y les saca fotos con Chromium (Playwright). Se ejecuta a mano cuando cambian
-las plantillas, y las imágenes se suben al repositorio.
+Genera con andamio un proyecto de Django, uno de FastAPI, uno de React y uno de
+React Native, los pone en marcha de verdad (APIs con datos, web compilada, app de
+Expo exportada para web) y les saca fotos con Chromium (Playwright). Se ejecuta a
+mano cuando cambian las plantillas, y las imágenes se suben al repositorio.
 
-Necesita: las dependencias de Django instaladas en este Python
-(pip install -r andamio/plantillas/django/_proyecto/requirements.txt), Node 22.13+
-y Playwright para Node con Chromium.
+Necesita: las dependencias de Django y de FastAPI instaladas en este Python
+(pip install -r andamio/plantillas/django/_proyecto/requirements.txt y lo mismo con
+andamio/plantillas/fastapi/_proyecto/requirements.txt), Node 22.13+ y Playwright
+para Node con Chromium.
 """
 
 from __future__ import annotations
@@ -116,9 +117,11 @@ const tareas = JSON.parse(process.argv[2]);
     }
     await pagina.goto(t.url, { waitUntil: 'networkidle' });
     if (t.esperar) await pagina.waitForSelector(t.esperar, { timeout: 30000 });
+    for (const selector of t.clics || []) await pagina.locator(selector).first().click();
     for (const [etiqueta, valor] of Object.entries(t.llenar || {})) await pagina.getByLabel(etiqueta).fill(valor);
     if (t.enviar) await pagina.getByRole('button', { name: t.enviar }).click();
     if (t.esperar_despues) await pagina.waitForSelector(t.esperar_despues, { timeout: 30000 });
+    if (t.mostrar) await pagina.locator(t.mostrar).first().evaluate((el) => el.scrollIntoView({ block: 'start' }));
     await pagina.waitForTimeout(800);
     await pagina.screenshot({ path: t.archivo, type: 'jpeg', quality: 88 });
     console.log('  foto:', t.archivo);
@@ -175,6 +178,50 @@ def django(base: Path) -> subprocess.Popen:
         base,
     )
     return servidor
+
+
+def fastapi(base: Path) -> None:
+    print("FastAPI")
+    carpeta = base / "fastapi"
+    carpeta.mkdir()
+    andamio(carpeta, "crear", "fastapi", "mi-api")
+    api = carpeta / "mi-api"
+    andamio(api, "nuevo", "recurso", "producto", *CAMPOS)
+    # En el puerto 8001: el 8000 lo usa Django, que necesitan las capturas de React.
+    servidor = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8001"],
+        cwd=api,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        esperar_url("http://127.0.0.1:8001/api/productos/")
+        for nombre, precio, stock in PRODUCTOS:
+            datos = json.dumps({"nombre": nombre, "precio": precio, "stock": stock}).encode()
+            pedido = urllib.request.Request(
+                "http://127.0.0.1:8001/api/productos/", data=datos, headers={"Content-Type": "application/json"}
+            )
+            urllib.request.urlopen(pedido, timeout=10)
+        fotos(
+            [
+                {"url": "http://127.0.0.1:8001/docs", "archivo": str(IMAGENES / "fastapi-swagger.jpg"), "ancho": 1200, "alto": 760, "esperar": ".opblock"},
+                {
+                    # En Swagger: GET /api/productos/ → Try it out → Execute, y se ve la respuesta.
+                    "url": "http://127.0.0.1:8001/docs",
+                    "archivo": str(IMAGENES / "fastapi-api.jpg"),
+                    "ancho": 1200,
+                    "alto": 760,
+                    "esperar": ".opblock",
+                    "clics": [".opblock-get .opblock-summary", "button.try-out__btn", "button.execute"],
+                    "esperar_despues": ".live-responses-table .highlight-code",
+                    "mostrar": ".live-responses-table",
+                },
+            ],
+            base,
+        )
+    finally:
+        servidor.terminate()
+        servidor.wait(timeout=30)
 
 
 def react(base: Path) -> None:
@@ -236,6 +283,7 @@ def principal() -> None:
         base = Path(temporal)
         servidor = django(base)
         try:
+            fastapi(base)
             react(base)
             react_native(base)
         finally:

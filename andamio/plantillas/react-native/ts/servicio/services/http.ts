@@ -1,5 +1,5 @@
 /**
- * Funciones para hablar con la API de Django.
+ * Funciones para hablar con la API (Django o FastAPI, hecha con andamio).
  *
  * La dirección de la API sale de EXPO_PUBLIC_API_URL (archivo .env).
  * Ojo con "localhost": en el celular o el emulador, localhost es el propio
@@ -7,8 +7,9 @@
  *   - Emulador de Android:    http://10.0.2.2:8000/api   (10.0.2.2 = tu PC)
  *   - Navegador o iOS:        http://localhost:8000/api
  *   - Celular real con Expo Go: http://IP-DE-TU-PC:8000/api  (ej: 192.168.0.10)
- *     y Django tiene que escuchar en la red: python manage.py runserver 0.0.0.0:8000
- *     (además, agregá esa IP a ALLOWED_HOSTS en el .env de Django).
+ *     y la API tiene que escuchar en la red:
+ *       Django:  python manage.py runserver 0.0.0.0:8000  (y agregá esa IP a ALLOWED_HOSTS en su .env)
+ *       FastAPI: python -m uvicorn app.main:app --reload --host 0.0.0.0
  * Si cambiás el .env, reiniciá "npx expo start".
  */
 

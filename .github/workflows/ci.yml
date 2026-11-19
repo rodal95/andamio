@@ -21,13 +21,15 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Instalar andamio y pytest
         run: python -m pip install -e ".[dev]"
-      - name: Instalar las dependencias del proyecto Django generado
-        run: python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
+      - name: Instalar las dependencias de los proyectos Django y FastAPI generados
+        run: |
+          python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
+          python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
       - name: Tests
         run: python -m pytest
 
   # Instala las dependencias de los proyectos generados y los compila:
-  # npm install + build (React), tsc (React Native) y servicios contra la API de Django.
+  # npm install + build (React), tsc (React Native) y servicios y CRUD contra las APIs de Django y FastAPI.
   lento:
     name: Proyectos generados (--lento)
     runs-on: ubuntu-latest
@@ -39,10 +41,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Instalar andamio, pytest y las dependencias de Django
+      - name: Instalar andamio, pytest y las dependencias de Django y FastAPI
         run: |
           python -m pip install -e ".[dev]"
           python -m pip install -r andamio/plantillas/django/_proyecto/requirements.txt
+          python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
       - name: Playwright (prueba en el navegador del CRUD generado)
         run: |
           npm install -g playwright@1.63.0

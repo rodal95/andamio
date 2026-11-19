@@ -31,7 +31,7 @@ export function @@Nombre@@FormPage() {
   const editando = id !== undefined;
   const navegar = useNavigate();
   const [datos, setDatos] = useState(VACIO);
-  // Errores de validación que devuelve Django, por campo: { nombre: ['Este campo...'] }
+  // Errores de validación que devuelve la API, por campo: { nombre: ['Este campo...'] }
   const [errores, setErrores] = useState(/** @type {Record<string, string[]>} */ ({}));
 
   // Al editar, primero se cargan los datos actuales.

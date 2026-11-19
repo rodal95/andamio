@@ -8,6 +8,14 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [1.1.0] - 2026-11-19
 
 ### Agregado
+- Stack `fastapi`: API REST con FastAPI + SQLModel (`python -m andamio crear
+  fastapi mi-api`) y pieza `recurso` con modelo, router y 5 tests. Cumple el
+  mismo contrato que la API de Django (rutas `/api/productos/`, lista sin
+  paginación, decimales como número, errores 400 en español por campo,
+  `?search=`, `?ordering=` y filtros), así que los servicios y el `crud` de
+  React y React Native funcionan igual con las dos. Las fechas con hora sin
+  zona horaria se toman como hora local (`ZONA_HORARIA` en el `.env`), como
+  en Django.
 - Pieza `crud` para React: `python -m andamio nuevo crud producto <campos>`
   genera la lista, el detalle (con eliminar) y el formulario para crear y
   editar (con los errores de validación de Django en cada campo), el
@@ -19,12 +27,15 @@ Todos los cambios importantes de andamio. El proyecto usa
   `src/pages/InicioPage/`. `nuevo pagina` registra también su ruta y su enlace.
 - Se rechaza una página o un CRUD si su ruta ya existe en `App`. En proyectos
   sin router, andamio genera igual e indica el `npm install` y qué pegar.
-- Test en el navegador (Playwright) del CRUD generado contra la API de Django.
+- Test en el navegador (Playwright) del CRUD generado contra las APIs de Django y FastAPI.
 - `python -m andamio configurar`: agrega la carpeta de andamio al PATH del
   usuario (sin permisos de administrador) para poder escribir solo `andamio`.
   En Linux y Mac explica qué línea agregar. Es opcional.
 
 ### Cambiado
+- Los servicios y el `crud` de React y React Native ya no hablan solo de
+  Django: los comentarios y los `.env` explican cómo usarlos con cualquiera
+  de las dos APIs.
 - Todos los mensajes, la ayuda y los README de los proyectos generados
   muestran los comandos con Python adelante (`python -m andamio ...`, o
   `python andamio.pyz ...` si se usa el .pyz), que funciona en cualquier PC.

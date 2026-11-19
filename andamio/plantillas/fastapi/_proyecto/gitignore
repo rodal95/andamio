@@ -1,0 +1,12 @@
+# Configuración local con datos privados
+.env
+
+# Base de datos de desarrollo
+datos.db
+
+# Entorno virtual y archivos generados por Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/

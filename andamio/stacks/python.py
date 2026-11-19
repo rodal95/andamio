@@ -19,7 +19,13 @@ TIPOS_SQL = {"str": "TEXT", "int": "INTEGER", "float": "REAL"}
 
 
 def _detectar(raiz: Path) -> bool:
-    return (raiz / "main.py").is_file() and (raiz / "db.py").is_file()
+    if not ((raiz / "main.py").is_file() and (raiz / "db.py").is_file()):
+        return False
+    # app/ de un proyecto FastAPI también tiene main.py y db.py: no es de consola.
+    try:
+        return "fastapi" not in (raiz / "main.py").read_text(encoding="utf-8-sig").lower()
+    except (OSError, UnicodeDecodeError):
+        return True
 
 
 def _contexto_entidad(sol: Solicitud) -> dict[str, str]:
