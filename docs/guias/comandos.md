@@ -399,7 +399,7 @@ reflex run                                       http://localhost:3000
 | `componente` | `nuevo componente Tarjeta` | `mi_app/componentes/tarjeta.py`. |
 | `estado` | `nuevo estado contador` | `mi_app/estados/contador.py` (`ContadorState`). |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `mi_app/servicios/producto.py` (funciones async). |
-| `tema` | `nuevo tema violeta --modo auto` | `mi_app/tema.py` con el tema de Radix (color de acento, claro u oscuro), aplicado con `app.theme = TEMA`. |
+| `tema` | `nuevo tema violeta --modo auto` | `mi_app/tema.py` con el tema de Radix (color de acento, claro u oscuro), conectado en `rxconfig.py` (`RadixThemesPlugin(theme=TEMA)`). |
 
 ---
 

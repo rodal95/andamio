@@ -348,7 +348,7 @@ def _contexto_proyecto(nombre: Nombre) -> dict[str, str]:
 
 
 TEMA = pieza_tema(
-    descripcion="color de acento y modo claro u oscuro de toda la aplicación (rx.theme)",
+    descripcion="color de acento y modo claro u oscuro de toda la aplicación (rx.theme en rxconfig.py)",
     contexto=_con_app(contexto_tema_reflex),
     marcadores={
         "app": _MARCADORES_PANTALLA["app"],
@@ -358,13 +358,12 @@ TEMA = pieza_tema(
     },
     existe_si=("@@app@@/tema.py",),
     inserciones=(
-        Insercion("@@app@@/@@app@@.py", "from @@app@@.tema import TEMA", marcador="imports", descripcion="import", ubicacion="arriba, junto a los otros import"),
         Insercion(
-            "@@app@@/@@app@@.py",
-            "app.theme = TEMA  # el tema de @@app@@/tema.py (nuevo tema)",
-            marcador="paginas",
-            descripcion="app.theme = TEMA",
-            ubicacion="después de app = rx.App(...)",
+            "rxconfig.py",
+            "from @@app@@.tema import TEMA  # noqa: E402,F811 (nuevo tema: reemplaza al de arriba)",
+            marcador="tema",
+            descripcion="usa el tema de @@app@@/tema.py",
+            ubicacion="antes de config = rx.Config(...), que tiene que usar RadixThemesPlugin(theme=TEMA)",
         ),
     ),
     siguiente_paso=["reflex run", "# Para cambiar el color o el modo, editá @@app@@/tema.py."],

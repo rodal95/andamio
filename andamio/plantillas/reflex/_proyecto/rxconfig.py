@@ -2,6 +2,11 @@
 
 import reflex as rx
 
+# El tema de toda la aplicación (Radix): color de acento, claro u oscuro, bordes.
+# Para cambiarlo: python -m andamio nuevo tema <color> [--modo auto|claro|oscuro]
+TEMA = rx.theme(accent_color="amber")
+# --- andamio:tema (no borrar esta línea) ---
+
 config = rx.Config(
     app_name="@@proyecto_snake@@",
     # Base de datos SQLite: el archivo datos.db en la carpeta del proyecto.
@@ -14,5 +19,5 @@ config = rx.Config(
     env_file=".env",
     # No enviar datos de uso a los creadores de Reflex.
     telemetry_enabled=False,
-    plugins=[rx.plugins.SitemapPlugin(), rx.plugins.RadixThemesPlugin()],
+    plugins=[rx.plugins.SitemapPlugin(), rx.plugins.RadixThemesPlugin(theme=TEMA)],
 )
