@@ -119,3 +119,23 @@ def test_los_ejemplos_no_tienen_restos_de_otra_variante():
         if ejemplo.suffix in (".js", ".jsx"):
             texto = ejemplo.read_text(encoding="utf-8")
             assert "type " not in texto and ": unknown" not in texto and "<Producto" not in texto, ejemplo
+
+
+def test_compartir_la_pagina_muestra_imagen_y_logo():
+    """Si falla: ejecutá python scripts/compartir_sitio.py (o --etiquetas) y subí lo que cambió."""
+    import struct
+
+    import compartir_sitio
+
+    for ruta, texto in compartir_sitio.archivos_de_texto().items():
+        assert ruta.read_text(encoding="utf-8") == texto, f"{ruta.name} no está al día"
+    for pagina in compartir_sitio.paginas():
+        contenido = pagina["archivo"].read_text(encoding="utf-8")
+        for etiqueta in ('property="og:image"', 'name="twitter:card" content="summary_large_image"', 'rel="canonical"', 'rel="apple-touch-icon"'):
+            assert etiqueta in contenido, (pagina["clave"], etiqueta)
+        imagen = SITIO / pagina["imagen"]
+        assert imagen.is_file(), f"falta {imagen.name}: ejecutá python scripts/compartir_sitio.py"
+        ancho, alto = struct.unpack(">II", imagen.read_bytes()[16:24])
+        assert (ancho, alto) == (1200, 630), imagen.name
+    for icono in ("icono-32.png", "apple-touch-icon.png", "icono-192.png", "icono-512.png"):
+        assert (SITIO / "img" / icono).is_file(), icono
