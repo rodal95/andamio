@@ -60,7 +60,7 @@ def test_reexportar_no_devuelve_archivos_borrados(en_carpeta, monkeypatch, capsy
     assert main(["plantillas", "exportar"]) == 0
     salida = capsys.readouterr().out
     assert not admin.exists()
-    assert "login/" in salida  # la otra pieza sí se exportó
+    assert (en_carpeta / "api/.andamio/plantillas/django/login/LEEME.md").is_file()  # la otra pieza sí se exportó
     assert "Ya estaban exportadas y no se tocaron: recurso" in salida
 
 
