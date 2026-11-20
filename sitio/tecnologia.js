@@ -558,6 +558,9 @@
       destino = pestana.id;
     }
     history.replaceState(null, "", `#${destino}`);
+    const sub = pestana.sub && pestana.sub.find((s) => `${pestana.id}/${s.id}` === destino);
+    const base = `andamio con ${tecnologia.titulo}${variante.nombre ? ` (${variante.nombre})` : ""}`;
+    document.title = pestana.id === "empezar" ? base : `${sub ? sub.titulo : pestana.titulo} · ${base}`;
     if (enfocar) main.querySelector(".guia-tabs").scrollIntoView({ block: "start" });
   }
 
@@ -585,7 +588,6 @@
   }
 
   function dibujar(destino) {
-    document.title = `andamio con ${tecnologia.titulo}${variante.nombre ? ` (${variante.nombre})` : ""}`;
     lista = pestanas();
     visores = 0;
     const barra = lista

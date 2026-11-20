@@ -85,6 +85,33 @@ def _datos_estructurados() -> str:
     return '<script type="application/ld+json">' + json.dumps(datos, ensure_ascii=False) + "</script>"
 
 
+def _datos_guia(pagina: dict) -> str:
+    """Una guía: artículo técnico (con su imagen y su idioma) y la ruta de navegación."""
+    datos = [
+        {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": pagina["titulo"],
+            "description": pagina["descripcion"],
+            "inLanguage": "es",
+            "url": pagina["url"],
+            "image": BASE + pagina["imagen"],
+            "proficiencyLevel": "Beginner",
+            "isPartOf": {"@type": "WebSite", "name": "andamio", "url": BASE},
+            "about": {"@type": "SoftwareApplication", "name": "andamio", "applicationCategory": "DeveloperApplication"},
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "andamio", "item": BASE},
+                {"@type": "ListItem", "position": 2, "name": pagina["titulo"], "item": pagina["url"]},
+            ],
+        },
+    ]
+    return '<script type="application/ld+json">' + json.dumps(datos, ensure_ascii=False) + "</script>"
+
+
 def bloque(pagina: dict) -> str:
     e = lambda texto: html.escape(texto, quote=True)  # noqa: E731
     imagen = BASE + pagina["imagen"]
@@ -110,8 +137,7 @@ def bloque(pagina: dict) -> str:
         '<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />',
         '<link rel="manifest" href="site.webmanifest" />',
     ]
-    if pagina["clave"] == "index":
-        lineas.append(_datos_estructurados())
+    lineas.append(_datos_estructurados() if pagina["clave"] == "index" else _datos_guia(pagina))
     lineas.append(FIN)
     return "\n".join("    " + linea for linea in lineas)
 

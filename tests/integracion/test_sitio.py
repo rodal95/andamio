@@ -137,6 +137,18 @@ def test_compartir_la_pagina_muestra_imagen_y_logo():
         assert imagen.is_file(), f"falta {imagen.name}: ejecutá python scripts/compartir_sitio.py"
         ancho, alto = struct.unpack(">II", imagen.read_bytes()[16:24])
         assert (ancho, alto) == (1200, 630), imagen.name
+    # Los datos estructurados (para buscadores) son JSON válido: SoftwareApplication en la
+    # portada; TechArticle y la ruta de navegación en cada guía.
+    import json
+
+    for pagina in compartir_sitio.paginas():
+        contenido = pagina["archivo"].read_text(encoding="utf-8")
+        bloques = re.findall(r'<script type="application/ld\+json">(.*?)</script>', contenido)
+        assert len(bloques) == 1, pagina["clave"]
+        datos = json.loads(bloques[0])
+        tipos = {d["@type"] for d in datos} if isinstance(datos, list) else {datos["@type"]}
+        esperado = {"SoftwareApplication"} if pagina["clave"] == "index" else {"TechArticle", "BreadcrumbList"}
+        assert tipos == esperado, pagina["clave"]
     for icono in ("icono-32.png", "apple-touch-icon.png", "icono-192.png", "icono-512.png"):
         assert (SITIO / "img" / icono).is_file(), icono
 
