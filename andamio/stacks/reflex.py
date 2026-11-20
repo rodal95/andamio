@@ -117,7 +117,7 @@ def _contexto_pantalla(sol: Solicitud, desde) -> dict[str, str]:
         "campos_formulario": _campos_formulario(sol),
         "encabezados": "\n".join(f'rx.table.column_header_cell("{c.titulo}"),' for c in campos),
         "celdas": "\n".join(
-            f'rx.table.cell(rx.cond(registro["{c.nombre}"], "Sí", "No")),' if c.tipo == "bool" else f'rx.table.cell(registro["{c.nombre}"]),'
+            f'rx.table.cell(rx.cond(elemento["{c.nombre}"], "Sí", "No")),' if c.tipo == "bool" else f'rx.table.cell(elemento["{c.nombre}"]),'
             for c in campos
         ),
     }

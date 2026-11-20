@@ -131,3 +131,13 @@ def test_conexiones_en_otro_archivo(en_carpeta, monkeypatch):
     router = leer(raiz / "src/router.tsx")
     assert "ContactoPage" in router and 'path="/contacto"' in router
     assert "ContactoPage" not in leer(raiz / "src/App.tsx").replace(app_antes, "")  # las rutas no van a App.tsx
+
+
+def test_el_error_dice_de_que_carpeta_es_el_andamio_json(en_carpeta, monkeypatch, capsys):
+    # Un andamio.json roto en una carpeta de más arriba: el error dice cuál es.
+    (en_carpeta / "andamio.json").write_text('{"stack": "react",}', encoding="utf-8")
+    (en_carpeta / "sub").mkdir()
+    monkeypatch.chdir(en_carpeta / "sub")
+    assert main(["info"]) == 1
+    error = capsys.readouterr().err
+    assert str(en_carpeta / "andamio.json") in error and "no es un JSON válido" in error

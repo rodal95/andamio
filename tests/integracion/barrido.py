@@ -173,26 +173,30 @@ def barrer(
 # --- Revisiones ---------------------------------------------------------------------------
 
 
-def _ligaduras(cuerpo: list[ast.stmt], parametros: list[str]) -> dict[str, list[str]]:
-    """Qué nombres define cada sentencia de un bloque (sin entrar en if/try/for)."""
-    ligaduras: dict[str, list[str]] = {p: ["parámetro"] for p in parametros}
+def _ligaduras(cuerpo: list[ast.stmt], parametros: list[str]) -> dict[str, list[tuple[str, int]]]:
+    """Qué nombres define cada sentencia de un bloque (sin entrar en if/try/for), con su línea."""
+    ligaduras: dict[str, list[tuple[str, int]]] = {p: [("parámetro", 0)] for p in parametros}
     for nodo in cuerpo:
         if isinstance(nodo, (ast.Import, ast.ImportFrom)):
             for alias in nodo.names:
                 nombre = alias.asname or alias.name.split(".")[0]
                 if nombre != "*":
-                    ligaduras.setdefault(nombre, []).append("import")
+                    ligaduras.setdefault(nombre, []).append(("import", nodo.lineno))
         elif isinstance(nodo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            ligaduras.setdefault(nodo.name, []).append("def" if not isinstance(nodo, ast.ClassDef) else "class")
+            tipo = "def" if not isinstance(nodo, ast.ClassDef) else "class"
+            ligaduras.setdefault(nodo.name, []).append((tipo, nodo.lineno))
         elif isinstance(nodo, (ast.Assign, ast.AnnAssign)):
             objetivos = nodo.targets if isinstance(nodo, ast.Assign) else [nodo.target]
             for objetivo in objetivos:
                 if isinstance(objetivo, ast.Name):
-                    ligaduras.setdefault(objetivo.id, []).append("variable")
+                    ligaduras.setdefault(objetivo.id, []).append(("variable", nodo.lineno))
     return ligaduras
 
 
-def _redefiniciones(arbol: ast.AST) -> list[str]:
+def _redefiniciones(arbol: ast.AST, lineas: list[str] | None = None) -> list[str]:
+    """Nombres definidos dos veces en el mismo bloque. Una línea con `# noqa: F811` (como
+    la usan los linters) marca una redefinición a propósito y no cuenta."""
+    lineas = lineas or []
     problemas = []
     bloques: list[tuple[str, list[ast.stmt], list[str]]] = [("módulo", arbol.body, [])]
     for nodo in ast.walk(arbol):
@@ -204,9 +208,93 @@ def _redefiniciones(arbol: ast.AST) -> list[str]:
         elif isinstance(nodo, ast.ClassDef):
             bloques.append((f"clase {nodo.name}", nodo.body, []))
     for donde, cuerpo, parametros in bloques:
-        for nombre, tipos in _ligaduras(cuerpo, parametros).items():
-            if len(tipos) > 1 and any(t != "variable" for t in tipos):
+        for nombre, ligaduras in _ligaduras(cuerpo, parametros).items():
+            tipos = [tipo for tipo, _ in ligaduras]
+            a_proposito = any(0 < n <= len(lineas) and "F811" in lineas[n - 1] for _, n in ligaduras)
+            if len(tipos) > 1 and any(t != "variable" for t in tipos) and not a_proposito:
                 problemas.append(f"'{nombre}' se define {len(tipos)} veces en {donde} ({', '.join(tipos)})")
+    return problemas
+
+
+_BUILTINS = set(dir(__import__("builtins"))) | {"__name__", "__file__", "__doc__", "__spec__", "__package__", "__builtins__"}
+
+
+def _ligados(nodo: ast.AST) -> set[str]:
+    """Todos los nombres que un bloque define (en cualquier nivel, sin entrar en otras funciones)."""
+    nombres: set[str] = set()
+    pendientes = list(ast.iter_child_nodes(nodo))
+    while pendientes:
+        hijo = pendientes.pop()
+        if isinstance(hijo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            nombres.add(hijo.name)
+            pendientes.extend(hijo.decorator_list)
+            continue  # su cuerpo es otro alcance
+        if isinstance(hijo, ast.Lambda):
+            continue
+        if isinstance(hijo, ast.Name) and isinstance(hijo.ctx, (ast.Store, ast.Del)):
+            nombres.add(hijo.id)
+        elif isinstance(hijo, (ast.Import, ast.ImportFrom)):
+            nombres.update(a.asname or a.name.split(".")[0] for a in hijo.names)
+        elif isinstance(hijo, ast.ExceptHandler) and hijo.name:
+            nombres.add(hijo.name)
+        elif isinstance(hijo, (ast.Global, ast.Nonlocal)):
+            nombres.update(hijo.names)
+        elif isinstance(hijo, ast.arg):
+            nombres.add(hijo.arg)
+        pendientes.extend(ast.iter_child_nodes(hijo))
+    return nombres
+
+
+def _usados(nodo: ast.AST) -> list[ast.Name]:
+    """Los nombres que se leen en un bloque (sin entrar en el cuerpo de otras funciones)."""
+    usados = []
+    pendientes = list(ast.iter_child_nodes(nodo))
+    while pendientes:
+        hijo = pendientes.pop()
+        if isinstance(hijo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            if not isinstance(hijo, ast.Lambda):
+                pendientes.extend(hijo.decorator_list)
+            continue
+        if isinstance(hijo, ast.Name) and isinstance(hijo.ctx, ast.Load):
+            usados.append(hijo)
+        pendientes.extend(ast.iter_child_nodes(hijo))
+    return usados
+
+
+def _alcances_hijos(nodo: ast.AST) -> list[ast.AST]:
+    """Las funciones, lambdas y clases que cuelgan directamente de este alcance."""
+    hijos = []
+    pendientes = list(ast.iter_child_nodes(nodo))
+    while pendientes:
+        hijo = pendientes.pop()
+        if isinstance(hijo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)):
+            hijos.append(hijo)
+        else:
+            pendientes.extend(ast.iter_child_nodes(hijo))
+    return hijos
+
+
+def nombres_sin_definir(arbol: ast.Module) -> list[str]:
+    """Nombres que se usan sin estar definidos (un NameError al ejecutar). Aproximado: alcanza
+    con que el nombre exista en algún alcance que lo encierra."""
+    if any(isinstance(n, ast.ImportFrom) and any(a.name == "*" for a in n.names) for n in ast.walk(arbol)):
+        return []
+    problemas: list[str] = []
+
+    def recorrer(nodo: ast.AST, visibles: set[str]) -> None:
+        propios = visibles | _ligados(nodo)
+        if isinstance(nodo, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            argumentos = nodo.args
+            propios |= {a.arg for a in [*argumentos.posonlyargs, *argumentos.args, *argumentos.kwonlyargs]}
+            propios |= {a.arg for a in (argumentos.vararg, argumentos.kwarg) if a is not None}
+        for nombre in _usados(nodo):
+            if nombre.id not in propios and nombre.id not in _BUILTINS:
+                problemas.append(f"línea {nombre.lineno}: '{nombre.id}' no está definido")
+        # Los métodos no ven los atributos de su clase: heredan lo de afuera de la clase.
+        for hijo in _alcances_hijos(nodo):
+            recorrer(hijo, visibles if isinstance(nodo, ast.ClassDef) else propios)
+
+    recorrer(arbol, set())
     return problemas
 
 
@@ -223,7 +311,8 @@ def revisar_archivo(ruta: Path, raiz: Path) -> list[str]:
             compile(arbol, rel, "exec")
         except SyntaxError as e:
             return [f"{rel}:{e.lineno}: {e.msg}"]
-        problemas += [f"{rel}: {p}" for p in _redefiniciones(arbol)]
+        problemas += [f"{rel}: {p}" for p in _redefiniciones(arbol, texto.splitlines())]
+        problemas += [f"{rel}: {p}" for p in nombres_sin_definir(arbol)]
     if ruta.suffix in {".html", ".vue", ".jsx", ".tsx"}:
         ids = _ID_HTML.findall(texto)
         repetidos = sorted({i for i in ids if ids.count(i) > 1})

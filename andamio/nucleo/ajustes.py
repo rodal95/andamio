@@ -115,9 +115,12 @@ def leer(raiz: Path) -> Ajustes | None:
         return None
     try:
         texto = archivo.read_text(encoding="utf-8-sig")
+        return desde_texto(texto)
     except (OSError, UnicodeDecodeError) as e:
-        raise _error(f"no se pudo leer ({e}).") from e
-    return desde_texto(texto)
+        raise AndamioError(f"{archivo}: no se pudo leer ({e}).") from e
+    except AndamioError as e:
+        # El mensaje dice de qué carpeta es: puede ser un andamio.json de más arriba.
+        raise AndamioError(e.mensaje.replace(f"{ARCHIVO}:", f"{archivo}:", 1), e.sugerencia) from e
 
 
 def de_proyecto(raiz: Path) -> Ajustes:

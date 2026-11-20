@@ -66,6 +66,8 @@ Todos los cambios importantes de andamio. El proyecto usa
 - Barrido de nombres (`tests/integracion/test_barrido.py`, con `--lento`): prueba cada
   identificador de las plantillas como nombre y como campo de cada pieza, y compila lo
   generado (Python con `ast`; JavaScript, TypeScript y Vue con el compilador de TypeScript).
+- `test_python_generado.py`: el Python que genera cada pieza no usa nombres sin definir
+  (compila igual pero falla al ejecutar) ni define dos veces el mismo, con y sin guía.
 
 ## [1.4.1] - 2026-11-19
 
