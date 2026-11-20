@@ -13,6 +13,7 @@ configuración de la terminal.
 from __future__ import annotations
 
 import os
+import sys
 from importlib import metadata
 from pathlib import Path
 
@@ -91,6 +92,11 @@ def es_windows() -> bool:
     return os.name == "nt"
 
 
+def en_entorno_virtual() -> bool:
+    """True si andamio corre dentro de un entorno virtual (venv)."""
+    return sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+
+
 def configurar(simular: bool = False, windows: bool | None = None) -> int:
     windows = es_windows() if windows is None else windows
     carpeta = carpeta_de_andamio()
@@ -100,6 +106,20 @@ def configurar(simular: bool = False, windows: bool | None = None) -> int:
             f"Seguí usándolo así ({consola.programa()} ...), o instalalo con python -m pip install y después ejecutá: "
             "python -m andamio configurar",
         )
+
+    if en_entorno_virtual():
+        # La carpeta del venv tiene su propio python y pip: en el PATH permanente, todas las
+        # terminales usarían el python de este proyecto. Adentro del venv no hace falta.
+        consola.aviso("Estás usando andamio desde un entorno virtual (venv). No cambio el PATH.")
+        consola.escribir(
+            "Mientras el entorno está activado, andamio ya funciona escribiendo solo: andamio. "
+            "Agregar esta carpeta al PATH haría que el python y el pip de este entorno se usen en todas las terminales."
+        )
+        consola.escribir(
+            "Para usar andamio fuera del entorno: instalalo para tu usuario (sin el venv activado) "
+            "y ejecutá python -m andamio configurar desde ahí."
+        )
+        return 0
 
     if not windows:
         if esta_en_path(carpeta, os.environ.get("PATH", "")):

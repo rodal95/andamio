@@ -300,8 +300,13 @@ def css_estilo(nombre: Nombre) -> str:
 # --- Piezas ---------------------------------------------------------------------------
 
 
+# --mode también acepta los modos en inglés.
+_MODOS_EN_INGLES = {"light": "claro", "dark": "oscuro"}
+
+
 def normalizar_modo(texto: str) -> str:
     modo = texto.strip().lower()
+    modo = _MODOS_EN_INGLES.get(modo, modo)
     if modo not in MODOS:
         raise AndamioError(f"El modo '{texto}' no existe.", "Modos: " + ", ".join(f"{m} ({d})" for m, d in MODOS.items()))
     return modo

@@ -118,6 +118,8 @@ ALIAS_PIEZAS = {
     "screen": "pantalla",
     "service": "servicio",
     "state": "estado",
+    "theme": "tema",
+    "style": "estilo",
 }
 
 

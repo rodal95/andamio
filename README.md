@@ -50,7 +50,7 @@ en tu proyecto, escribí `python -m andamio info`.
 
 **Guías paso a paso** (en [docs/guias/](docs/guias/README.md)): [todos los comandos con
 ejemplos](docs/guias/comandos.md), [cómo combinar piezas y proyectos](docs/guias/combinaciones.md),
-[reglas para no romper nada](docs/guias/reglas.md), [API con Django + login JWT](docs/guias/django-api-jwt.md)
+[reglas para no romper nada](docs/guias/reglas.md), [API con Django + login JWT](docs/guias/django-api-jwt.md),
 [sitio con Django y plantillas](docs/guias/django-plantillas.md) y [estilos: tema, ui y estilo](docs/guias/estilos.md).
 
 **`crud` (React, Vue y Next.js):** con un comando genera la lista, el detalle (con eliminar) y el

@@ -354,6 +354,13 @@ def _validar_login(raiz: Path, nombre: Nombre) -> None:
             "El proyecto ya tiene el login con JWT (JWTAuthentication está en config/settings.py).",
             "Para proteger un recurso nuevo: python -m andamio nuevo recurso <nombre> <campos> --protegido",
         )
+    # El login es una app más (por defecto "cuentas"). Si ya hay una app con ese nombre
+    # (ej.: un recurso "cuenta" de un banco), el login se genera con otro nombre.
+    if f'"{nombre.plural}"' in settings or (raiz / nombre.plural).exists():
+        raise AndamioError(
+            f"Ya hay una app '{nombre.plural}' en el proyecto, así que el login no puede usar ese nombre.",
+            f"Generalo con otro nombre: {consola.programa()} nuevo login acceso",
+        )
 
 
 def _pasos_login(sol: Solicitud) -> list[str]:
@@ -373,6 +380,7 @@ LOGIN = Pieza(
     descripcion="registro, token de acceso (SimpleJWT) y usuario actual",
     ejemplo="",
     nombre_defecto="cuenta",
+    pregunta_nombre="Nombre de la app del login (Enter para cuenta)",
     formas=("app @@plural@@",),
     validar_nombre=_validar_login,
     existe_si=("@@plural@@",),

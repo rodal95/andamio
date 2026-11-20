@@ -53,9 +53,9 @@ jobs:
           python -m pip install "djangorestframework-simplejwt~=$(python -c 'from andamio.stacks.django import VERSION_SIMPLEJWT; print(VERSION_SIMPLEJWT)')"
           python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
           python -m pip install -r andamio/plantillas/reflex/_proyecto/requirements.txt
-      - name: Playwright (prueba en el navegador del CRUD generado)
+      - name: Playwright (prueba en el navegador del CRUD generado) y TypeScript (barrido de nombres)
         run: |
-          npm install -g playwright@1.63.0
+          npm install -g playwright@1.63.0 typescript@6.0.2
           playwright install --with-deps chromium
           echo "NODE_PATH=$(npm root -g)" >> "$GITHUB_ENV"
       - name: Tests lentos

@@ -18,13 +18,13 @@ export async function GET(request: Request) {
     const parametros = Object.fromEntries(new URL(request.url).searchParams);
     const { search, ordering, ...filtros } = validar(@@nombreCamel@@Filtros, parametros);
     const campo = CAMPOS_ORDEN.find((nombre) => nombre === ordering?.replace(/^-/, '')) ?? 'id';
-    const orden = { [campo]: ordering?.startsWith('-') ? 'desc' : 'asc' } as Prisma.@@Nombre@@OrderByWithRelationInput;
+    const criterioDeOrden = { [campo]: ordering?.startsWith('-') ? 'desc' : 'asc' } as Prisma.@@Nombre@@OrderByWithRelationInput;
     const @@pluralCamel@@ = await prisma.@@nombreCamel@@.findMany({
       where: {
         ...filtros,
         @@busqueda@@
       },
-      orderBy: orden,
+      orderBy: criterioDeOrden,
     });
     return Response.json(@@pluralCamel@@.map(aJson));
   });

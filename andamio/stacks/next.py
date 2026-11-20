@@ -15,7 +15,7 @@ import dataclasses
 from pathlib import Path
 
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.nombres import Nombre
+from andamio.nucleo.nombres import Nombre, pluralizar
 from andamio.estilos import piezas_de_estilos
 from andamio.stacks import _js, express
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -196,9 +196,12 @@ def _pasos_crud_fullstack(sol: Solicitud) -> list[str]:
     pasos = ["npm run dev", "http://localhost:3000/@@pluralKebab@@"]
     if not (sol.raiz / "app" / "api" / sol.nombre.plural).is_dir():
         campos = " ".join(f"{c.nombre}:{c.tipo}" for c in sol.campos)
+        # Si el plural no es el automático, el recurso tiene que usar el mismo (si no, la API
+        # queda en otra ruta y las páginas reciben 404).
+        plural = f" --plural {sol.nombre.plural}" if sol.nombre.plural_palabras != tuple(pluralizar(sol.nombre.palabras)) else ""
         pasos = [
             "# Las páginas usan la API de este proyecto. Si todavía no generaste el recurso:",
-            f"python -m andamio nuevo recurso {sol.nombre.snake} {campos} --migrar",
+            f"python -m andamio nuevo recurso {sol.nombre.snake} {campos}{plural} --migrar",
             *pasos,
         ]
     return pasos

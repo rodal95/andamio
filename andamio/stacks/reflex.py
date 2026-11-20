@@ -11,6 +11,7 @@ import keyword
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 from andamio.nucleo import consola
@@ -23,7 +24,8 @@ from andamio.stacks.django import TIPOS, python_del_proyecto
 from andamio.stacks.fastapi import _ATRIBUTOS_DE_SQLMODEL, _CAMPO_BASE
 
 # Nombres que el paquete de la aplicación no puede tener: taparían a una librería.
-_PAQUETES_OCUPADOS = {"reflex", "rxconfig", "alembic", "sqlmodel", "sqlalchemy", "pydantic", "httpx", "tests"}
+# "assets" es la carpeta pública de Reflex: el paquete quedaría adentro.
+_PAQUETES_OCUPADOS = {"reflex", "rxconfig", "alembic", "sqlmodel", "sqlalchemy", "pydantic", "httpx", "tests", "assets"}
 
 
 def _detectar(raiz: Path) -> bool:
@@ -339,6 +341,12 @@ SERVICIO = Pieza(
 
 def _contexto_proyecto(nombre: Nombre) -> dict[str, str]:
     paquete = nombre.snake
+    if paquete in sys.stdlib_module_names:
+        raise AndamioError(
+            f"Un proyecto de Reflex no se puede llamar '{paquete}': es el nombre de un módulo de Python "
+            "y la app no se podría importar.",
+            "Elegí otro nombre (por ejemplo, mi-" + nombre.kebab + ").",
+        )
     if not paquete.isidentifier() or keyword.iskeyword(paquete) or paquete in _PAQUETES_OCUPADOS:
         raise AndamioError(
             f"Un proyecto de Reflex no se puede llamar '{paquete}': es el nombre del paquete de Python de la app.",

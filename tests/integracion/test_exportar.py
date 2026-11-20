@@ -48,6 +48,22 @@ def test_reexportar_no_pisa_nada(proyecto_python, capsys):
     assert leer(plantilla) == "# mi versión\n"
 
 
+def test_reexportar_no_devuelve_archivos_borrados(en_carpeta, monkeypatch, capsys):
+    # Borrar un archivo de las plantillas exportadas es la forma de que no se genere:
+    # exportar de nuevo no lo tiene que volver a crear.
+    assert main(["crear", "django", "api"]) == 0
+    monkeypatch.chdir(en_carpeta / "api")
+    assert main(["plantillas", "exportar", "recurso"]) == 0
+    admin = en_carpeta / "api/.andamio/plantillas/django/recurso/@@plural@@/admin.py"
+    admin.unlink()
+    capsys.readouterr()
+    assert main(["plantillas", "exportar"]) == 0
+    salida = capsys.readouterr().out
+    assert not admin.exists()
+    assert "login/" in salida  # la otra pieza sí se exportó
+    assert "Ya estaban exportadas y no se tocaron: recurso" in salida
+
+
 def test_exportar_una_pieza(en_carpeta, monkeypatch, capsys):
     main(["crear", "react", "web"])
     monkeypatch.chdir(en_carpeta / "web")

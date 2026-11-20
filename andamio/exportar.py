@@ -1,8 +1,9 @@
 """`andamio plantillas exportar`: copia las plantillas al proyecto para modificarlas.
 
 Las copias van a `.andamio/plantillas/<stack>/<pieza>/`. Desde ese momento,
-`andamio nuevo <pieza>` usa esa versión en lugar de la incorporada. Nunca se
-sobrescribe un archivo: si ya existe, se deja como está.
+`andamio nuevo <pieza>` usa esa versión en lugar de la incorporada. Una pieza que ya
+tiene su carpeta no se vuelve a exportar: así no se pisa nada y un archivo que se
+borró a propósito (para que no se genere) sigue borrado.
 """
 
 from __future__ import annotations
@@ -89,14 +90,20 @@ def exportar(cwd: Path, clave_pieza: str | None = None) -> int:
     piezas = [acciones.pieza_por_clave(stack, clave_pieza)] if clave_pieza else list(stack.piezas.values())
     plan = Plan(raiz)
     base = PurePosixPath(*plantillas.CARPETA_USUARIO.parts) / stack.clave
+    ya_exportadas: list[str] = []
     for pieza in piezas:
         origen = carpeta_pieza(stack, pieza, variante_del_proyecto(stack, raiz))
         if not origen.is_dir():
             raise AndamioError(f"No encontré las plantillas incorporadas de '{pieza.clave}'.")
         destino = base / pieza.clave
+        if (raiz / destino).exists():
+            # Ya exportada: se deja como está, aunque le falten archivos (pueden haberse
+            # borrado a propósito para que no se generen).
+            ya_exportadas.append(pieza.clave)
+            continue
         for archivo in plantillas.leer_arbol(origen):
-            plan.crear(destino / PurePosixPath(*archivo.partes), archivo.contenido, si_no_existe=True)
-        plan.crear(destino / plantillas.LEEME, generar_leeme(stack, pieza, raiz), si_no_existe=True)
+            plan.crear(destino / PurePosixPath(*archivo.partes), archivo.contenido)
+        plan.crear(destino / plantillas.LEEME, generar_leeme(stack, pieza, raiz))
 
     if not plan.nuevos:
         consola.aviso(f"Las plantillas ya estaban exportadas en {base}. No se modificó nada.")
@@ -104,6 +111,9 @@ def exportar(cwd: Path, clave_pieza: str | None = None) -> int:
     plan.aplicar()
     consola.exito("Listo.")
     plan.mostrar("Archivos creados")
+    if ya_exportadas:
+        consola.escribir()
+        consola.escribir(f"Ya estaban exportadas y no se tocaron: {', '.join(ya_exportadas)}.")
     consola.escribir()
     consola.escribir(f"Modificá los archivos de {base}/: andamio va a usar tu versión.")
     consola.escribir("Cada carpeta tiene un LEEME.md con los marcadores @@...@@ que podés usar.")

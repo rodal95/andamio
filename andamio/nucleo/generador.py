@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
-from andamio.nucleo import plantillas
+from andamio.nucleo import identificadores, plantillas
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.motor import renderizar, renderizar_ruta
 from andamio.nucleo.nombres import (
@@ -17,7 +18,9 @@ from andamio.nucleo.nombres import (
     snake,
     titulo,
     validar_nombre,
+    validar_nombre_carpeta,
 )
+from andamio.nucleo.insercion import ya_presente
 from andamio.nucleo.plan import Plan
 
 if TYPE_CHECKING:
@@ -41,10 +44,19 @@ def nombre_para_pieza(pieza: Pieza, texto: str, plural: str | None = None) -> No
 
 def validar_nombre_pieza(stack: Stack, raiz: Path, nombre: Nombre, pieza: Pieza | None = None) -> None:
     validar_nombre(nombre)
-    if stack.validar_nombre:
-        stack.validar_nombre(raiz, nombre)
+    # Primero la validación de la pieza: es la más específica y da el mejor consejo.
     if pieza is not None and pieza.validar_nombre:
         pieza.validar_nombre(raiz, nombre)
+    if stack.validar_nombre:
+        stack.validar_nombre(raiz, nombre)
+
+
+def _error_identificador(pieza: Pieza, forma: str, donde: str) -> AndamioError:
+    return AndamioError(
+        f"No se puede usar '{forma}' como nombre: en {donde} el código ya usa '{forma}' para otra cosa "
+        "(el código generado no funcionaría).",
+        "Elegí otro nombre" + (", o indicá otro plural con --plural." if pieza.usa_plural else "."),
+    )
 
 
 def describir_nombre(pieza: Pieza, nombre: Nombre) -> str:
@@ -60,7 +72,9 @@ def describir_nombre(pieza: Pieza, nombre: Nombre) -> str:
 
 
 def carpeta_proyecto(texto: str) -> str:
-    return kebab(separar_palabras(texto, "El nombre del proyecto"))
+    carpeta = kebab(separar_palabras(texto, "El nombre del proyecto"))
+    validar_nombre_carpeta(carpeta)
+    return carpeta
 
 
 # --- Plantillas -------------------------------------------------------------
@@ -164,25 +178,66 @@ def planificar_pieza(sol: Solicitud) -> Plan:
     carpeta, _ = ubicar_plantilla(stack, pieza, sol.raiz, sol.variante)
     if not carpeta.is_dir():
         raise AndamioError(f"No encontré las plantillas de '{pieza.clave}' en {carpeta}.")
+    # Nombres que chocan con lo que el código ya usa. Se informan al final: si además hay
+    # archivos que ya existen, ese error es más claro (la pieza ya se generó).
+    choques: list[AndamioError] = []
+    centinela = _contexto_centinela(sol)
     for archivo in plantillas.leer_arbol(carpeta):
         origen = f"{stack.clave}/{pieza.clave}/{archivo.ruta}"
         destino = renderizar_ruta(archivo.partes, contexto, origen)
         texto = archivo.texto
+        if texto is not None and centinela is not None and archivo.ruta not in pieza.si_no_existe:
+            forma = identificadores.conflicto(archivo.partes[-1], renderizar(texto, centinela, origen), sol.nombre)
+            if forma:
+                choques.append(_error_identificador(pieza, forma, str(destino)))
         contenido = renderizar(texto, contexto, origen) if texto is not None else archivo.contenido
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 
     for ins in pieza.inserciones:
         origen = f"inserción en {ins.archivo}"
+        ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen)
+        bloque = renderizar(ins.texto, contexto, origen)
+        if centinela is not None:
+            choque = _choque_insercion(pieza, sol, ruta, renderizar(ins.texto, centinela, origen), bloque)
+            if choque:
+                choques.append(choque)
         plan.insertar(
-            renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen),
-            renderizar(ins.texto, contexto, origen),
+            ruta,
+            bloque,
             marcador=ins.marcador,
             descripcion=renderizar(ins.descripcion, contexto, origen),
             comentario=ins.comentario,
             crear_si_falta=ins.crear_si_falta,
             ubicacion=renderizar(ins.ubicacion, contexto, origen),
         )
+    plan.validar()
+    if choques:
+        raise choques[0]
     return plan
+
+
+def _contexto_centinela(sol: Solicitud) -> dict[str, str] | None:
+    """El contexto de la pieza con el nombre centinela (ver nucleo/identificadores.py)."""
+    try:
+        return contexto_pieza(dataclasses.replace(sol, nombre=identificadores.CENTINELA, contexto={}))
+    except (AndamioError, OSError, LookupError, ValueError):
+        # Algunas piezas leen archivos según el nombre (ej.: ui tarjetas): con el centinela no
+        # existen. Esas piezas no generan código con el nombre, así que no hay nada que controlar.
+        return None
+
+
+def _choque_insercion(pieza: Pieza, sol: Solicitud, ruta: PurePosixPath, texto_centinela: str, bloque: str) -> AndamioError | None:
+    """Lo que se inserta (ej.: `from .paginas.app import app`) no puede chocar con lo que el
+    archivo del proyecto ya declara (ej.: `app = rx.App()`)."""
+    try:
+        actual = (sol.raiz / ruta).read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return None
+    if ya_presente(actual, bloque):
+        return None  # ya se había insertado: lo declaró andamio para este mismo nombre
+    ocupados = identificadores.declarados(ruta.name, actual)
+    chocan = sorted(identificadores.formas_usadas(texto_centinela, sol.nombre) & ocupados)
+    return _error_identificador(pieza, chocan[0], str(ruta)) if chocan else None
 
 
 def pasos_pieza(sol: Solicitud) -> list[str]:
@@ -196,6 +251,7 @@ def pasos_pieza(sol: Solicitud) -> list[str]:
 
 def contexto_proyecto(stack: Stack, texto: str, variante: str = "") -> dict[str, str]:
     palabras = separar_palabras(texto, "El nombre del proyecto")
+    validar_nombre_carpeta(kebab(palabras))
     contexto = {
         **stack.marcadores_variante.get(variante, {}),
         "carpeta": kebab(palabras),

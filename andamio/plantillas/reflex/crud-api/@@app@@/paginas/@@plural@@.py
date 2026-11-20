@@ -18,23 +18,23 @@ VACIO = {
 
 
 def a_formulario(@@nombre@@: dict) -> dict:
-    """Pasa un registro de la API a los valores del formulario (y de la tabla)."""
+    """Pasa un elemento de la API a los valores del formulario (y de la tabla)."""
     return {
         @@campos_a_formulario@@
     }
 
 
 class @@Nombre@@State(rx.State):
-    registros: list[dict] = []  # lo que muestra la tabla
+    tabla: list[dict] = []  # lo que muestra la tabla
     datos: dict = VACIO  # lo que está escrito en el formulario
     errores: dict[str, list[str]] = {}  # errores de validación, por campo
-    editando: int = 0  # el id del registro que se está editando (0: uno nuevo)
+    editando: int = 0  # el id del elemento que se está editando (0: uno nuevo)
     error: str = ""  # si la API no responde
 
     async def _leer(self):
         try:
             todos = await @@nombre@@_api.listar()
-            self.registros = [{"id": registro["id"], **a_formulario(registro)} for registro in todos]
+            self.tabla = [{"id": elemento["id"], **a_formulario(elemento)} for elemento in todos]
             self.error = ""
         except ErrorApi as error:
             self.error = str(error)
@@ -67,10 +67,10 @@ class @@Nombre@@State(rx.State):
         await self._leer()
 
     @rx.event
-    def editar(self, registro: dict):
-        """Pasa un registro de la tabla al formulario."""
-        self.editando = registro["id"]
-        self.datos = {campo: valor for campo, valor in registro.items() if campo != "id"}
+    def editar(self, elemento: dict):
+        """Pasa un elemento de la tabla al formulario."""
+        self.editando = elemento["id"]
+        self.datos = {campo: valor for campo, valor in elemento.items() if campo != "id"}
         self.errores = {}
 
     @rx.event
@@ -119,13 +119,13 @@ def formulario() -> rx.Component:
     )
 
 
-def fila(registro: dict) -> rx.Component:
+def fila(elemento: dict) -> rx.Component:
     return rx.table.row(
         @@celdas@@
         rx.table.cell(
             rx.hstack(
-                rx.button("Editar", size="1", variant="soft", on_click=@@Nombre@@State.editar(registro)),
-                rx.button("Eliminar", size="1", color_scheme="red", on_click=@@Nombre@@State.eliminar(registro["id"])),
+                rx.button("Editar", size="1", variant="soft", on_click=@@Nombre@@State.editar(elemento)),
+                rx.button("Eliminar", size="1", color_scheme="red", on_click=@@Nombre@@State.eliminar(elemento["id"])),
             )
         ),
     )
@@ -137,7 +137,7 @@ def @@plural@@() -> rx.Component:
         rx.cond(@@Nombre@@State.error != "", rx.callout(@@Nombre@@State.error, color_scheme="red")),
         formulario(),
         rx.cond(
-            @@Nombre@@State.registros.length() == 0,
+            @@Nombre@@State.tabla.length() == 0,
             rx.text("Todavía no hay registros."),
             rx.table.root(
                 rx.table.header(
@@ -146,7 +146,7 @@ def @@plural@@() -> rx.Component:
                         rx.table.column_header_cell(""),
                     )
                 ),
-                rx.table.body(rx.foreach(@@Nombre@@State.registros, fila)),
+                rx.table.body(rx.foreach(@@Nombre@@State.tabla, fila)),
                 width="100%",
             ),
         ),

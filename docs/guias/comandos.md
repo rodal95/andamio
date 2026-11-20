@@ -84,10 +84,11 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `comandos` | `commands` |
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
-| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state` |
+| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style` |
 | `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode` |
+| `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
-`crud`, `crud-api`, `login`, `hook`, `composable`, `tema`, `ui`, `estilo` e `info` son iguales en los dos idiomas.
+`crud`, `crud-api`, `login`, `hook`, `composable`, `ui` e `info` son iguales en los dos idiomas.
 
 ```
 python -m andamio create django my-api

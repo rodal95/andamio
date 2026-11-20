@@ -100,7 +100,7 @@ def _json_campo(variable: str, nombre: str, tipo: str) -> str:
 
 def _verificacion(sol: Solicitud) -> str:
     campo = sol.campos[0]
-    actual = f"respuesta.datos.{campo.nombre}"
+    actual = f"res.datos.{campo.nombre}"
     if campo.tipo == "datetime":
         # Vuelve en hora local ("2025-02-20T15:45:00-03:00"): se compara el instante, no el texto.
         esperado = _literal(_VALORES_PRUEBA["datetime"][1])

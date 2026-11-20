@@ -190,21 +190,42 @@ MARCADORES_NOMBRE = {
 }
 
 
+# Windows no deja crear archivos ni carpetas con estos nombres (aunque tengan extensión:
+# "con.py" o "Aux.tsx" fallan).
+RESERVADAS_WINDOWS = frozenset(
+    {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))}
+)
+
+
 def _motivo_reservado(forma: str) -> str | None:
     if forma in RESERVADAS_PYTHON:
         return "es una palabra reservada de Python"
     if forma in RESERVADAS_JS:
         return "es una palabra reservada de JavaScript"
+    if forma.lower() in RESERVADAS_WINDOWS:
+        return "Windows no deja crear archivos con ese nombre"
     return None
+
+
+def formas_identificador(nombre: Nombre) -> list[str]:
+    """Las formas del nombre que el código generado usa como identificadores."""
+    p, pl = nombre.palabras, nombre.plural_palabras
+    return list(dict.fromkeys([snake(p), camel(p), pascal(p), snake(pl), camel(pl), pascal(pl)]))
 
 
 def validar_nombre(nombre: Nombre, reservados: dict[str, str] | None = None) -> None:
     """Rechaza palabras reservadas y nombres que chocan con algo que ya existe."""
     reservados = reservados or {}
-    for forma in (nombre.snake, nombre.camel, nombre.plural, camel(nombre.plural_palabras)):
+    for forma in [*formas_identificador(nombre), nombre.kebab, kebab(nombre.plural_palabras)]:
         motivo = _motivo_reservado(forma) or reservados.get(forma)
         if motivo:
             raise AndamioError(f"No se puede usar '{forma}': {motivo}.", "Elegí otro nombre.")
+
+
+def validar_nombre_carpeta(texto: str) -> None:
+    """Un nombre de carpeta que Windows no acepta (con, aux, nul...)."""
+    if texto.lower() in RESERVADAS_WINDOWS:
+        raise AndamioError(f"No se puede usar '{texto}': Windows no deja crear carpetas con ese nombre.", "Elegí otro nombre.")
 
 
 def validar_nombre_campo(texto: str, reservados: dict[str, str] | None = None) -> str:

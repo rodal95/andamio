@@ -71,3 +71,12 @@ def test_la_ayuda_muestra_los_alias(argumentos, capsys):
     assert main(argumentos) == 0
     salida = capsys.readouterr().out
     assert "--dry-run" in salida
+
+
+def test_theme_style_y_modos_en_ingles(en_carpeta, monkeypatch):
+    assert main(["create", "react", "web"]) == 0
+    monkeypatch.chdir(en_carpeta / "web")
+    assert main(["new", "theme", "violeta", "--mode", "dark"]) == 0
+    tema = leer(next((en_carpeta / "web/src").rglob("tema.css")))
+    assert "--modo oscuro" in tema
+    assert main(["new", "style", "botones"]) == 0

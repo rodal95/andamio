@@ -19,17 +19,17 @@ beforeEach(async () => {
 });
 
 async function crear() {
-  const respuesta = await api.post(URL, DATOS);
-  assert.equal(respuesta.status, 201, JSON.stringify(respuesta.datos));
-  return respuesta.datos;
+  const res = await api.post(URL, DATOS);
+  assert.equal(res.status, 201, JSON.stringify(res.datos));
+  return res.datos;
 }
 
 test('listar', async () => {
   await crear();
-  const respuesta = await api.get(URL);
-  assert.equal(respuesta.status, 200);
-  // Sin paginación, la respuesta es directamente una lista.
-  assert.equal(respuesta.datos.length, 1);
+  const res = await api.get(URL);
+  assert.equal(res.status, 200);
+  // Sin paginación, la res es directamente una lista.
+  assert.equal(res.datos.length, 1);
 });
 
 test('crear', async () => {
@@ -39,15 +39,15 @@ test('crear', async () => {
 
 test('obtener', async () => {
   const creado = await crear();
-  const respuesta = await api.get(`${URL}${creado.id}/`);
-  assert.equal(respuesta.status, 200);
-  assert.equal(respuesta.datos.id, creado.id);
+  const res = await api.get(`${URL}${creado.id}/`);
+  assert.equal(res.status, 200);
+  assert.equal(res.datos.id, creado.id);
 });
 
 test('actualizar', async () => {
   const creado = await crear();
-  const respuesta = await api.put(`${URL}${creado.id}/`, DATOS_MODIFICADOS);
-  assert.equal(respuesta.status, 200, JSON.stringify(respuesta.datos));
+  const res = await api.put(`${URL}${creado.id}/`, DATOS_MODIFICADOS);
+  assert.equal(res.status, 200, JSON.stringify(res.datos));
   @@verificacion@@
 });
 

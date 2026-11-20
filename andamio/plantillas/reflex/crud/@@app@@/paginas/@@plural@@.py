@@ -19,22 +19,22 @@ VACIO = {
 
 
 def a_formulario(@@nombre@@: @@Nombre@@) -> dict:
-    """Pasa un registro de la base a los valores del formulario (y de la tabla)."""
+    """Pasa un elemento de la base a los valores del formulario (y de la tabla)."""
     return {
         @@campos_a_formulario@@
     }
 
 
 class @@Nombre@@State(rx.State):
-    registros: list[dict] = []  # lo que muestra la tabla
+    tabla: list[dict] = []  # lo que muestra la tabla
     datos: dict = VACIO  # lo que está escrito en el formulario
     errores: dict[str, list[str]] = {}  # errores de validación, por campo
-    editando: int = 0  # el id del registro que se está editando (0: uno nuevo)
+    editando: int = 0  # el id del elemento que se está editando (0: uno nuevo)
 
     def _leer(self):
-        with rx.session() as sesion:
-            todos = sesion.exec(select(@@Nombre@@).order_by(@@Nombre@@.id)).all()
-            self.registros = [{"id": registro.id, **a_formulario(registro)} for registro in todos]
+        with rx.session() as bd:
+            todos = bd.exec(select(@@Nombre@@).order_by(@@Nombre@@.id)).all()
+            self.tabla = [{"id": elemento.id, **a_formulario(elemento)} for elemento in todos]
 
     def _limpiar(self):
         self.datos, self.errores, self.editando = dict(VACIO), {}, 0
@@ -56,23 +56,23 @@ class @@Nombre@@State(rx.State):
         except ValidationError as error:
             self.errores = errores_de(error)
             return
-        with rx.session() as sesion:
+        with rx.session() as bd:
             if self.editando:
-                registro = sesion.get(@@Nombre@@, self.editando)
-                registro.sqlmodel_update(validos.model_dump())
-                registro.actualizado = ahora()
+                elemento = bd.get(@@Nombre@@, self.editando)
+                elemento.sqlmodel_update(validos.model_dump())
+                elemento.actualizado = ahora()
             else:
-                registro = @@Nombre@@.model_validate(validos)
-            sesion.add(registro)
-            sesion.commit()
+                elemento = @@Nombre@@.model_validate(validos)
+            bd.add(elemento)
+            bd.commit()
         self._limpiar()
         self._leer()
 
     @rx.event
-    def editar(self, registro: dict):
-        """Pasa un registro de la tabla al formulario."""
-        self.editando = registro["id"]
-        self.datos = {campo: valor for campo, valor in registro.items() if campo != "id"}
+    def editar(self, elemento: dict):
+        """Pasa un elemento de la tabla al formulario."""
+        self.editando = elemento["id"]
+        self.datos = {campo: valor for campo, valor in elemento.items() if campo != "id"}
         self.errores = {}
 
     @rx.event
@@ -81,11 +81,11 @@ class @@Nombre@@State(rx.State):
 
     @rx.event
     def eliminar(self, id_registro: int):
-        with rx.session() as sesion:
-            registro = sesion.get(@@Nombre@@, id_registro)
-            if registro is not None:
-                sesion.delete(registro)
-                sesion.commit()
+        with rx.session() as bd:
+            elemento = bd.get(@@Nombre@@, id_registro)
+            if elemento is not None:
+                bd.delete(elemento)
+                bd.commit()
         self._limpiar()
         self._leer()
 
@@ -117,13 +117,13 @@ def formulario() -> rx.Component:
     )
 
 
-def fila(registro: dict) -> rx.Component:
+def fila(elemento: dict) -> rx.Component:
     return rx.table.row(
         @@celdas@@
         rx.table.cell(
             rx.hstack(
-                rx.button("Editar", size="1", variant="soft", on_click=@@Nombre@@State.editar(registro)),
-                rx.button("Eliminar", size="1", color_scheme="red", on_click=@@Nombre@@State.eliminar(registro["id"])),
+                rx.button("Editar", size="1", variant="soft", on_click=@@Nombre@@State.editar(elemento)),
+                rx.button("Eliminar", size="1", color_scheme="red", on_click=@@Nombre@@State.eliminar(elemento["id"])),
             )
         ),
     )
@@ -134,7 +134,7 @@ def @@plural@@() -> rx.Component:
         rx.heading("@@titulo@@", size="7"),
         formulario(),
         rx.cond(
-            @@Nombre@@State.registros.length() == 0,
+            @@Nombre@@State.tabla.length() == 0,
             rx.text("Todavía no hay registros."),
             rx.table.root(
                 rx.table.header(
@@ -143,7 +143,7 @@ def @@plural@@() -> rx.Component:
                         rx.table.column_header_cell(""),
                     )
                 ),
-                rx.table.body(rx.foreach(@@Nombre@@State.registros, fila)),
+                rx.table.body(rx.foreach(@@Nombre@@State.tabla, fila)),
                 width="100%",
             ),
         ),

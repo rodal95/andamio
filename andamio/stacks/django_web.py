@@ -11,7 +11,7 @@ import secrets
 from pathlib import Path
 
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.nombres import Nombre
+from andamio.nucleo.nombres import Nombre, kebab
 from andamio.estilos import piezas_de_estilos
 from andamio.stacks import django
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -103,8 +103,8 @@ def setUp(self):
 
 def test_sin_login_pide_ingresar(self):
     self.client.logout()
-    respuesta = self.client.get(f"{URL}nuevo/")
-    self.assertRedirects(respuesta, f"/cuentas/login/?next={URL}nuevo/")
+    res = self.client.get(f"{URL}nuevo/")
+    self.assertRedirects(res, f"/cuentas/login/?next={URL}nuevo/")
     # Ver la lista sigue siendo libre.
     self.assertEqual(self.client.get(URL).status_code, 200)
 """
@@ -123,23 +123,43 @@ def _validar_nombre(raiz: Path, nombre: Nombre) -> None:
             raise AndamioError(f"No se puede usar '{forma}': {_NOMBRES_OCUPADOS[forma]}.", "Elegí otro nombre.")
 
 
-def _validar_crud(raiz: Path, nombre: Nombre) -> None:
-    django._validar_nombre(raiz, nombre)
-
-
 _RUTAS_OCUPADAS = {"admin", "cuentas", "static", "media", "inicio", "login", "logout", "registro"}
 
 
-def _validar_pagina(raiz: Path, nombre: Nombre) -> None:
-    if nombre.kebab in _RUTAS_OCUPADAS or nombre.snake in _RUTAS_OCUPADAS:
-        raise AndamioError(f"La ruta /{nombre.kebab}/ ya la usa el proyecto.", "Elegí otro nombre para la página.")
+def _leer_urls(raiz: Path) -> str:
     try:
-        urls = (raiz / "config" / "urls.py").read_text(encoding="utf-8-sig")
+        return (raiz / "config" / "urls.py").read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError):
-        return
-    if f'path("{nombre.kebab}/"' in urls or f'name="{nombre.snake}"' in urls:
+        return ""
+
+
+def _validar_ruta(raiz: Path, ruta: str, que: str, sugerencia: str) -> None:
+    """Rechaza una ruta (/ruta/) que ya usa el proyecto o que ya está en config/urls.py."""
+    if ruta in _RUTAS_OCUPADAS:
+        raise AndamioError(f"La ruta /{ruta}/ ya la usa el proyecto.", sugerencia)
+    if f'path("{ruta}/"' in _leer_urls(raiz):
+        raise AndamioError(f"Ya hay {que} en /{ruta}/ (config/urls.py).", sugerencia)
+
+
+def _validar_crud(raiz: Path, nombre: Nombre) -> None:
+    _validar_nombre(raiz, nombre)  # primero: explica mejor por qué (ej.: /cuentas/ es del login)
+    django._validar_nombre(raiz, nombre)
+    # El crud ocupa /<plural>/ (ej.: una página "Productos" ya usa /productos/).
+    _validar_ruta(
+        raiz,
+        kebab(nombre.plural_palabras),
+        "una ruta",
+        "Elegí otro nombre o indicá otro plural con --plural, o borrá esa ruta de config/urls.py si ya no la usás.",
+    )
+
+
+def _validar_pagina(raiz: Path, nombre: Nombre) -> None:
+    if nombre.snake in _RUTAS_OCUPADAS:
+        raise AndamioError(f"La ruta /{nombre.kebab}/ ya la usa el proyecto.", "Elegí otro nombre para la página.")
+    _validar_ruta(raiz, nombre.kebab, "una página", "Elegí otro nombre, o borrá esa ruta si ya no la usás.")
+    if f'name="{nombre.snake}"' in _leer_urls(raiz):
         raise AndamioError(
-            f"Ya hay una página en /{nombre.kebab}/ (config/urls.py).", "Elegí otro nombre, o borrá esa ruta si ya no la usás."
+            f"Ya hay una ruta llamada '{nombre.snake}' en config/urls.py.", "Elegí otro nombre para la página."
         )
 
 

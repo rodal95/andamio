@@ -27,13 +27,13 @@ async function buscarO404(texto: string) {
 @@pluralCamel@@Router.get('/', async (req, res) => {
   const { search, ordering, ...filtros } = validar(@@nombreCamel@@Filtros, req.query);
   const campo = CAMPOS_ORDEN.find((nombre) => nombre === ordering?.replace(/^-/, '')) ?? 'id';
-  const orden = { [campo]: ordering?.startsWith('-') ? 'desc' : 'asc' } as Prisma.@@Nombre@@OrderByWithRelationInput;
+  const criterioDeOrden = { [campo]: ordering?.startsWith('-') ? 'desc' : 'asc' } as Prisma.@@Nombre@@OrderByWithRelationInput;
   const @@pluralCamel@@ = await prisma.@@nombreCamel@@.findMany({
     where: {
       ...filtros,
       @@busqueda@@
     },
-    orderBy: orden,
+    orderBy: criterioDeOrden,
   });
   res.json(@@pluralCamel@@.map(aJson));
 });

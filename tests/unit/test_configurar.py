@@ -18,6 +18,7 @@ def registro(tmp_path, monkeypatch):
     carpeta.mkdir(parents=True)
     estado = {"valor": r"C:\Windows\system32;%USERPROFILE%\bin", "tipo": 2, "escrituras": []}
     monkeypatch.setattr(modulo, "carpeta_de_andamio", lambda: carpeta)
+    monkeypatch.setattr(modulo, "en_entorno_virtual", lambda: False)
     monkeypatch.setattr(modulo, "leer_path_usuario", lambda: (estado["valor"], estado["tipo"]))
 
     def escribir(valor, tipo):
@@ -47,6 +48,14 @@ def test_no_lo_agrega_dos_veces(registro, capsys):
     assert modulo.configurar(windows=True) == 0
     assert len(registro["escrituras"]) == 1
     assert "Ya está configurado" in capsys.readouterr().out
+
+
+def test_desde_un_venv_no_toca_el_path(registro, monkeypatch, capsys):
+    # La carpeta del venv tiene python.exe y pip.exe: no puede quedar en el PATH permanente.
+    monkeypatch.setattr(modulo, "en_entorno_virtual", lambda: True)
+    assert modulo.configurar(windows=True) == 0
+    assert registro["escrituras"] == []
+    assert "entorno virtual" in capsys.readouterr().out
 
 
 def test_simular_no_escribe(registro, capsys):

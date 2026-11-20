@@ -10,7 +10,7 @@ La lista acepta estos parámetros (igual que la API de Django):
 from fastapi import APIRouter, HTTPException, Response
 @@import_sqlmodel@@
 
-from app.db import Sesion
+from app.db import Sesion as SesionBD  # la sesión de la base de datos (app/db.py)
 @@import_tipos_router@@
 
 from .modelo import @@Nombre@@, @@Nombre@@Actualizar, @@Nombre@@Crear, @@Nombre@@Leer
@@ -23,8 +23,8 @@ ORDEN = {
 }
 
 
-def buscar_o_404(sesion: Sesion, id_@@nombre@@: int) -> @@Nombre@@:
-    @@nombre@@ = sesion.get(@@Nombre@@, id_@@nombre@@)
+def buscar_o_404(bd: SesionBD, id_@@nombre@@: int) -> @@Nombre@@:
+    @@nombre@@ = bd.get(@@Nombre@@, id_@@nombre@@)
     if @@nombre@@ is None:
         raise HTTPException(status_code=404, detail="No encontrado.")
     return @@nombre@@
@@ -32,7 +32,7 @@ def buscar_o_404(sesion: Sesion, id_@@nombre@@: int) -> @@Nombre@@:
 
 @router.get("/", response_model=list[@@Nombre@@Leer])
 def listar(
-    sesion: Sesion,
+    bd: SesionBD,
     search: str | None = None,
     ordering: str | None = None,
     @@parametros_filtro@@
@@ -45,48 +45,48 @@ def listar(
     if campo in ORDEN:
         columna = col(ORDEN[campo])
         consulta = consulta.order_by(columna.desc() if (ordering or "").startswith("-") else columna)
-    return sesion.exec(consulta).all()
+    return bd.exec(consulta).all()
 
 
 @router.post("/", response_model=@@Nombre@@Leer, status_code=201)
-def crear(datos: @@Nombre@@Crear, sesion: Sesion):
+def crear(datos: @@Nombre@@Crear, bd: SesionBD):
     @@nombre@@ = @@Nombre@@.model_validate(datos)
-    sesion.add(@@nombre@@)
-    sesion.commit()
-    sesion.refresh(@@nombre@@)
+    bd.add(@@nombre@@)
+    bd.commit()
+    bd.refresh(@@nombre@@)
     return @@nombre@@
 
 
 @router.get("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer)
-def obtener(id_@@nombre@@: int, sesion: Sesion):
-    return buscar_o_404(sesion, id_@@nombre@@)
+def obtener(id_@@nombre@@: int, bd: SesionBD):
+    return buscar_o_404(bd, id_@@nombre@@)
 
 
 @router.put("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer)
-def reemplazar(id_@@nombre@@: int, datos: @@Nombre@@Crear, sesion: Sesion):
+def reemplazar(id_@@nombre@@: int, datos: @@Nombre@@Crear, bd: SesionBD):
     """Modifica todos los campos."""
-    return guardar_cambios(sesion, buscar_o_404(sesion, id_@@nombre@@), datos.model_dump())
+    return guardar_cambios(bd, buscar_o_404(bd, id_@@nombre@@), datos.model_dump())
 
 
 @router.patch("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer)
-def actualizar(id_@@nombre@@: int, datos: @@Nombre@@Actualizar, sesion: Sesion):
+def actualizar(id_@@nombre@@: int, datos: @@Nombre@@Actualizar, bd: SesionBD):
     """Modifica solo los campos que se envían."""
     # exclude_none: un campo enviado como null se ignora (los campos no pueden quedar vacíos).
     cambios = datos.model_dump(exclude_unset=True, exclude_none=True)
-    return guardar_cambios(sesion, buscar_o_404(sesion, id_@@nombre@@), cambios)
+    return guardar_cambios(bd, buscar_o_404(bd, id_@@nombre@@), cambios)
 
 
 @router.delete("/{id_@@nombre@@}/", status_code=204)
-def eliminar(id_@@nombre@@: int, sesion: Sesion):
-    sesion.delete(buscar_o_404(sesion, id_@@nombre@@))
-    sesion.commit()
+def eliminar(id_@@nombre@@: int, bd: SesionBD):
+    bd.delete(buscar_o_404(bd, id_@@nombre@@))
+    bd.commit()
     return Response(status_code=204)
 
 
-def guardar_cambios(sesion: Sesion, @@nombre@@: @@Nombre@@, cambios: dict) -> @@Nombre@@:
+def guardar_cambios(bd: SesionBD, @@nombre@@: @@Nombre@@, cambios: dict) -> @@Nombre@@:
     @@nombre@@.sqlmodel_update(cambios)
     @@nombre@@.actualizado = ahora()
-    sesion.add(@@nombre@@)
-    sesion.commit()
-    sesion.refresh(@@nombre@@)
+    bd.add(@@nombre@@)
+    bd.commit()
+    bd.refresh(@@nombre@@)
     return @@nombre@@

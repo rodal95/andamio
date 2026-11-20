@@ -261,14 +261,26 @@ def test_login_genera_la_app_y_configura_jwt(proyecto, capsys):
         py_compile.compile(str(archivo), doraise=True)
     capsys.readouterr()
     assert main(["nuevo", "login"]) == 1
-    assert "cuentas" in capsys.readouterr().err
+    assert "ya tiene el login con JWT" in capsys.readouterr().err
 
 
-def test_login_en_el_menu_no_pide_nombre(proyecto, respuestas):
-    preguntas = respuestas(["2", "s"])
+def test_login_en_el_menu_usa_cuenta_con_enter(proyecto, respuestas):
+    preguntas = respuestas(["2", "", "s"])
     assert main([]) == 0
-    assert not any("Nombre" in p for p in preguntas)
+    assert any("Nombre de la app del login" in p for p in preguntas)
     assert (proyecto / "cuentas/urls.py").is_file()
+
+
+def test_login_con_otro_nombre_si_ya_hay_una_app_cuentas(proyecto, capsys):
+    # Un banco: el recurso "cuenta" ocupa la app "cuentas", que es la del login por defecto.
+    assert main(["nuevo", "recurso", "cuenta", "numero:str", "saldo:decimal"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "login"]) == 1
+    error = capsys.readouterr().err
+    assert "Ya hay una app 'cuentas'" in error and "nuevo login acceso" in error
+    assert "--plural" not in error  # login no acepta --plural: no se puede sugerir
+    assert main(["nuevo", "login", "acceso"]) == 0
+    assert 'path("api/", include("accesos.urls")),' in leer(proyecto / "config/urls.py")
 
 
 def test_recurso_protegido(proyecto):

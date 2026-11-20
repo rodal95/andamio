@@ -5,6 +5,36 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Corregido
+- Nombres que generaban código que no compilaba o no funcionaba. Ahora andamio los
+  rechaza y explica por qué, o los acepta porque las plantillas ya no chocan con ellos:
+  - Cualquier pieza: si el nombre es una variable, una función o un import que el código
+    generado ya usa en el mismo archivo (ej.: `nuevo recurso filtro` en Express, `nuevo crud
+    error` en Vue, `nuevo pagina app` o `plantilla` en Reflex). Se controla solo, también con
+    las plantillas que exportó el docente.
+  - `None`, `True` y `False` (palabras reservadas de Python) y los nombres que Windows no
+    deja usar en archivos y carpetas (`con`, `aux`, `nul`...).
+  - Reflex: un proyecto con el nombre de un módulo de Python (`email`, `random`...).
+  - Web: campos que repetían un `id` de la página del crud (`estado`, `filas`...).
+  - Django con plantillas: un crud cuya ruta ya usaba una página (`/productos/`).
+- Nombres comunes que antes chocaban con variables internas y ahora se pueden usar:
+  `sesion` (FastAPI y Reflex), `orden` y `respuesta` (Express y Next.js), `registro`
+  (Reflex) y `respuesta` (Django con plantillas).
+- Django: si ya hay una app `cuentas` (ej.: un recurso `cuenta`), `nuevo login` sugiere
+  otro nombre (`nuevo login acceso`) en lugar de un `--plural` que no acepta, y el menú
+  pregunta el nombre del login.
+- `plantillas exportar` ya no vuelve a crear los archivos que se borraron a propósito de una
+  pieza exportada (las piezas ya exportadas no se tocan).
+- Next.js full stack: la pista del `crud` incluye el `--plural` cuando no es el automático.
+- `configurar` dentro de un entorno virtual ya no agrega la carpeta del venv al PATH.
+- `theme`, `style` y `--mode light|dark` en inglés.
+- El workflow de releases instala SimpleJWT, así los tests del login no se saltean.
+
+### Agregado (tests)
+- Barrido de nombres (`tests/integracion/test_barrido.py`, con `--lento`): prueba cada
+  identificador de las plantillas como nombre y como campo de cada pieza, y compila lo
+  generado (Python con `ast`; JavaScript, TypeScript y Vue con el compilador de TypeScript).
+
 ## [1.4.1] - 2026-11-19
 
 ### Cambiado

@@ -141,6 +141,21 @@ SERVICIO = Pieza(
     ],
 )
 
+# Cada campo del formulario usa los id "<campo>" y "error-<campo>"; no pueden repetir
+# los id fijos de la página (getElementById devolvería otro elemento).
+_IDS_DE_LA_PAGINA = {
+    "estado": "es el id del mensaje de estado de la página (Cargando...)",
+    "filas": "es el id del cuerpo de la tabla",
+    "formulario": "es el id del formulario",
+    "cancelar": "es el id del botón Cancelar",
+    "general": "su mensaje de error usaría el id error-general, que ya usa la página",
+}
+
+
+def _campos_reservados_crud(nombre: Nombre) -> dict[str, str]:
+    return dict(_IDS_DE_LA_PAGINA)
+
+
 CRUD = Pieza(
     clave="crud",
     titulo="CRUD completo",
@@ -150,6 +165,7 @@ CRUD = Pieza(
     usa_campos=True,
     usa_plural=True,
     contexto=_contexto_crud,
+    campos_reservados=_campos_reservados_crud,
     validar_nombre=_validar_pagina("@@pluralKebab@@.html"),
     marcadores={
         **_js.MARCADORES_SERVICIO,
