@@ -22,6 +22,14 @@ Todos los cambios importantes de andamio. El proyecto usa
   `guía:`.
 - `python -m andamio pendientes` (`todo`): lista las marcas `TODO(logica)` del proyecto,
   con archivo, línea y qué falta.
+- `andamio.json` (opcional): fija el tipo de proyecto y su raíz (útil si las carpetas no
+  son las de siempre o hay varios proyectos juntos), la variante, si se genera con guía, la
+  carpeta de las plantillas propias y `conexiones`: en qué archivo está cada punto de
+  conexión (ej.: las rutas de React en `src/router.tsx`). Sin el archivo, todo funciona
+  como antes. `crear --sin-guia` lo crea con `"guia": false`.
+- `python -m andamio init [tipo]`: prepara un proyecto que ya existe, aunque no lo haya
+  creado andamio. Muestra qué puntos de conexión tiene y cuáles faltan (con la línea a
+  pegar y dónde) y crea `andamio.json`. No modifica el código del proyecto.
 
 ### Corregido
 - Nombres que generaban código que no compilaba o no funcionaba. Ahora andamio los

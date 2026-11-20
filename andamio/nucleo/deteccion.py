@@ -44,6 +44,9 @@ def buscar_proyecto(desde: Path, registro: Sequence[Stack] | None = None) -> tup
         from andamio.stacks import REGISTRO as registro
     desde = desde.resolve()
     for carpeta in (desde, *desde.parents):
+        configurado = _stack_de_andamio_json(carpeta, registro)
+        if configurado is not None:
+            return configurado, carpeta
         for stack in registro:
             try:
                 if stack.detectar(carpeta):
@@ -51,6 +54,22 @@ def buscar_proyecto(desde: Path, registro: Sequence[Stack] | None = None) -> tup
             except OSError:
                 continue
     return None
+
+
+def _stack_de_andamio_json(carpeta: Path, registro: Sequence[Stack]) -> Stack | None:
+    """El stack que indica andamio.json en esa carpeta (si lo indica)."""
+    from andamio.nucleo import ajustes
+
+    configuracion = ajustes.leer(carpeta)
+    if configuracion is None or configuracion.stack is None:
+        return None
+    for stack in registro:
+        if stack.clave == configuracion.stack:
+            return stack
+    claves = ", ".join(s.clave for s in registro)
+    raise AndamioError(
+        f"{ajustes.ARCHIVO} ({carpeta}): el stack '{configuracion.stack}' no existe.", f"Stacks: {claves}"
+    )
 
 
 def error_no_detectado(desde: Path, registro: Sequence[Stack] | None = None) -> AndamioError:

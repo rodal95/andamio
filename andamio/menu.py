@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from andamio import __version__, acciones, stacks
-from andamio.nucleo import consola
+from andamio.nucleo import ajustes, consola
 from andamio.nucleo.campos import Campo, validar_tipo
 from andamio.nucleo.deteccion import buscar_proyecto
 from andamio.nucleo.errores import AndamioError
@@ -77,7 +77,7 @@ def _menu_piezas(stack: Stack, raiz: Path) -> int:
     extras = _pedir_opciones(pieza)
     campos = _pedir_campos(stack, acciones.campos_reservados(pieza, nombre)) if pieza.usa_campos else []
     consola.escribir()
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, extras, variante=variante)
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, extras, variante=variante, guia=ajustes.guia(raiz))
     return acciones.generar_pieza(sol, confirmar=True)
 
 

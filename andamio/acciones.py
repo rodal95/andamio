@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from andamio import stacks
-from andamio.nucleo import consola, lectura
+from andamio.nucleo import ajustes, consola, lectura, plantillas
 from andamio.nucleo.campos import Campo, parsear_campo, validar_campos
 from andamio.nucleo.deteccion import buscar_proyecto, error_no_detectado
 from andamio.nucleo.errores import AndamioError, Cancelado
@@ -86,6 +86,9 @@ def crear_proyecto(
 ) -> int:
     variante = resolver_variante(stack, variante)
     plan, contexto = planificar_proyecto(stack, texto_nombre, padre, variante, guia)
+    if not guia:
+        # Sin guía queda anotado, así los "nuevo" de este proyecto también la omiten.
+        plan.crear(PurePosixPath(contexto["carpeta"]) / ajustes.ARCHIVO, ajustes.texto(stack.clave, variante, guia_activada=False))
     consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
     if variante:
         consola.escribir(f"Variante: {consola.color(nombre_variante(stack, variante), 'negrita')}")
@@ -189,7 +192,8 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
         consola.escribir("Campos: " + ", ".join(f"{c.nombre} ({c.tipo})" for c in sol.campos))
     _, personalizada = ubicar_plantilla(sol.stack, sol.pieza, sol.raiz, sol.variante)
     if personalizada:
-        consola.aviso(f"Se usan tus plantillas de .andamio/plantillas/{sol.stack.clave}/{sol.pieza.clave}/")
+        carpeta = plantillas.carpeta_personalizada(sol.raiz, sol.stack.clave, sol.pieza.clave).relative_to(sol.raiz)
+        consola.aviso(f"Se usan tus plantillas de {carpeta.as_posix()}/")
     plan = planificar_pieza(sol)
     if not _cerrar(plan, simular, confirmar, "¿Generar estos archivos?"):
         return 0
@@ -214,7 +218,7 @@ def nuevo(
     plural: str | None = None,
     opciones: dict[str, Any] | None = None,
     simular: bool = False,
-    guia: bool = True,
+    guia: bool | None = None,
 ) -> int:
     stack, raiz = proyecto_actual(cwd)
     pieza = pieza_por_clave(stack, clave_pieza)
@@ -235,7 +239,7 @@ def nuevo(
             "Si de verdad es singular (como 'país'), indicá el plural con --plural. Ejemplo: --plural paises",
         )
     campos = preparar_campos(stack, pieza, nombre, textos_campos)
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones, variante=variante_del_proyecto(stack, raiz), guia=guia)
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones, variante=variante_del_proyecto(stack, raiz), guia=ajustes.guia(raiz, guia))
     return generar_pieza(sol, simular=simular)
 
 
@@ -247,6 +251,13 @@ def info(cwd: Path) -> int:
     variante = nombre_variante(stack, variante_del_proyecto(stack, raiz))
     consola.titulo(f"Proyecto {stack.titulo}" + (f" ({variante})" if variante else ""))
     consola.escribir(f"Carpeta: {raiz}")
+    configuracion = ajustes.leer(raiz)
+    if configuracion is not None:
+        detalles = [f"guía: {'no' if configuracion.guia is False else 'sí'}"]
+        if configuracion.plantillas != ajustes.CARPETA_PLANTILLAS:
+            detalles.append(f"plantillas en {configuracion.plantillas}")
+        detalles += [f"{clave} en {ruta}" for clave, ruta in configuracion.conexiones.items()]
+        consola.escribir(f"Configuración: {ajustes.ARCHIVO} ({'; '.join(detalles)})")
     consola.escribir()
     consola.titulo("Piezas que podés generar:")
     ancho = max(len(c) for c in stack.piezas)

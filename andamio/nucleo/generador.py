@@ -6,7 +6,7 @@ import dataclasses
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
-from andamio.nucleo import identificadores, plantillas
+from andamio.nucleo import ajustes, identificadores, plantillas
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.motor import renderizar, renderizar_ruta
 from andamio.nucleo.nombres import (
@@ -147,6 +147,11 @@ def resolver_variante(stack: Stack, pedida: str | None) -> str:
 def variante_del_proyecto(stack: Stack, raiz: Path) -> str:
     if not stack.variantes:
         return ""
+    configurada = ajustes.de_proyecto(raiz).variante
+    if configurada:
+        if configurada not in stack.variantes:
+            raise AndamioError(f"{ajustes.ARCHIVO}: los proyectos {stack.titulo} no tienen la variante '{configurada}'.")
+        return configurada
     if stack.detectar_variante:
         return stack.detectar_variante(raiz)
     return next(iter(stack.variantes))
@@ -193,9 +198,14 @@ def planificar_pieza(sol: Solicitud) -> Plan:
         contenido = renderizar(texto, contexto, origen, sol.guia) if texto is not None else archivo.contenido
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 
+    conexiones = ajustes.de_proyecto(sol.raiz).conexiones
     for ins in pieza.inserciones:
         origen = f"inserción en {ins.archivo}"
-        ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen)
+        if ins.marcador and ins.marcador in conexiones:
+            # andamio.json indica que ese punto de conexión está en otro archivo.
+            ruta = PurePosixPath(conexiones[ins.marcador])
+        else:
+            ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen)
         bloque = renderizar(ins.texto, contexto, origen, sol.guia)
         if centinela is not None:
             choque = _choque_insercion(pieza, sol, ruta, renderizar(ins.texto, centinela, origen), bloque)

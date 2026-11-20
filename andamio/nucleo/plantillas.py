@@ -53,8 +53,15 @@ def carpeta_incorporada(stack: str) -> Traversable:
     return resources.files("andamio") / "plantillas" / stack
 
 
+def carpeta_usuario(raiz: Path) -> Path:
+    """Dónde están las plantillas propias del proyecto (andamio.json puede cambiarla)."""
+    from andamio.nucleo import ajustes
+
+    return raiz / ajustes.de_proyecto(raiz).plantillas
+
+
 def carpeta_personalizada(raiz: Path, stack: str, pieza: str) -> Path:
-    return raiz / CARPETA_USUARIO / stack / pieza
+    return carpeta_usuario(raiz) / stack / pieza
 
 
 def leer_arbol(carpeta: Traversable, ignorar_leeme: bool = True) -> list[ArchivoPlantilla]:

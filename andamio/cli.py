@@ -46,6 +46,7 @@ def _ejemplos() -> str:
         (f"{p} crear react mi-web --js", "crea un proyecto React en JavaScript"),
         (f"{p} nuevo recurso producto nombre:str", "genera un recurso con un campo"),
         (f"{p} info", "qué se puede generar acá"),
+        (f"{p} init", "prepara un proyecto que ya existe (crea andamio.json)"),
         (f"{p} pendientes", "dónde falta escribir tu lógica (marcas TODO(logica))"),
         (f"{p} comandos", "todos los comandos, opciones y piezas"),
         (f"{p} new resource producto nombre:str", "lo mismo que 'nuevo recurso', en inglés"),
@@ -62,6 +63,7 @@ ALIAS_COMANDOS = {
     "crear": ["create"],
     "nuevo": ["new", "generate", "g"],
     "info": [],
+    "init": [],
     "pendientes": ["todo", "pending"],
     "comandos": ["commands"],
     "plantillas": ["templates"],
@@ -89,6 +91,7 @@ def construir_parser() -> argparse.ArgumentParser:
     sin_guia = {
         "action": "store_false",
         "dest": "guia",
+        "default": None,  # sin la opción: lo que diga andamio.json (o con guía)
         "help": "sin los comentarios que explican el código (las marcas TODO(logica) quedan)",
     }
 
@@ -119,6 +122,17 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--sin-guia", "--no-guide", **sin_guia)
 
     comando("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
+    init = comando(
+        "init",
+        help="prepara un proyecto que ya existe: revisa sus puntos de conexión y crea andamio.json",
+        description="Prepara un proyecto que ya existe (aunque no lo haya creado andamio): detecta el tipo, "
+        "revisa los puntos de conexión (los marcadores andamio:...) y crea andamio.json. No modifica tu código.",
+    )
+    init.add_argument("tipo", nargs="?", help=f"tipo de proyecto, si no se detecta solo: {claves}")
+    init.add_argument("--variante", "--variant", dest="variante", help="ts o js")
+    init.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js")
+    init.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts")
+    init.add_argument("--simular", "--dry-run", **simular)
     comando("pendientes", help="lista las marcas TODO(logica): dónde falta escribir tu lógica")
     comando("comandos", help="muestra todos los comandos, sus opciones y las piezas de cada tecnología")
 
@@ -146,12 +160,16 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         return menu.ejecutar(cwd)
     if args.comando == "crear":
         stack = acciones.stack_por_clave(args.stack)
-        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia)
+        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia is not False)
     if args.comando == "nuevo":
         opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular, args.guia)
     if args.comando == "info":
         return acciones.info(cwd)
+    if args.comando == "init":
+        from andamio import inspeccion
+
+        return inspeccion.init(cwd, args.tipo, args.variante, args.simular)
     if args.comando == "pendientes":
         from andamio import inspeccion
 

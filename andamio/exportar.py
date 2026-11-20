@@ -89,7 +89,7 @@ def exportar(cwd: Path, clave_pieza: str | None = None) -> int:
     stack, raiz = acciones.proyecto_actual(cwd)
     piezas = [acciones.pieza_por_clave(stack, clave_pieza)] if clave_pieza else list(stack.piezas.values())
     plan = Plan(raiz)
-    base = PurePosixPath(*plantillas.CARPETA_USUARIO.parts) / stack.clave
+    base = PurePosixPath(plantillas.carpeta_usuario(raiz).relative_to(raiz).as_posix()) / stack.clave
     ya_exportadas: list[str] = []
     for pieza in piezas:
         origen = carpeta_pieza(stack, pieza, variante_del_proyecto(stack, raiz))
