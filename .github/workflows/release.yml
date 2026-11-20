@@ -1,14 +1,18 @@
 name: Release
 
-# Se ejecuta de cualquiera de estas dos formas:
+# Se ejecuta de cualquiera de estas tres formas:
 # - subiendo un tag de versión:  git tag v1.0.0 && git push origin v1.0.0
 # - publicando una Release desde la web de GitHub con un tag nuevo (v1.0.0):
 #   el workflow le agrega los archivos y las notas del CHANGELOG.
+# - a mano, desde Actions > Release > Run workflow (sobre main): crea el tag
+#   v<versión de andamio/__init__.py> y la Release. Sirve cuando no se pueden subir tags
+#   (por ejemplo, desde una sesión de Claude Code en la nube).
 on:
   push:
     tags: ["v*"]
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -30,11 +34,26 @@ jobs:
       - name: Verificar que el tag coincide con la versión de andamio
         run: |
           VERSION=$(python -c "import andamio; print(andamio.__version__)")
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::El tag $GITHUB_REF_NAME no coincide con __version__ = $VERSION (andamio/__init__.py)"
-            exit 1
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            # A mano: el tag sale de la versión, y no puede existir todavía.
+            TAG="v$VERSION"
+            if [ "$GITHUB_REF_NAME" != "main" ]; then
+              echo "::error::Las versiones se publican desde main (se ejecutó sobre $GITHUB_REF_NAME)"
+              exit 1
+            fi
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+              echo "::error::El tag $TAG ya existe: subí la versión en andamio/__init__.py y en el CHANGELOG"
+              exit 1
+            fi
+          else
+            TAG="$GITHUB_REF_NAME"
+            if [ "v$VERSION" != "$TAG" ]; then
+              echo "::error::El tag $TAG no coincide con __version__ = $VERSION (andamio/__init__.py)"
+              exit 1
+            fi
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: Tests
         run: |
@@ -76,10 +95,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/empaquetar.py notas "$VERSION" > notas.md
-          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+          if gh release view "$TAG" > /dev/null 2>&1; then
             # La Release ya existe (creada desde la web): se completan archivos y notas.
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-            gh release edit "$GITHUB_REF_NAME" --title "andamio $GITHUB_REF_NAME" --notes-file notas.md
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --title "andamio $TAG" --notes-file notas.md
           else
-            gh release create "$GITHUB_REF_NAME" dist/* --title "andamio $GITHUB_REF_NAME" --notes-file notas.md
+            # Si el tag no existe (ejecución a mano), gh lo crea sobre este commit.
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "andamio $TAG" --notes-file notas.md
           fi
