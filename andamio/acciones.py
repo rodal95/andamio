@@ -82,9 +82,10 @@ def crear_proyecto(
     simular: bool = False,
     confirmar: bool = False,
     variante: str | None = None,
+    guia: bool = True,
 ) -> int:
     variante = resolver_variante(stack, variante)
-    plan, contexto = planificar_proyecto(stack, texto_nombre, padre, variante)
+    plan, contexto = planificar_proyecto(stack, texto_nombre, padre, variante, guia)
     consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
     if variante:
         consola.escribir(f"Variante: {consola.color(nombre_variante(stack, variante), 'negrita')}")
@@ -213,6 +214,7 @@ def nuevo(
     plural: str | None = None,
     opciones: dict[str, Any] | None = None,
     simular: bool = False,
+    guia: bool = True,
 ) -> int:
     stack, raiz = proyecto_actual(cwd)
     pieza = pieza_por_clave(stack, clave_pieza)
@@ -233,7 +235,7 @@ def nuevo(
             "Si de verdad es singular (como 'país'), indicá el plural con --plural. Ejemplo: --plural paises",
         )
     campos = preparar_campos(stack, pieza, nombre, textos_campos)
-    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones, variante=variante_del_proyecto(stack, raiz))
+    sol = Solicitud(stack, pieza, raiz, nombre, campos, opciones, variante=variante_del_proyecto(stack, raiz), guia=guia)
     return generar_pieza(sol, simular=simular)
 
 

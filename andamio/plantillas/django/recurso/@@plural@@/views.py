@@ -1,3 +1,5 @@
+# guía: La API: el ViewSet arma listar, crear, ver, modificar y eliminar.
+# guía: Usa el modelo (models.py) y el serializer (serializers.py); urls.py le da la ruta /api/@@plural@@/.
 from rest_framework import viewsets
 @@import_permisos@@
 
@@ -20,3 +22,7 @@ class @@Nombre@@ViewSet(viewsets.ModelViewSet):
     filterset_fields = [@@campos_filtro@@]
     search_fields = [@@campos_busqueda@@]
     ordering_fields = [@@campos_orden@@]
+
+    # TODO(logica): reglas al guardar (lo que no manda el cliente). Ejemplo:
+    # def perform_create(self, serializer):
+    #     serializer.save(codigo=generar_codigo())

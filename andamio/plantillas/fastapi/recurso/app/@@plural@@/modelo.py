@@ -1,3 +1,5 @@
+# guía: El modelo (la tabla) y la forma de los datos que entran y salen de la API.
+# guía: Lo usa router.py. Si un dato no cumple el tipo, la API responde 422 con el motivo.
 """Modelos de @@titulo@@ con SQLModel: cada clase es una tabla o la forma de los datos de la API."""
 
 @@imports_modelo@@
@@ -25,6 +27,15 @@ class @@Nombre@@(@@Nombre@@Base, table=True):
 
 class @@Nombre@@Crear(@@Nombre@@Base):
     """Lo que hay que enviar para crear (POST) o reemplazar (PUT)."""
+
+    # TODO(logica): validaciones propias, además del tipo. Ejemplo con un precio
+    # (from pydantic import field_validator):
+    # @field_validator("precio")
+    # @classmethod
+    # def precio_positivo(cls, valor):
+    #     if valor <= 0:
+    #         raise ValueError("El precio tiene que ser mayor que cero.")
+    #     return valor
 
 
 class @@Nombre@@Actualizar(SQLModel):

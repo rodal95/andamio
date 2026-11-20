@@ -1,3 +1,5 @@
+# guía: Las cinco páginas (lista, detalle, crear, editar y eliminar). Cada vista usa el modelo,
+# guía: el formulario (forms.py) y una plantilla de templates/@@plural@@/; urls.py les da la ruta.
 from django.contrib import messages
 @@import_login@@
 from django.contrib.messages.views import SuccessMessageMixin

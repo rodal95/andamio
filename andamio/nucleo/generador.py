@@ -190,13 +190,13 @@ def planificar_pieza(sol: Solicitud) -> Plan:
             forma = identificadores.conflicto(archivo.partes[-1], renderizar(texto, centinela, origen), sol.nombre)
             if forma:
                 choques.append(_error_identificador(pieza, forma, str(destino)))
-        contenido = renderizar(texto, contexto, origen) if texto is not None else archivo.contenido
+        contenido = renderizar(texto, contexto, origen, sol.guia) if texto is not None else archivo.contenido
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 
     for ins in pieza.inserciones:
         origen = f"inserción en {ins.archivo}"
         ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen)
-        bloque = renderizar(ins.texto, contexto, origen)
+        bloque = renderizar(ins.texto, contexto, origen, sol.guia)
         if centinela is not None:
             choque = _choque_insercion(pieza, sol, ruta, renderizar(ins.texto, centinela, origen), bloque)
             if choque:
@@ -265,7 +265,9 @@ def contexto_proyecto(stack: Stack, texto: str, variante: str = "") -> dict[str,
     return contexto
 
 
-def planificar_proyecto(stack: Stack, texto: str, padre: Path, variante: str = "") -> tuple[Plan, dict[str, str]]:
+def planificar_proyecto(
+    stack: Stack, texto: str, padre: Path, variante: str = "", guia: bool = True
+) -> tuple[Plan, dict[str, str]]:
     contexto = contexto_proyecto(stack, texto, variante)
     nombre_carpeta = contexto["carpeta"]
     destino = padre / nombre_carpeta
@@ -284,9 +286,9 @@ def planificar_proyecto(stack: Stack, texto: str, padre: Path, variante: str = "
         if texto_plantilla is None:
             plan.crear(destino_rel, archivo.contenido)
             continue
-        plan.crear(destino_rel, renderizar(texto_plantilla, contexto, origen))
+        plan.crear(destino_rel, renderizar(texto_plantilla, contexto, origen, guia))
         if archivo.ruta == ".env.example" and stack.contexto_env:
-            plan.crear(base / ".env", renderizar(texto_plantilla, {**contexto, **stack.contexto_env()}, origen))
+            plan.crear(base / ".env", renderizar(texto_plantilla, {**contexto, **stack.contexto_env()}, origen, guia))
     return plan, contexto
 
 

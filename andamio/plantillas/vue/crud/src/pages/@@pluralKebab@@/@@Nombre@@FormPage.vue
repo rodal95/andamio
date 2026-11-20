@@ -1,3 +1,5 @@
+<!-- guía: El formulario para crear y editar. Envía los datos con el servicio (src/services) -->
+<!-- guía: y muestra los errores que devuelve la API debajo de cada campo. -->
 <script setup>
 // Formulario para crear (ruta /@@pluralKebab@@/nuevo) o editar (ruta /@@pluralKebab@@/:id/editar).
 import { onMounted, ref } from 'vue';
@@ -27,6 +29,8 @@ onMounted(async () => {
 });
 
 async function guardar() {
+  // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
+  // Ejemplo: if (Number(datos.value.precio) <= 0) { errores.value = { precio: ['Tiene que ser mayor que cero.'] }; return; }
   try {
     const guardado = editando
       ? await @@nombreCamel@@Service.actualizar(id, datos.value)

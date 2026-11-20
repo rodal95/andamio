@@ -18,6 +18,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --simular            (--dry-run)              muestra qué crearía, sin tocar nada
 │     --variante ts|js     (--variant)              lenguaje (Express, React, React Native, Next.js)
 │     --js / --ts                                   atajos de --variante
+│     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── nuevo <pieza> [nombre] [campos...]   (new, generate, g)   agrega una pieza al proyecto actual
 │     --plural <plural>                             el plural, si el automático no sirve
@@ -26,8 +27,10 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --protegido          (--protected)            crear, modificar y eliminar piden login
 │     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
 │     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
+│     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
+├── pendientes                           (todo, pending)   dónde falta tu lógica (marcas TODO(logica))
 ├── comandos                             (commands) este árbol
 ├── plantillas exportar [pieza]          (templates export)   copia las plantillas para editarlas
 └── configurar                           (configure, setup)   permite escribir solo "andamio"
@@ -42,7 +45,7 @@ Qué opciones acepta cada pieza:
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
-| `--plural`, `--simular` | todas (`--plural` solo en las que usan plural) |
+| `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
 
@@ -82,10 +85,11 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `crear` | `create` |
 | `nuevo` | `new`, `generate`, `g` |
 | `comandos` | `commands` |
+| `pendientes` | `todo`, `pending` |
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui` e `info` son iguales en los dos idiomas.
@@ -108,6 +112,7 @@ Opciones que sirven en todas las piezas:
 |---|---|
 | `--simular` | Muestra qué crearía o modificaría, sin tocar nada. |
 | `--plural paises` | Indica el plural cuando el automático no sirve. |
+| `--sin-guia` | Genera el código sin los comentarios que lo explican (para quien ya lo conoce). Las marcas `TODO(logica)`, que dicen dónde va tu lógica, quedan igual. |
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
 | `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
@@ -410,6 +415,7 @@ reflex run                                       http://localhost:3000
 |---|---|
 | `python -m andamio` | Menú interactivo: te pregunta todo, paso a paso. |
 | `python -m andamio info` | Qué proyecto detectó, qué piezas y qué tipos de campo hay. |
+| `python -m andamio pendientes` | Lista las marcas `TODO(logica)` del proyecto: archivo, línea y qué falta. Son los lugares donde va tu lógica (validaciones, reglas, cálculos). En inglés: `todo`. |
 | `python -m andamio comandos` | El árbol de todos los comandos, opciones y piezas (en inglés: `commands`). |
 | `python -m andamio plantillas exportar [pieza]` | Copia las plantillas a `.andamio/plantillas/` para modificar el código que se genera. |
 | `python -m andamio configurar` | Opcional: permite escribir solo `andamio` (agrega la carpeta al PATH). |

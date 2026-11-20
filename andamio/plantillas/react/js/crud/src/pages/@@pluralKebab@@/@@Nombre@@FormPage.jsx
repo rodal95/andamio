@@ -1,3 +1,5 @@
+// guía: El formulario para crear y editar. Envía los datos con el servicio (src/services)
+// guía: y muestra los errores que devuelve la API debajo de cada campo.
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ErrorApi } from '../../services/http';
@@ -50,6 +52,8 @@ export function @@Nombre@@FormPage() {
   }
 
   async function guardar() {
+    // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
+    // Ejemplo: if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
     try {
       const guardado = editando
         ? await @@nombreCamel@@Service.actualizar(Number(id), datos)

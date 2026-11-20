@@ -1,3 +1,5 @@
+# guía: El modelo: la tabla @@plural@@ de la base de datos (cada atributo es una columna).
+# guía: Si cambiás un campo: python manage.py makemigrations @@plural@@ y después migrate.
 from django.db import models
 
 

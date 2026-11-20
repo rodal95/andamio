@@ -1,3 +1,5 @@
+// guía: Qué datos acepta la API (con Zod) y cómo se ve cada registro en el JSON.
+// guía: Lo usan las rutas del recurso; si un dato no sirve, la API responde 400 con el motivo.
 /**
  * @@titulo@@: qué datos acepta la API (validación) y cómo se ve cada registro en el JSON.
  */
@@ -15,6 +17,9 @@ export const @@nombreCamel@@Crear = @@esquema_crear@@;
 
 /** Lo que se puede enviar para modificar (PATCH): solo los campos que cambian. */
 export const @@nombreCamel@@Actualizar = z.object(campos).partial();
+
+// TODO(logica): validaciones propias, además del tipo. Ejemplo con un precio, en `campos`:
+//   precio: decimal().refine((valor) => valor > 0, 'El precio tiene que ser mayor que cero.'),
 
 /** Parámetros de la lista: ?search=, ?ordering= y ?campo=valor (filtra por igualdad). */
 export const @@nombreCamel@@Filtros = z.object({

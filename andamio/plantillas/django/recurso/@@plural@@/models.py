@@ -1,3 +1,6 @@
+# guía: El modelo: la tabla @@plural@@ de la base de datos (cada atributo es una columna).
+# guía: Lo usan serializers.py (JSON y validación), views.py (la API) y admin.py.
+# guía: Si cambiás un campo: python manage.py makemigrations @@plural@@ y después migrate.
 from django.db import models
 
 

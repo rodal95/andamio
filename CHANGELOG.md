@@ -14,6 +14,14 @@ Todos los cambios importantes de andamio. El proyecto usa
   (registrarse, pedir el token, usuario actual y renovar el token).
 - Mapa de lectura: después de generar una pieza, andamio muestra en qué orden leer los
   archivos y qué hace cada uno (en los recursos, crud, páginas, servicios y entidades).
+- Código guiado: los archivos principales empiezan con una explicación de qué hacen y con
+  qué se conectan, y marcan con `TODO(logica)` dónde va la lógica propia (validaciones y
+  reglas al guardar), con un ejemplo comentado. Al generar, andamio muestra esas marcas.
+  `--sin-guia` (`--no-guide`), en `crear` y `nuevo`, genera sin las explicaciones (las
+  marcas quedan). En las plantillas, una guía es una línea de comentario que empieza con
+  `guía:`.
+- `python -m andamio pendientes` (`todo`): lista las marcas `TODO(logica)` del proyecto,
+  con archivo, línea y qué falta.
 
 ### Corregido
 - Nombres que generaban código que no compilaba o no funcionaba. Ahora andamio los

@@ -1,3 +1,5 @@
+# guía: Guardar, listar, modificar y eliminar @@plural@@ en SQLite (la tabla está en sql/schema.sql).
+# guía: Lo usa menus/menu_@@nombre@@.py. Las consultas usan ? para que los datos no se mezclen con el SQL.
 """Funciones para la tabla @@plural@@: crear, listar, obtener, actualizar y eliminar.
 
 Todas las consultas usan signos "?" para los valores, en lugar de armar el SQL
@@ -8,6 +10,7 @@ from db import get_conexion
 
 
 def crear(@@parametros@@):
+    # TODO(logica): validaciones antes de guardar (ej.: que el precio sea mayor que cero).
     """Guarda un registro nuevo y devuelve su id."""
     with get_conexion() as conexion:
         cursor = conexion.execute(

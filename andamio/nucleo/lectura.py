@@ -7,6 +7,7 @@ con los pasos de siempre, cómo probarlo.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,8 @@ def texto_de_marca(linea: str) -> str:
     for cierre in ("*/}", "*/", "-->", "#}"):
         if resto.endswith(cierre):
             resto = resto[: -len(cierre)].rstrip()
+    # "reglas al guardar. Ejemplo:" -> "reglas al guardar" (el ejemplo está en el código).
+    resto = re.split(r"\.?\s+Ejemplo\b", resto)[0]
     return resto
 
 

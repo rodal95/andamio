@@ -1,3 +1,5 @@
+# guía: La página de @@titulo@@: el estado (cargar, guardar, editar, eliminar) y lo que se ve.
+# guía: Guarda en la base con el modelo de modelos/@@nombre@@.py.
 """@@titulo@@ (la dirección /@@pluralKebab@@): listar, agregar, editar y eliminar.
 
 @@Nombre@@State guarda lo que muestra la página y tiene las acciones, que se ejecutan
@@ -53,6 +55,7 @@ class @@Nombre@@State(rx.State):
         """Valida el formulario y guarda: crea uno nuevo o modifica el que se está editando."""
         try:
             validos = @@Nombre@@Datos.model_validate(self.datos)
+            # TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre).
         except ValidationError as error:
             self.errores = errores_de(error)
             return

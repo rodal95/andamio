@@ -1,3 +1,5 @@
+// guía: La API de la lista: GET lista y POST crea. Ver, modificar y eliminar uno están en [id]/route.
+// guía: Valida con esquema y guarda con Prisma.
 /**
  * API de @@titulo@@: /api/@@plural@@/  (listar y crear)
  *
@@ -35,6 +37,7 @@ export async function GET(request) {
 export async function POST(request) {
   return responder(async () => {
     const datos = validar(@@nombreCamel@@Crear, await leerJson(request));
+    // TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).
     const @@nombreCamel@@ = await prisma.@@nombreCamel@@.create({ data: datos });
     return Response.json(aJson(@@nombreCamel@@), { status: 201 });
   });

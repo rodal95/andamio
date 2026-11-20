@@ -31,6 +31,7 @@ class Solicitud:
     opciones: dict[str, Any] = field(default_factory=dict)
     contexto: dict[str, str] = field(default_factory=dict)
     variante: str = ""  # ej.: "ts" o "js"; vacío si el stack no tiene variantes
+    guia: bool = True  # con los comentarios de guía (False con --sin-guia)
 
 
 # Lista de comandos (con marcadores) o función que la calcula según la solicitud.

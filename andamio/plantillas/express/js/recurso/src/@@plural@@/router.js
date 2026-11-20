@@ -1,3 +1,5 @@
+// guía: La API: una ruta por operación (listar, crear, ver, reemplazar, modificar y eliminar).
+// guía: Valida con esquema.ts y guarda con Prisma; src/app conecta el router en /api/@@plural@@.
 /**
  * API de @@titulo@@: /api/@@plural@@/
  *
@@ -41,6 +43,7 @@ async function buscarO404(texto) {
 
 // Crear.
 @@pluralCamel@@Router.post('/', async (req, res) => {
+  // TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).
   const datos = validar(@@nombreCamel@@Crear, req.body);
   const @@nombreCamel@@ = await prisma.@@nombreCamel@@.create({ data: datos });
   res.status(201).json(aJson(@@nombreCamel@@));

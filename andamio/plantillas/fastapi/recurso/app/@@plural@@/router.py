@@ -1,3 +1,5 @@
+# guía: La API: una función por operación (listar, crear, ver, reemplazar, modificar y eliminar).
+# guía: Usa el modelo (modelo.py) y la base (bd); app/main.py la conecta con include_router.
 """API de @@titulo@@: /api/@@plural@@/
 
 La lista acepta estos parámetros (igual que la API de Django):
@@ -50,6 +52,7 @@ def listar(
 
 @router.post("/", response_model=@@Nombre@@Leer, status_code=201)
 def crear(datos: @@Nombre@@Crear, bd: SesionBD):
+    # TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).
     @@nombre@@ = @@Nombre@@.model_validate(datos)
     bd.add(@@nombre@@)
     bd.commit()

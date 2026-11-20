@@ -1,3 +1,5 @@
+// guía: El formulario para crear y editar (lo usan nuevo/page y [id]/editar/page). Envía los datos
+// guía: con el servicio (services/) y muestra los errores que devuelve la API debajo de cada campo.
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -42,6 +44,8 @@ export function @@Nombre@@Formulario() {
   }
 
   async function guardar() {
+    // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
+    // Ejemplo: if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
     try {
       const guardado = editando
         ? await @@nombreCamel@@Service.actualizar(Number(id), datos)

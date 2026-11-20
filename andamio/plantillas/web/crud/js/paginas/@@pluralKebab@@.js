@@ -1,3 +1,5 @@
+// guía: Lo que hace la página @@pluralKebab@@.html: carga la lista, guarda el formulario,
+// guía: edita y elimina, usando el servicio (js/servicios/). No hace falta instalar nada.
 // La página @@titulo@@ (@@pluralKebab@@.html): lista, agrega, edita y elimina usando la API.
 import { ErrorApi } from '../http.js';
 import { dibujarMenu } from '../menu.js';
@@ -113,6 +115,7 @@ formulario.addEventListener('submit', async (evento) => {
   evento.preventDefault(); // que el navegador no recargue la página
   try {
     const datos = leerFormulario();
+    // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
     if (editando === null) await @@nombreCamel@@Servicio.crear(datos);
     else await @@nombreCamel@@Servicio.actualizar(editando, datos);
     llenarFormulario(null);

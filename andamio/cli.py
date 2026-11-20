@@ -46,6 +46,7 @@ def _ejemplos() -> str:
         (f"{p} crear react mi-web --js", "crea un proyecto React en JavaScript"),
         (f"{p} nuevo recurso producto nombre:str", "genera un recurso con un campo"),
         (f"{p} info", "qué se puede generar acá"),
+        (f"{p} pendientes", "dónde falta escribir tu lógica (marcas TODO(logica))"),
         (f"{p} comandos", "todos los comandos, opciones y piezas"),
         (f"{p} new resource producto nombre:str", "lo mismo que 'nuevo recurso', en inglés"),
         (f"{p} plantillas exportar", "copia las plantillas para modificarlas"),
@@ -61,6 +62,7 @@ ALIAS_COMANDOS = {
     "crear": ["create"],
     "nuevo": ["new", "generate", "g"],
     "info": [],
+    "pendientes": ["todo", "pending"],
     "comandos": ["commands"],
     "plantillas": ["templates"],
     "configurar": ["configure", "setup"],
@@ -84,11 +86,17 @@ def construir_parser() -> argparse.ArgumentParser:
 
     claves = ", ".join(s.clave for s in stacks.ORDEN_MENU)
     simular = {"action": "store_true", "dest": "simular", "help": "muestra qué se crearía, sin tocar nada"}
+    sin_guia = {
+        "action": "store_false",
+        "dest": "guia",
+        "help": "sin los comentarios que explican el código (las marcas TODO(logica) quedan)",
+    }
 
     crear = comando("crear", help="crea un proyecto nuevo", description="Crea un proyecto nuevo en una carpeta.")
     crear.add_argument("stack", metavar="tipo", help=f"tipo de proyecto: {claves}")
     crear.add_argument("nombre", help="nombre del proyecto (ej: mi-tienda)")
     crear.add_argument("--simular", "--dry-run", **simular)
+    crear.add_argument("--sin-guia", "--no-guide", **sin_guia)
     crear.add_argument("--variante", "--variant", dest="variante", help="variante del proyecto: ts o js (Express, React, React Native, Next.js)")
     crear.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js (JavaScript)")
     crear.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts (TypeScript)")
@@ -108,8 +116,10 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
     nuevo.add_argument("--modo", "--mode", dest="modo", help="modo del tema: auto (sigue al sistema), claro u oscuro")
     nuevo.add_argument("--simular", "--dry-run", **simular)
+    nuevo.add_argument("--sin-guia", "--no-guide", **sin_guia)
 
     comando("info", help="muestra el tipo de proyecto detectado y qué se puede generar")
+    comando("pendientes", help="lista las marcas TODO(logica): dónde falta escribir tu lógica")
     comando("comandos", help="muestra todos los comandos, sus opciones y las piezas de cada tecnología")
 
     plantillas = comando("plantillas", help="exporta las plantillas para modificarlas")
@@ -136,12 +146,16 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         return menu.ejecutar(cwd)
     if args.comando == "crear":
         stack = acciones.stack_por_clave(args.stack)
-        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante)
+        return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia)
     if args.comando == "nuevo":
         opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo}
-        return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular)
+        return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular, args.guia)
     if args.comando == "info":
         return acciones.info(cwd)
+    if args.comando == "pendientes":
+        from andamio import inspeccion
+
+        return inspeccion.pendientes(cwd)
     if args.comando == "comandos":
         from andamio import comandos
 
