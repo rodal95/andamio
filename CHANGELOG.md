@@ -5,6 +5,8 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.5.0] - 2026-11-20
+
 ### Agregado
 - Archivos `.http` para probar las APIs a mano, sin programas aparte (extensión REST Client
   de VS Code, o el cliente HTTP de PyCharm y WebStorm): `recurso` genera
@@ -30,6 +32,10 @@ Todos los cambios importantes de andamio. El proyecto usa
 - `python -m andamio init [tipo]`: prepara un proyecto que ya existe, aunque no lo haya
   creado andamio. Muestra qué puntos de conexión tiene y cuáles faltan (con la línea a
   pegar y dónde) y crea `andamio.json`. No modifica el código del proyecto.
+- `python -m andamio mapa` (`map`): las piezas que se generaron en el proyecto, si sus
+  archivos y sus conexiones (rutas, imports, menú) siguen en su lugar, y si una API y su
+  interfaz tienen campos distintos. Cada `nuevo` anota lo que generó en
+  `.andamio/historial.jsonl` (en el mismo paso que la pieza: si algo falla, se deshace).
 
 ### Corregido
 - Nombres que generaban código que no compilaba o no funcionaba. Ahora andamio los

@@ -47,6 +47,7 @@ def _ejemplos() -> str:
         (f"{p} nuevo recurso producto nombre:str", "genera un recurso con un campo"),
         (f"{p} info", "qué se puede generar acá"),
         (f"{p} init", "prepara un proyecto que ya existe (crea andamio.json)"),
+        (f"{p} mapa", "las piezas generadas y si siguen conectadas"),
         (f"{p} pendientes", "dónde falta escribir tu lógica (marcas TODO(logica))"),
         (f"{p} comandos", "todos los comandos, opciones y piezas"),
         (f"{p} new resource producto nombre:str", "lo mismo que 'nuevo recurso', en inglés"),
@@ -64,6 +65,7 @@ ALIAS_COMANDOS = {
     "nuevo": ["new", "generate", "g"],
     "info": [],
     "init": [],
+    "mapa": ["map"],
     "pendientes": ["todo", "pending"],
     "comandos": ["commands"],
     "plantillas": ["templates"],
@@ -133,6 +135,7 @@ def construir_parser() -> argparse.ArgumentParser:
     init.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js")
     init.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts")
     init.add_argument("--simular", "--dry-run", **simular)
+    comando("mapa", help="muestra las piezas generadas y controla sus archivos y conexiones")
     comando("pendientes", help="lista las marcas TODO(logica): dónde falta escribir tu lógica")
     comando("comandos", help="muestra todos los comandos, sus opciones y las piezas de cada tecnología")
 
@@ -170,6 +173,10 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         from andamio import inspeccion
 
         return inspeccion.init(cwd, args.tipo, args.variante, args.simular)
+    if args.comando == "mapa":
+        from andamio import inspeccion
+
+        return inspeccion.mapa(cwd)
     if args.comando == "pendientes":
         from andamio import inspeccion
 

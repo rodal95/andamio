@@ -1,9 +1,11 @@
-"""Comandos que miran el proyecto: `pendientes` e `init`.
+"""Comandos que miran el proyecto: `pendientes`, `init` y `mapa`.
 
 - `pendientes` busca las marcas TODO(logica) que deja andamio en el código generado: son
   los lugares donde va la lógica propia (validaciones, reglas de negocio, cálculos).
 - `init` prepara un proyecto que ya existe (aunque no lo haya creado andamio): dice qué
   puntos de conexión tiene y cuáles faltan, y crea andamio.json.
+- `mapa` muestra las piezas que se generaron (según .andamio/historial.jsonl) y controla
+  que sus archivos y sus conexiones (rutas, imports, enlaces) sigan en su lugar.
 """
 
 from __future__ import annotations
@@ -14,12 +16,19 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
 from andamio import acciones, stacks
-from andamio.nucleo import ajustes, consola
+from andamio.nucleo import ajustes, consola, historial, plantillas
 from andamio.nucleo.campos import parsear_campo
 from andamio.nucleo.deteccion import buscar_proyecto
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.generador import contexto_pieza, nombre_para_pieza, nombre_variante, resolver_variante
-from andamio.nucleo.insercion import linea_marcador
+from andamio.nucleo.generador import (
+    contexto_pieza,
+    nombre_para_pieza,
+    nombre_variante,
+    resolver_variante,
+    ubicar_plantilla,
+    variante_del_proyecto,
+)
+from andamio.nucleo.insercion import linea_marcador, ya_presente
 from andamio.nucleo.lectura import MARCA_LOGICA, Pendiente, buscar_marcas
 from andamio.nucleo.motor import renderizar, renderizar_ruta
 from andamio.nucleo.plan import Plan
@@ -202,4 +211,123 @@ def init(cwd: Path, tipo: str | None = None, variante: str | None = None, simula
     plan.aplicar()
     consola.exito(f"Se creó {ajustes.ARCHIVO}: desde ahora andamio usa esta configuración en esta carpeta.")
     consola.escribir(f"Para ver qué podés generar: {consola.comando(consola.programa() + ' info')}")
+    return 0
+
+
+# --- mapa -------------------------------------------------------------------------------
+
+
+@dataclass
+class EstadoPieza:
+    entrada: historial.Entrada
+    archivos: list[tuple[str, bool]] = field(default_factory=list)  # (ruta, existe)
+    conexiones: list[tuple[str, str, bool]] = field(default_factory=list)  # (ruta, qué es, está)
+    error: str = ""
+
+    @property
+    def completa(self) -> bool:
+        return not self.error and all(e for _, e in self.archivos) and all(e for _, _, e in self.conexiones)
+
+
+def _leer(ruta: Path) -> str | None:
+    try:
+        return ruta.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def revisar_entrada(stack: Stack, raiz: Path, entrada: historial.Entrada) -> EstadoPieza:
+    """Vuelve a calcular la pieza (sin escribir nada) y controla sus archivos y conexiones."""
+    estado = EstadoPieza(entrada)
+    pieza = stack.piezas.get(entrada.pieza)
+    if pieza is None:
+        estado.error = f"'{entrada.pieza}' no es una pieza de {stack.titulo}"
+        return estado
+    variante = entrada.variante or variante_del_proyecto(stack, raiz)
+    sol = Solicitud(stack, pieza, raiz, entrada.nombre, list(entrada.campos), dict(entrada.opciones), variante=variante)
+    try:
+        contexto = contexto_pieza(sol)
+        carpeta, _ = ubicar_plantilla(stack, pieza, raiz, variante)
+        for archivo in plantillas.leer_arbol(carpeta):
+            ruta = renderizar_ruta(archivo.partes, contexto).as_posix()
+            estado.archivos.append((ruta, (raiz / ruta).is_file()))
+        conexiones = ajustes.de_proyecto(raiz).conexiones
+        for ins in pieza.inserciones:
+            if ins.marcador and ins.marcador in conexiones:
+                ruta = conexiones[ins.marcador]
+            else:
+                ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto).as_posix()
+            actual = _leer(raiz / ruta)
+            bloques = {renderizar(ins.texto, contexto, guia=True), renderizar(ins.texto, contexto, guia=False)}
+            esta = actual is not None and any(ya_presente(actual, b) for b in bloques)
+            estado.conexiones.append((ruta, renderizar(ins.descripcion, contexto) or "líneas agregadas", esta))
+    except (AndamioError, OSError, LookupError, ValueError) as e:
+        estado.error = f"no se pudo revisar ({getattr(e, 'mensaje', e)})"
+    return estado
+
+
+def _campos_distintos(estados: list[EstadoPieza]) -> list[str]:
+    """Regla 3: la API y la interfaz de un mismo recurso tienen que tener los mismos campos."""
+    avisos = []
+    por_nombre: dict[str, list[historial.Entrada]] = {}
+    for estado in estados:
+        if estado.entrada.campos:
+            por_nombre.setdefault(estado.entrada.nombre.snake, []).append(estado.entrada)
+    for nombre, entradas in por_nombre.items():
+        distintos = {tuple((c.nombre, c.tipo) for c in e.campos) for e in entradas}
+        if len(distintos) > 1:
+            detalle = "; ".join(f"{e.pieza}: {' '.join(f'{c.nombre}:{c.tipo}' for c in e.campos)}" for e in entradas)
+            avisos.append(f"'{nombre}' tiene campos distintos según la pieza ({detalle}).")
+    return avisos
+
+
+def mapa(cwd: Path) -> int:
+    stack, raiz = acciones.proyecto_actual(cwd)
+    variante = nombre_variante(stack, variante_del_proyecto(stack, raiz))
+    consola.titulo(f"Mapa del proyecto {stack.titulo}" + (f" ({variante})" if variante else "") + f" en {raiz}")
+    entradas, malas = historial.leer(raiz)
+    if not entradas:
+        consola.escribir()
+        consola.escribir(
+            f"Todavía no hay piezas en {historial.ARCHIVO.as_posix()}: andamio anota ahí cada pieza que genera "
+            "(desde la versión 1.5.0)."
+        )
+        consola.escribir(f"Para ver qué podés generar: {consola.comando(consola.programa() + ' info')}")
+        return 0
+    estados = [revisar_entrada(stack, raiz, e) for e in entradas]
+    consola.escribir(f"Según {historial.ARCHIVO.as_posix()}: {len(estados)} {'pieza generada' if len(estados) == 1 else 'piezas generadas'}.")
+    for estado in estados:
+        consola.escribir()
+        marca = consola.color("ok", "verde") if estado.completa else consola.color("revisar", "amarillo")
+        consola.escribir(f"  {consola.color(estado.entrada.resumen(), 'negrita')}   {marca}")
+        if estado.error:
+            consola.escribir(f"      {estado.error}")
+            continue
+        existentes = sum(1 for _, e in estado.archivos if e)
+        conectados = [ruta for ruta, _, e in estado.conexiones if e]
+        linea = f"      {existentes} de {len(estado.archivos)} archivos"
+        if conectados:
+            linea += " · conectada en " + ", ".join(dict.fromkeys(conectados))
+        consola.escribir(consola.color(linea, "gris"))
+        for ruta, existe in estado.archivos:
+            if not existe:
+                consola.escribir(f"      falta {ruta}")
+        for ruta, que, esta in estado.conexiones:
+            if not esta:
+                consola.escribir(f"      sin conectar: {ruta} ({que})")
+    avisos = _campos_distintos(estados)
+    if malas:
+        avisos.append(
+            f"{malas} {'línea' if malas == 1 else 'líneas'} de {historial.ARCHIVO.as_posix()} "
+            f"no se {'pudo' if malas == 1 else 'pudieron'} leer."
+        )
+    for aviso in avisos:
+        consola.escribir()
+        consola.aviso(aviso)
+    if any(not e.completa for e in estados):
+        consola.escribir()
+        consola.escribir(
+            "Si borraste algo a propósito, está bien. Si no, volvé a generar la pieza "
+            "(borrando lo que quedó) o pegá la conexión que falta."
+        )
     return 0

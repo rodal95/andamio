@@ -6,7 +6,7 @@ import dataclasses
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
-from andamio.nucleo import ajustes, identificadores, plantillas
+from andamio.nucleo import ajustes, historial, identificadores, plantillas
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.motor import renderizar, renderizar_ruta
 from andamio.nucleo.nombres import (
@@ -220,6 +220,13 @@ def planificar_pieza(sol: Solicitud) -> Plan:
             crear_si_falta=ins.crear_si_falta,
             ubicacion=renderizar(ins.ubicacion, contexto, origen),
         )
+    # El historial (lo usa `andamio mapa`): una línea más, en el mismo plan que la pieza.
+    plan.insertar(
+        historial.ARCHIVO,
+        historial.linea(pieza.clave, sol.nombre, sol.campos, sol.opciones, sol.variante),
+        descripcion="lo generado, para andamio mapa",
+        crear_si_falta=True,
+    )
     plan.validar()
     if choques:
         raise choques[0]

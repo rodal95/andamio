@@ -528,6 +528,8 @@ _COMUNES = [
     (".gitignore", "Lista de archivos que git no sube: dependencias, base de datos, .env."),
     ("README.md", "Explica cómo instalar y ejecutar el proyecto."),
     ("*.gitkeep", "Archivo vacío para que git guarde la carpeta aunque todavía esté vacía."),
+    (".andamio/historial.jsonl", "Lo que se generó con andamio (una línea por pieza). Lo usa python -m andamio mapa."),
+    ("andamio.json", "La configuración de andamio en este proyecto (ver python -m andamio init)."),
 ]
 
 # Carpetas que el proyecto trae vacías (con un .gitkeep): se explica para qué son.

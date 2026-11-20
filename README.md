@@ -8,7 +8,7 @@ componentes, pantallas) para que te concentres en la lógica. Funciona con
 **Instalar** (en Windows, en CMD o PowerShell):
 
 ```
-python -m pip install https://github.com/rodal95/andamio/releases/download/v1.4.1/andamio-1.4.1-py3-none-any.whl
+python -m pip install https://github.com/rodal95/andamio/releases/download/v1.5.0/andamio-1.5.0-py3-none-any.whl
 ```
 
 En Linux o Mac, escribí `python3` en lugar de `python`.
@@ -118,9 +118,29 @@ Opciones útiles:
   y aplica la migración (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en
   Express y Next.js, `reflex db` en Reflex).
 - `--carpeta` (React Native): crea la pantalla dentro de una carpeta de `app/`.
+- `--sin-guia`: genera sin los comentarios que explican el código (las marcas `TODO(logica)` quedan).
 
 Los nombres se escriben como quieras (`Línea Venta`, `linea-venta`) y andamio
 los adapta (`LineaVenta`, `linea_venta`). Van **en singular**: `producto`, no `productos`.
+
+## Para entender el código generado y escribir tu lógica
+
+andamio arma la estructura; la lógica la escribís vos. Para que el código no sea una caja negra:
+
+- **Guía en el código:** los archivos principales empiezan explicando qué hacen y con qué se
+  conectan. Con `--sin-guia` se generan sin esas explicaciones.
+- **`TODO(logica)`:** marca dónde va tu lógica (validaciones, reglas al guardar), con un
+  ejemplo comentado. `python -m andamio pendientes` lista las que faltan.
+- **Mapa de lectura:** al generar, andamio muestra en qué orden leer los archivos y qué hace cada uno.
+- **Probar la API sin programas aparte:** cada recurso trae `http/<plural>.http` con peticiones
+  de ejemplo para la extensión REST Client de VS Code (y `nuevo login`, `http/login.http`).
+- **`python -m andamio mapa`:** las piezas que generaste, si siguen conectadas (rutas, imports,
+  menú) y si una API y su interfaz tienen campos distintos.
+
+**¿Tu proyecto no lo creó andamio?** `python -m andamio init` revisa sus puntos de conexión,
+te dice qué línea pegar en cada lugar que falta y crea `andamio.json`, donde también se puede
+indicar otra carpeta de plantillas o que las rutas están en otro archivo. Ver
+[la guía de comandos](docs/guias/comandos.md#andamiojson-la-configuración-del-proyecto-opcional).
 
 ## Tipos de campo
 
@@ -156,9 +176,11 @@ frontend funciona con cualquiera de las tres sin cambiar nada.
 python -m andamio plantillas exportar
 ```
 
-Copia las plantillas a `.andamio/plantillas/` dentro de tu proyecto. Si las
-modificás, andamio usa tu versión. Cada carpeta tiene un `LEEME.md` que explica
-los marcadores `@@...@@` que podés usar. Para volver a la original, borrá la carpeta.
+Copia las plantillas a `.andamio/plantillas/` dentro de tu proyecto (u otra carpeta, con
+`"plantillas"` en `andamio.json`). Si las modificás, andamio usa tu versión. Cada carpeta
+tiene un `LEEME.md` que explica los marcadores `@@...@@` que podés usar. Para volver a la
+original, borrá la carpeta. Una línea de comentario que empieza con `guía:` es una
+explicación para el alumno (se omite con `--sin-guia`), y `TODO(logica)` marca dónde va su lógica.
 
 ## Preguntas frecuentes
 

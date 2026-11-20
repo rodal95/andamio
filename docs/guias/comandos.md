@@ -30,6 +30,10 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
+├── init [tipo]                                     prepara un proyecto que ya existe (crea andamio.json)
+│     --variante ts|js / --js / --ts                lenguaje, si no se detecta solo
+│     --simular            (--dry-run)              muestra qué haría, sin crear nada
+├── mapa                                 (map)      las piezas generadas y si siguen conectadas
 ├── pendientes                           (todo, pending)   dónde falta tu lógica (marcas TODO(logica))
 ├── comandos                             (commands) este árbol
 ├── plantillas exportar [pieza]          (templates export)   copia las plantillas para editarlas
@@ -85,6 +89,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `crear` | `create` |
 | `nuevo` | `new`, `generate`, `g` |
 | `comandos` | `commands` |
+| `mapa` | `map` |
 | `pendientes` | `todo`, `pending` |
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
@@ -415,8 +420,51 @@ reflex run                                       http://localhost:3000
 |---|---|
 | `python -m andamio` | Menú interactivo: te pregunta todo, paso a paso. |
 | `python -m andamio info` | Qué proyecto detectó, qué piezas y qué tipos de campo hay. |
+| `python -m andamio init [tipo]` | Prepara un proyecto que ya existe, aunque no lo haya creado andamio: muestra qué puntos de conexión (`andamio:rutas`, `andamio:imports`...) tiene y cuáles faltan, con la línea a pegar y dónde, y crea `andamio.json`. No modifica tu código. |
+| `python -m andamio mapa` | Las piezas que se generaron en el proyecto (según `.andamio/historial.jsonl`), si sus archivos y sus conexiones siguen en su lugar, y si una API y su interfaz tienen campos distintos. En inglés: `map`. |
 | `python -m andamio pendientes` | Lista las marcas `TODO(logica)` del proyecto: archivo, línea y qué falta. Son los lugares donde va tu lógica (validaciones, reglas, cálculos). En inglés: `todo`. |
 | `python -m andamio comandos` | El árbol de todos los comandos, opciones y piezas (en inglés: `commands`). |
 | `python -m andamio plantillas exportar [pieza]` | Copia las plantillas a `.andamio/plantillas/` para modificar el código que se genera. |
 | `python -m andamio configurar` | Opcional: permite escribir solo `andamio` (agrega la carpeta al PATH). |
 | `python -m andamio --version` | La versión instalada. |
+
+---
+
+## andamio.json: la configuración del proyecto (opcional)
+
+Sin este archivo, andamio detecta el tipo de proyecto por sus archivos y funciona como
+siempre. Se crea con `python -m andamio init` (o a mano) en la carpeta del proyecto:
+
+```json
+{
+  "version": 1,
+  "stack": "react",
+  "variante": "ts",
+  "guia": true,
+  "plantillas": ".andamio/plantillas",
+  "conexiones": { "rutas": "src/router/AppRouter.tsx", "imports": "src/router/AppRouter.tsx" }
+}
+```
+
+| Clave | Qué hace |
+|---|---|
+| `stack` | El tipo de proyecto (como en `crear`). La carpeta de `andamio.json` pasa a ser la raíz del proyecto, aunque las carpetas no sean las de siempre. |
+| `variante` | `ts` o `js` (Express, React, React Native, Next.js). |
+| `guia` | `false`: genera sin los comentarios que explican el código, como `--sin-guia`. |
+| `plantillas` | La carpeta de las plantillas propias (por defecto `.andamio/plantillas`), por ejemplo las de la cátedra. |
+| `conexiones` | En qué archivo está cada punto de conexión, si no es el de siempre. La clave es la del marcador: `rutas` es `andamio:rutas`. `init` muestra cuáles usa cada pieza. |
+
+Lo que indiques al ejecutar (por ejemplo `--sin-guia`) tiene prioridad sobre `andamio.json`.
+
+## El código generado: guía, TODO(logica) y mapa de lectura
+
+- **Guía:** los archivos principales empiezan con un comentario que explica qué hacen y
+  con qué otros archivos se conectan. `--sin-guia` (o `"guia": false`) los omite.
+- **`TODO(logica)`:** marca dónde va tu lógica (validaciones, reglas al guardar), con un
+  ejemplo comentado. Al generar, andamio muestra dónde quedaron; después,
+  `python -m andamio pendientes` las lista. Cuando escribas esa lógica, borrá la marca.
+- **Mapa de lectura:** al generar, andamio muestra en qué orden conviene leer los archivos
+  y qué hace cada uno.
+- **Archivos `.http`:** las APIs traen `http/<plural>.http` con peticiones de ejemplo
+  (listar, crear, ver, modificar y eliminar) para probarlas con la extensión REST Client
+  de VS Code, sin programas aparte.

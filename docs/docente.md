@@ -44,9 +44,11 @@ sitio/                  página web (HTML, CSS y JS sin librerías) para GitHub 
 
 ## Cómo se genera una pieza
 
-1. Se detecta el proyecto: desde la carpeta actual hacia arriba, se prueba
-   `detectar(carpeta)` de cada stack en el orden de `REGISTRO`. Gana la carpeta
-   más cercana.
+1. Se detecta el proyecto: desde la carpeta actual hacia arriba, en cada carpeta se
+   mira primero `andamio.json` (si tiene `"stack"`, esa carpeta es la raíz) y después
+   `detectar(carpeta)` de cada stack en el orden de `REGISTRO`. Gana la carpeta más
+   cercana. `andamio.json` (opcional) también puede fijar la variante, la guía, la
+   carpeta de plantillas propias y las `conexiones` (ver `andamio/nucleo/ajustes.py`).
 2. Se normaliza el nombre (`"Línea Venta"` → `["linea", "venta"]`), se valida y se
    calculan los marcadores comunes (`@@Nombre@@`, `@@plural@@`, ...).
 3. Se leen los campos (`nombre:tipo`) y se validan contra `Stack.tipos`.
@@ -55,9 +57,12 @@ sitio/                  página web (HTML, CSS y JS sin librerías) para GitHub 
 5. Se arma un **Plan**: cada archivo de `plantillas/<stack>/<pieza>/` se
    renderiza y se ubica en el proyecto con la misma ruta relativa; cada
    `Insercion` agrega líneas a un archivo existente.
-6. Se valida todo junto (ningún archivo existe, ningún marcador desconocido),
-   se muestra el resumen y recién ahí se escribe. Si algo falla al escribir, se
-   deshace todo.
+6. Se valida todo junto (ningún archivo existe, ningún marcador desconocido, el
+   nombre no choca con un identificador del código), se muestra el resumen y recién
+   ahí se escribe. Si algo falla al escribir, se deshace todo.
+7. En el mismo plan se agrega una línea a `.andamio/historial.jsonl` (lo usa `mapa`).
+8. Se muestra el mapa de lectura (`Pieza.lectura`), las marcas `TODO(logica)` de lo
+   generado y los pasos siguientes.
 
 ## Plantillas y marcadores
 
@@ -83,6 +88,30 @@ sitio/                  página web (HTML, CSS y JS sin librerías) para GitHub 
   generarlo; un `.gitignore` real dentro del paquete afectaría a este repo.
 - El `.env` del proyecto no se guarda: se genera a partir de `.env.example`
   con los valores de `Stack.contexto_env` (en Django, una `SECRET_KEY` al azar).
+
+### Guía y TODO(logica)
+
+- Una línea que es **solo un comentario que empieza con `guía:`** (`# guía: ...`,
+  `// guía: ...`, `{/* guía: ... */}`, `<!-- guía: ... -->`, `{# guía: ... #}`,
+  `/* guía: ... */`, `-- guía: ...`) explica el código para el alumno. Al generar se
+  quita la palabra `guía:`; con `--sin-guia` (o `"guia": false` en `andamio.json`) se
+  borra la línea entera. Por eso tiene que ir sola en su línea (`test_guia.py` lo
+  controla en todas las plantillas).
+- `TODO(logica): ...` marca dónde va la lógica del alumno. Queda siempre (también sin
+  guía), se muestra al generar y `andamio pendientes` la lista. Usala con medida: dos o
+  tres por pieza, donde haya una decisión real (validaciones, reglas al guardar).
+- `Pieza.lectura` es el orden recomendado para leer lo generado: `(ruta con
+  marcadores, qué hace)`. `test_lectura.py` controla que cada ruta exista.
+
+### Nombres que chocan con el código
+
+Antes de escribir, andamio renderiza cada plantilla con un nombre "centinela" y busca
+dónde el código usa el nombre como identificador (variable, función, import,
+parámetro). Si en ese mismo archivo la plantilla ya declara ese identificador (por
+ejemplo, una variable `consulta` y un recurso llamado `consulta`), rechaza el nombre:
+el código generado no funcionaría. Es automático (`andamio/nucleo/identificadores.py`),
+también con las plantillas exportadas. Si agregás una variable a una plantilla, evitá
+palabras que un alumno usaría como nombre de entidad (`orden`, `sesion`, `registro`...).
 
 Marcadores disponibles en todas las piezas (para `línea venta`):
 
@@ -330,6 +359,13 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   eliminar, y `?search=`, `?ordering=` y `?campo=valor`, en el puerto 8000. Si
   cambiás una, cambiá las otras: `test_coherencia.py` y `test_crud_navegador.py` lo
   controlan.
+- El barrido de nombres (`test_barrido.py`, con `--lento`) toma cada identificador de
+  las plantillas de cada pieza y lo prueba como nombre y como campo: andamio lo tiene
+  que rechazar o generar código que compile (Python con `ast`; JavaScript, TypeScript y
+  Vue con el compilador de TypeScript, que tiene que estar instalado en Node:
+  `npm install -g typescript`). Para investigar una pieza:
+  `python -m tests.integracion.barrido react crud --variante js --campos`.
+- Los archivos `.http` se ejecutan contra la API en marcha (`test_http.py`, con `--lento`).
 - El CI (GitHub Actions) corre los tests en Ubuntu y Windows con Python 3.10 y
   3.13, y un trabajo aparte con `--lento`.
 
