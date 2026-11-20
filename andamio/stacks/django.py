@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from andamio.nucleo import consola
+from andamio.nucleo import consola, ejemplos
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -263,8 +263,24 @@ def _pasos_recurso(sol: Solicitud) -> list[str]:
     return [*pasos, "python manage.py runserver", "http://127.0.0.1:8000/api/@@plural@@/"]
 
 
+
+def _contexto_recurso_api(sol: Solicitud) -> dict[str, str]:
+    """El del recurso, más el archivo http/<plural>.http para probar la API a mano."""
+    protegido = bool(sol.opciones.get("protegido"))
+    http = ejemplos.contexto_http(sol.campos, "http://127.0.0.1:8000/api", "python manage.py runserver", protegido)
+    return {**_contexto_recurso(sol), **http}
+
+
 RECURSO = Pieza(
     clave="recurso",
+    lectura=(
+        ('@@plural@@/models.py', 'el modelo: la tabla y sus campos'),
+        ('@@plural@@/serializers.py', 'cómo se convierte a JSON y qué se valida'),
+        ('@@plural@@/views.py', 'la API: listar, crear, ver, modificar y eliminar'),
+        ('@@plural@@/urls.py', 'las rutas /api/@@plural@@/'),
+        ('@@plural@@/tests.py', 'los tests: lo que la API tiene que cumplir'),
+        ('http/@@plural@@.http', 'peticiones para probar la API a mano'),
+    ),
     titulo="Recurso REST",
     descripcion="app con modelo, API (CRUD), admin y tests",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -272,9 +288,10 @@ RECURSO = Pieza(
     usa_campos=True,
     usa_plural=True,
     opciones=frozenset({"migrar", "protegido"}),
-    contexto=_contexto_recurso,
+    contexto=_contexto_recurso_api,
     campos_reservados=_campos_reservados,
     marcadores={
+        **ejemplos.MARCADORES_HTTP,
         "campos_modelo": "una línea por campo: nombre = models.CharField(...)",
         "verbose": 'nombre en minúsculas y con espacios: "linea venta"',
         "verbose_plural": 'plural en minúsculas y con espacios: "lineas venta"',
@@ -376,6 +393,13 @@ def _pasos_login(sol: Solicitud) -> list[str]:
 
 LOGIN = Pieza(
     clave="login",
+    lectura=(
+        ('@@plural@@/serializers.py', 'qué datos pide el registro y cómo se valida la clave'),
+        ('@@plural@@/views.py', 'registrarse (/api/registro/) y el usuario actual (/api/yo/)'),
+        ('@@plural@@/urls.py', 'las rutas, incluidas las del token (/api/token/)'),
+        ('http/login.http', 'peticiones para registrarse, pedir el token y usarlo'),
+        ('@@plural@@/tests.py', 'los tests del login'),
+    ),
     titulo="Login con JWT",
     descripcion="registro, token de acceso (SimpleJWT) y usuario actual",
     ejemplo="",

@@ -65,15 +65,25 @@ def _comando_servidor(backend: str, puerto: int, raiz: Path) -> list[str]:
 
 
 @contextlib.contextmanager
-def api_en_marcha(backend: str, carpeta: Path, monkeypatch, recursos: list[list[str]], cors: str | None = None):
+def api_en_marcha(
+    backend: str,
+    carpeta: Path,
+    monkeypatch,
+    recursos: list[list[str]],
+    cors: str | None = None,
+    previas: list[list[str]] | None = None,
+):
     """Crea el proyecto `api` en `carpeta`, genera los recursos y lo pone en marcha.
 
+    `previas`: otras piezas que se generan antes (ej.: [["login"]] en Django).
     Devuelve la dirección de la API (http://127.0.0.1:<puerto>/api).
     """
     monkeypatch.chdir(carpeta)
     assert main(["crear", backend, "api"]) == 0
     raiz = carpeta / "api"
     monkeypatch.chdir(raiz)
+    for argumentos in previas or []:
+        assert main(["nuevo", *argumentos]) == 0
     migrar = ["--migrar"] if backend == "django" else []
     for argumentos in recursos:
         assert main(["nuevo", "recurso", *argumentos, *migrar]) == 0

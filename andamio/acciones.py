@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from andamio import stacks
-from andamio.nucleo import consola
+from andamio.nucleo import consola, lectura
 from andamio.nucleo.campos import Campo, parsear_campo, validar_campos
 from andamio.nucleo.deteccion import buscar_proyecto, error_no_detectado
 from andamio.nucleo.errores import AndamioError, Cancelado
@@ -200,6 +200,7 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
                 sol.opciones[opcion] = consola.confirmar(pregunta, defecto=True)
     if sol.pieza.despues:
         sol.pieza.despues(sol)
+    lectura.mostrar(lectura.orden_de_lectura(sol.pieza.lectura, sol.contexto), lectura.marcas_del_plan(plan))
     mostrar_pasos(pasos_pieza(sol))
     return 0
 

@@ -78,6 +78,12 @@ def _validar_nombre(raiz: Path, nombre: Nombre) -> None:
 
 ENTIDAD = Pieza(
     clave="entidad",
+    lectura=(
+        ('sql/schema.sql', 'la tabla @@plural@@ (al final del archivo)'),
+        ('entidades/@@nombre@@.py', 'guardar, listar, modificar y eliminar en SQLite'),
+        ('menus/menu_@@nombre@@.py', 'el menú de consola que usa la entidad'),
+        ('main.py', 'el menú principal, con la opción nueva'),
+    ),
     titulo="Entidad",
     descripcion="tabla + funciones CRUD + menú de consola",
     ejemplo="producto nombre:str precio:float stock:int",

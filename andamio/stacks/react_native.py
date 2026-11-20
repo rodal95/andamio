@@ -62,6 +62,10 @@ HOOK = Pieza(
 
 SERVICIO = Pieza(
     clave="servicio",
+    lectura=(
+        ('services/@@nombreCamel@@Service.@@ext@@', 'las funciones para usar /api/@@plural@@/'),
+        ('services/http.@@ext@@', 'lo común a todas las llamadas: dirección de la API y errores'),
+    ),
     titulo="Servicio",
     descripcion="funciones para usar un recurso de la API (Django, FastAPI o Express)",
     ejemplo="producto nombre:str precio:decimal stock:int",

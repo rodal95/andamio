@@ -54,6 +54,10 @@ def _insercion_app(texto: str, marcador: str, descripcion: str, ubicacion: str, 
 
 PAGINA = Pieza(
     clave="pagina",
+    lectura=(
+        ('src/pages/@@Nombre@@Page/@@Nombre@@Page.@@extx@@', 'la página'),
+        ('src/App.@@extx@@', 'su ruta y su enlace en el menú'),
+    ),
     titulo="Página",
     descripcion="página con su ruta y su enlace en el menú",
     ejemplo="Contacto",
@@ -80,6 +84,14 @@ def _validar_crud(raiz, nombre) -> None:
 
 CRUD = Pieza(
     clave="crud",
+    lectura=(
+        ('src/services/@@nombreCamel@@Service.@@ext@@', 'cómo se habla con la API (/api/@@plural@@/)'),
+        ('src/pages/@@pluralKebab@@/@@Nombre@@ListaPage.@@extx@@', 'la lista'),
+        ('src/components/@@Nombre@@Detalle/@@Nombre@@Detalle.@@extx@@', 'muestra uno y avisa con onEditar / onEliminar'),
+        ('src/pages/@@pluralKebab@@/@@Nombre@@DetallePage.@@extx@@', 'la página del detalle (con eliminar)'),
+        ('src/pages/@@pluralKebab@@/@@Nombre@@FormPage.@@extx@@', 'el formulario para crear y editar'),
+        ('src/App.@@extx@@', 'las rutas /@@pluralKebab@@ y el enlace en el menú'),
+    ),
     titulo="CRUD completo",
     descripcion="lista, detalle y formulario conectados a la API, con sus rutas",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -138,6 +150,10 @@ CRUD = Pieza(
 
 SERVICIO = Pieza(
     clave="servicio",
+    lectura=(
+        ('src/services/@@nombreCamel@@Service.@@ext@@', 'las funciones para usar /api/@@plural@@/'),
+        ('src/services/http.@@ext@@', 'lo común a todas las llamadas: dirección de la API y errores'),
+    ),
     titulo="Servicio",
     descripcion="funciones para usar un recurso de la API (Django, FastAPI o Express)",
     ejemplo="producto nombre:str precio:decimal stock:int",

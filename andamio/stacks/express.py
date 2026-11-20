@@ -14,7 +14,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable
 
-from andamio.nucleo import consola
+from andamio.nucleo import consola, ejemplos
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks import _js
@@ -135,6 +135,16 @@ def contexto_recurso(sol: Solicitud) -> dict[str, str]:
     }
 
 
+
+def contexto_recurso_api(url_api: str) -> Callable[[Solicitud], dict[str, str]]:
+    """El contexto del recurso, más el archivo http/<plural>.http con la dirección de la API."""
+
+    def calcular(sol: Solicitud) -> dict[str, str]:
+        return {**contexto_recurso(sol), **ejemplos.contexto_http(sol.campos, url_api, "npm run dev")}
+
+    return calcular
+
+
 # --- Validación de nombres -------------------------------------------------------------
 
 
@@ -226,6 +236,13 @@ INSERCION_MODELO = Insercion(
 
 RECURSO = Pieza(
     clave="recurso",
+    lectura=(
+        ('prisma/schema.prisma', 'el modelo @@Nombre@@ (la tabla), al final del archivo'),
+        ('src/@@plural@@/esquema.@@ext@@', 'qué datos acepta la API (validación con Zod)'),
+        ('src/@@plural@@/router.@@ext@@', 'la API: listar, crear, ver, modificar y eliminar'),
+        ('tests/@@plural@@.test.@@ext@@', 'los tests: lo que la API tiene que cumplir'),
+        ('http/@@plural@@.http', 'peticiones para probar la API a mano'),
+    ),
     titulo="Recurso REST",
     descripcion="modelo de Prisma, validación, API (CRUD) y tests",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -233,10 +250,11 @@ RECURSO = Pieza(
     usa_campos=True,
     usa_plural=True,
     opciones=frozenset({"migrar"}),
-    contexto=contexto_recurso,
+    contexto=contexto_recurso_api("http://localhost:8000/api"),
     campos_reservados=_campos_reservados,
     marcadores={
         **_js.MARCADORES_EXTENSION,
+        **ejemplos.MARCADORES_HTTP,
         "modelo_prisma": "el model completo para prisma/schema.prisma",
         "import_fechas": "funciones de src/fechas que usa el JSON (jsonFecha solo si hay fechas)",
         "import_validacion": "funciones de src/validacion que usan los campos",

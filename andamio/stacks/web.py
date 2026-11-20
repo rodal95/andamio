@@ -89,6 +89,10 @@ _SERVIR = ["python -m http.server 5173"]
 
 PAGINA = Pieza(
     clave="pagina",
+    lectura=(
+        ('@@nombreKebab@@.html', 'la página (el HTML)'),
+        ('js/paginas/@@nombreKebab@@.js', 'lo que hace la página'),
+    ),
     titulo="Página",
     descripcion="archivo .html con su .js y su enlace en el menú",
     ejemplo="Contacto",
@@ -158,6 +162,11 @@ def _campos_reservados_crud(nombre: Nombre) -> dict[str, str]:
 
 CRUD = Pieza(
     clave="crud",
+    lectura=(
+        ('js/servicios/@@nombreCamel@@Servicio.js', 'cómo se habla con la API (/api/@@plural@@/)'),
+        ('@@pluralKebab@@.html', 'la página: la tabla y el formulario'),
+        ('js/paginas/@@pluralKebab@@.js', 'lo que hace la página: cargar, guardar, editar y eliminar'),
+    ),
     titulo="CRUD completo",
     descripcion="página con la lista y el formulario para agregar, editar y eliminar usando la API",
     ejemplo="producto nombre:str precio:decimal stock:int",

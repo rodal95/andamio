@@ -1,0 +1,48 @@
+# Pruebas de la API de @@titulo@@ (/api/@@plural@@/), sin programas aparte.
+#
+# Cómo se usa: en VS Code, instalá la extensión "REST Client" (de Huachao Mao),
+# abrí este archivo y hacé clic en "Send Request", arriba de cada petición.
+# También funciona con el cliente HTTP de PyCharm y WebStorm.
+#
+# Antes, poné en marcha la API: @@comando_api@@
+# Las peticiones van en orden: "Crear uno" agrega el registro que usan las de abajo
+# (si ya había otros, cambiá el 1 por el id que devolvió).
+
+# Si la API está en otra dirección o en otro puerto, cambiala acá:
+@api = @@url_api@@
+@base = {{api}}/@@plural@@
+@@http_login@@
+
+### Listar todos
+GET {{base}}/
+
+### Buscar, ordenar y filtrar (?search=, ?ordering= y ?campo=valor)
+GET {{base}}/?search=prueba&ordering=-creado
+
+### Crear uno (si falta un campo o un dato no sirve, responde 400 y dice por qué)
+POST {{base}}/
+Content-Type: application/json
+@@http_auth@@
+
+@@json_crear@@
+
+### Ver uno
+GET {{base}}/1/
+
+### Reemplazar todos los campos
+PUT {{base}}/1/
+Content-Type: application/json
+@@http_auth@@
+
+@@json_reemplazar@@
+
+### Modificar solo algunos campos
+PATCH {{base}}/1/
+Content-Type: application/json
+@@http_auth@@
+
+@@json_modificar@@
+
+### Eliminar
+DELETE {{base}}/1/
+@@http_auth@@

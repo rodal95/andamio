@@ -1160,6 +1160,8 @@ DESCRIPCIONES = {
         ("cuentas/urls.py", "Rutas del login: /api/token/ y /api/token/refresh/ (SimpleJWT), /api/registro/ y /api/yo/."),
         ("cuentas/tests.py", "6 tests del login: registro, token, clave incorrecta, /api/yo/ con y sin token y refresco."),
         ("*/tests.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python manage.py test."),
+        ("http/login.http", "Peticiones de ejemplo del login: registrarse, pedir el token, ver el usuario actual y renovar el token (REST Client de VS Code)."),
+        ("http/*.http", "Peticiones de ejemplo para probar la API a mano (listar, crear, ver, modificar y eliminar), con la extensión REST Client de VS Code."),
     ],
     "django-web": [
         ("manage.py", "Herramienta de Django: runserver, migrate, makemigrations, test, createsuperuser."),
@@ -1233,6 +1235,7 @@ DESCRIPCIONES = {
         ("*/__init__.py", "Convierte la carpeta en un paquete de Python, para poder hacer import desde ella."),
         ("tests/conftest.py", "Prepara los tests: un cliente de la API con una base de datos en memoria (no toca tus datos)."),
         ("tests/test_*.py", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con python -m pytest."),
+        ("http/*.http", "Peticiones de ejemplo para probar la API a mano (listar, crear, ver, modificar y eliminar), con la extensión REST Client de VS Code."),
     ],
     "express": [
         ("package.json", "Dependencias (Express, Prisma, Zod) con versiones fijas, y los comandos npm run dev y npm test."),
@@ -1251,6 +1254,7 @@ DESCRIPCIONES = {
         ("src/*/router.*", "Las rutas del recurso: listar (con búsqueda, orden y filtros), crear, ver, reemplazar, modificar y eliminar."),
         ("tests/api.*", "Ayuda para los tests: arranca la API con otra base de datos (test.db), para no tocar tus datos."),
         ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
+        ("http/*.http", "Peticiones de ejemplo para probar la API a mano (listar, crear, ver, modificar y eliminar), con la extensión REST Client de VS Code."),
     ],
     "next": [
         ("package.json", "Dependencias (Next.js y React) con versiones fijas, y los comandos npm run dev, build y start."),
@@ -1293,6 +1297,7 @@ DESCRIPCIONES = {
         ("app/api/*/esquema.*", "Qué datos acepta el recurso (validación con Zod) y cómo se ve cada registro en el JSON."),
         ("tests/api.*", "Ayuda para los tests: llama a las funciones de app/api/ sin levantar el servidor, con otra base (test.db)."),
         ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
+        ("http/*.http", "Peticiones de ejemplo para probar la API a mano (listar, crear, ver, modificar y eliminar), con la extensión REST Client de VS Code."),
     ],
     "reflex": [
         ("rxconfig.py", "Configuración de Reflex: el nombre de la app, la base de datos, los puertos y que no envíe datos de uso."),

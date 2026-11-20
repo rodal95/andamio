@@ -5,6 +5,16 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- Archivos `.http` para probar las APIs a mano, sin programas aparte (extensión REST Client
+  de VS Code, o el cliente HTTP de PyCharm y WebStorm): `recurso` genera
+  `http/<plural>.http` (Django, FastAPI, Express y Next.js full stack) con listar, buscar,
+  crear, ver, reemplazar, modificar y eliminar, y datos de ejemplo según los campos. Con
+  `--protegido`, primero pide el token. `nuevo login` genera `http/login.http`
+  (registrarse, pedir el token, usuario actual y renovar el token).
+- Mapa de lectura: después de generar una pieza, andamio muestra en qué orden leer los
+  archivos y qué hace cada uno (en los recursos, crud, páginas, servicios y entidades).
+
 ### Corregido
 - Nombres que generaban código que no compilaba o no funcionaba. Ahora andamio los
   rechaza y explica por qué, o los acepta porque las plantillas ya no chocan con ellos:

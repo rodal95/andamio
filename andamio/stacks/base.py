@@ -81,6 +81,9 @@ class Pieza:
     existe_si: tuple[str, ...] = ()  # si alguna de estas rutas existe, la pieza ya fue generada
     si_no_existe: frozenset[str] = frozenset()  # archivos de la plantilla que se crean solo si faltan
     inserciones: tuple[Insercion, ...] = ()
+    # Orden recomendado para leer lo que se generó: (ruta con marcadores, qué hace).
+    # Se muestra después de generar, para que el código no sea una caja negra.
+    lectura: tuple[tuple[str, str], ...] = ()
     siguiente_paso: Pasos = field(default_factory=list)
     despues: Callable[[Solicitud], None] | None = None  # acción extra después de escribir
     # Opciones de sí/no que el menú pregunta después de escribir: {"migrar": "¿Ejecutar...?"}

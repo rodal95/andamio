@@ -265,6 +265,10 @@ ESTADO = Pieza(
 
 CRUD = Pieza(
     clave="crud",
+    lectura=(
+        ('@@app@@/modelos/@@nombre@@.py', 'el modelo: la tabla y sus campos'),
+        ('@@app@@/paginas/@@plural@@.py', 'el estado (cargar, guardar, eliminar) y la página'),
+    ),
     titulo="CRUD con base de datos",
     descripcion="tabla en la base de este proyecto y página para listar, agregar, editar y eliminar",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -296,6 +300,10 @@ _ARCHIVOS_SERVICIO = frozenset({"@@app@@/servicios/__init__.py", "@@app@@/servic
 
 CRUD_API = Pieza(
     clave="crud-api",
+    lectura=(
+        ('@@app@@/servicios/@@nombre@@.py', 'cómo se habla con la API (/api/@@plural@@/)'),
+        ('@@app@@/paginas/@@plural@@.py', 'el estado (cargar, guardar, eliminar) y la página'),
+    ),
     titulo="CRUD con una API",
     descripcion="página para listar, agregar, editar y eliminar usando una API de andamio",
     ejemplo="producto nombre:str precio:decimal stock:int",

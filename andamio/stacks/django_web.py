@@ -183,6 +183,15 @@ _MARCADORES_CRUD = {
 
 CRUD = Pieza(
     clave="crud",
+    lectura=(
+        ('@@plural@@/models.py', 'el modelo: la tabla y sus campos'),
+        ('@@plural@@/forms.py', 'el formulario: qué campos muestra y cómo valida'),
+        ('@@plural@@/views.py', 'las vistas: lista, detalle, crear, editar y eliminar'),
+        ('@@plural@@/urls.py', 'las rutas /@@pluralKebab@@/...'),
+        ('@@plural@@/templates/@@plural@@/@@nombre@@_lista.html', 'el HTML de la lista'),
+        ('@@plural@@/templates/@@plural@@/@@nombre@@_form.html', 'el HTML del formulario (crear y editar)'),
+        ('@@plural@@/tests.py', 'los tests'),
+    ),
     titulo="CRUD con plantillas",
     descripcion="app con modelo, formulario, vistas, plantillas HTML, rutas, admin y tests",
     ejemplo="producto nombre:str precio:decimal stock:int",

@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 
+from andamio.nucleo import ejemplos
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -193,17 +194,31 @@ def _campos_reservados(nombre: Nombre) -> dict[str, str]:
     return reservados
 
 
+
+def _contexto_recurso_api(sol: Solicitud) -> dict[str, str]:
+    """El del recurso, más el archivo http/<plural>.http para probar la API a mano."""
+    http = ejemplos.contexto_http(sol.campos, "http://127.0.0.1:8000/api", "python -m uvicorn app.main:app --reload")
+    return {**_contexto_recurso(sol), **http}
+
+
 RECURSO = Pieza(
     clave="recurso",
+    lectura=(
+        ('app/@@plural@@/modelo.py', 'el modelo (la tabla) y lo que se acepta al crear y modificar'),
+        ('app/@@plural@@/router.py', 'la API: listar, crear, ver, modificar y eliminar'),
+        ('tests/test_@@plural@@.py', 'los tests: lo que la API tiene que cumplir'),
+        ('http/@@plural@@.http', 'peticiones para probar la API a mano'),
+    ),
     titulo="Recurso REST",
     descripcion="modelo, API (CRUD) y tests",
     ejemplo="producto nombre:str precio:decimal stock:int",
     formas=("pascal", "snake"),
     usa_campos=True,
     usa_plural=True,
-    contexto=_contexto_recurso,
+    contexto=_contexto_recurso_api,
     campos_reservados=_campos_reservados,
     marcadores={
+        **ejemplos.MARCADORES_HTTP,
         "imports_modelo": "import que necesitan los campos (datetime, Decimal, EmailStr...)",
         "import_tipos": "import de app.tipos (DecimalNumero solo si hay decimales)",
         "campos_base": "una línea por campo del modelo: nombre: str = Field(...)",

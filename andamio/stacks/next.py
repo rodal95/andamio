@@ -93,6 +93,10 @@ HOOK = Pieza(
 
 PAGINA = Pieza(
     clave="pagina",
+    lectura=(
+        ('app/@@nombreKebab@@/page.@@extx@@', 'la página (/@@nombreKebab@@)'),
+        ('app/layout.@@extx@@', 'el enlace en el menú'),
+    ),
     titulo="Página",
     descripcion="página con su ruta y su enlace en el menú",
     ejemplo="Contacto",
@@ -107,6 +111,10 @@ PAGINA = Pieza(
 
 SERVICIO = Pieza(
     clave="servicio",
+    lectura=(
+        ('services/@@nombreCamel@@Service.@@ext@@', 'las funciones para usar /api/@@plural@@/'),
+        ('services/http.@@ext@@', 'lo común a todas las llamadas: dirección de la API y errores'),
+    ),
     titulo="Servicio",
     descripcion="funciones para usar un recurso de la API (Django, FastAPI o Express)",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -126,6 +134,13 @@ SERVICIO = Pieza(
 
 CRUD = Pieza(
     clave="crud",
+    lectura=(
+        ('services/@@nombreCamel@@Service.@@ext@@', 'cómo se habla con la API (/api/@@plural@@/)'),
+        ('app/@@pluralKebab@@/page.@@extx@@', 'la lista (/@@pluralKebab@@)'),
+        ('components/@@Nombre@@Detalle/@@Nombre@@Detalle.@@extx@@', 'muestra uno y avisa con onEditar / onEliminar'),
+        ('app/@@pluralKebab@@/[id]/page.@@extx@@', 'la página del detalle (con eliminar)'),
+        ('app/@@pluralKebab@@/@@Nombre@@Formulario.@@extx@@', 'el formulario, que usan nuevo y editar'),
+    ),
     titulo="CRUD completo",
     descripcion="lista, detalle y formulario conectados a la API, con sus rutas",
     ejemplo="producto nombre:str precio:decimal stock:int",
@@ -211,6 +226,15 @@ RECURSO = dataclasses.replace(
     express.RECURSO,
     descripcion="API en app/api/ (Route Handlers), modelo de Prisma, validación y tests",
     existe_si=("app/api/@@plural@@",),
+    contexto=express.contexto_recurso_api("http://localhost:3000/api"),
+    lectura=(
+        ("prisma/schema.prisma", "el modelo @@Nombre@@ (la tabla), al final del archivo"),
+        ("app/api/@@plural@@/esquema.@@ext@@", "qué datos acepta la API (validación con Zod)"),
+        ("app/api/@@plural@@/route.@@ext@@", "listar y crear (/api/@@plural@@/)"),
+        ("app/api/@@plural@@/[id]/route.@@ext@@", "ver, modificar y eliminar uno (/api/@@plural@@/3/)"),
+        ("tests/@@plural@@.test.@@ext@@", "los tests: lo que la API tiene que cumplir"),
+        ("http/@@plural@@.http", "peticiones para probar la API a mano"),
+    ),
     validar_nombre=express.validar_nombre_recurso("app/api"),
     inserciones=(express.INSERCION_MODELO,),
     siguiente_paso=express.pasos_recurso(["npm run dev", "http://localhost:3000/api/@@plural@@/"]),
