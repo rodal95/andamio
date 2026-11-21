@@ -135,8 +135,11 @@
               <li><div class="comando"><code>python3 -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python3 -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado. En Linux y Mac, los comandos de esta página van con <code>python3</code>.</p></li>
             </ol>
             <div class="aviso-caja">
-              <p><b>¿Dice <code>externally-managed-environment</code>?</b> Pasa en Ubuntu, Debian y otras distribuciones nuevas:
-                no dejan instalar con pip en el Python del sistema. Instalalo con <b>pipx</b>, que le arma su propio entorno:</p>
+              <p><b>¿Dice <code>externally-managed-environment</code>?</b> No es un error de andamio: Ubuntu, Debian y otras
+                distribuciones nuevas (con Python 3.12 o más nuevo) no dejan que <code>pip</code> instale nada en el Python del sistema,
+                porque el sistema operativo también lo usa y un paquete podría romperlo (es la regla PEP 668). Por eso el mismo comando
+                va a fallar siempre, con cualquier paquete. La solución es instalarlo con <b>pipx</b>, que le arma a andamio su propio
+                entorno aparte y deja el comando <code>andamio</code> listo para usar en cualquier carpeta:</p>
               <ol class="pasos-marcha">
                 <li><div class="comando"><code>sudo apt install pipx</code><button type="button" class="comando__copiar" data-copiar="sudo apt install pipx">Copiar</button></div></li>
                 <li><span data-instalar="pipx"></span></li>

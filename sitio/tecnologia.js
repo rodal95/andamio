@@ -314,7 +314,15 @@
         `${A.comandoHtml(`python -m pip install ${A.urlWhl}`)}
         <p class="bajada">Para comprobar que quedó instalado:</p>${A.comandoHtml("python -m andamio --version")}
         <p class="nota">Todos los comandos empiezan con <code>python -m andamio</code>, que funciona en cualquier PC (en Linux o Mac, <code>python3</code>).
-        ¿Sin permisos o sin internet? Mirá <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>`,
+        ¿Sin permisos o sin internet? Mirá <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>
+        <details class="consola"><summary>¿En Linux dice <code>externally-managed-environment</code>?</summary>
+          <p>No es un error de andamio. Ubuntu, Debian y otras distribuciones nuevas (con Python 3.12 o más nuevo) no dejan que
+          <code>pip</code> instale nada en el Python del sistema, porque el sistema operativo también lo usa (es la regla PEP 668):
+          el mismo comando va a fallar siempre, con cualquier paquete. Instalalo con <b>pipx</b>, que le arma su propio entorno:</p>
+          ${A.comandoHtml("sudo apt install pipx")}${A.comandoHtml(`pipx install ${A.urlWhl}`)}${A.comandoHtml("pipx ensurepath")}
+          <p>Cerrá la terminal, abrí una nueva y escribí <code>andamio</code> en lugar de <code>python3 -m andamio</code>
+          (por ejemplo: <code>andamio crear ${e(clave)} mi-proyecto</code>). Sin <code>sudo</code>, usá <code>andamio.pyz</code>
+          (en <a href="index.html#instalar">Instalar → Sin instalar</a>).</p></details>`,
         "Una sola vez en la PC. En Windows, en CMD o PowerShell:",
       )}
       ${bloque(
