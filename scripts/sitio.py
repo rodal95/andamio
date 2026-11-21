@@ -1439,6 +1439,10 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": f"{base} --migrar", "descripcion": "Además crea y aplica la migración (la tabla en la base)."})
         elif opcion == "protegido":
             filas.append({"comando": f"{base} --protegido", "descripcion": "Leer es libre; crear, modificar y eliminar piden iniciar sesión."})
+        elif opcion == "datos" and clave == "pantalla":
+            filas.append({"comando": "nuevo pantalla productos --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): FlatList con useConsulta(productoService.listar), cargando y error."})
+        elif opcion == "uno" and clave == "pantalla":
+            filas.append({"comando": "nuevo pantalla producto --datos producto --uno", "descripcion": "Muestra uno solo: crea app/producto/[id] (el id es parte de la ruta) y usa obtener(id)."})
         elif opcion == "datos":
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":

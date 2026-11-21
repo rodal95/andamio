@@ -27,7 +27,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --protegido          (--protected)            crear, modificar y eliminar piden login
 │     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
 │     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
-│     --datos <servicio>   (--data)                 la página muestra datos de la API (React)
+│     --datos <servicio>   (--data)                 la página o pantalla muestra datos de la API (React, React Native)
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
@@ -51,7 +51,7 @@ Qué opciones acepta cada pieza:
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
-| `--datos`, `--uno` | `pagina` (React) |
+| `--datos`, `--uno` | `pagina` (React), `pantalla` (React Native) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
@@ -124,8 +124,8 @@ Opciones que sirven en todas las piezas:
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
 | `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
-| `--datos producto` | La página muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React). |
-| `--uno` | Con `--datos`: la página muestra uno solo; su ruta lleva el id (`/producto-detalle/:id`). |
+| `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
+| `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
 | `--js` | Al crear: el proyecto en JavaScript en lugar de TypeScript (Express, React, React Native, Next.js). |
 
 ---
@@ -361,9 +361,11 @@ npx expo start
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `pantalla` | `nuevo pantalla detalle-producto --carpeta productos` | `app/productos/detalle-producto` (Expo Router: el archivo es la ruta). |
+| `pantalla --datos` | `nuevo pantalla productos --datos producto` | La pantalla con la lista del servicio `productoService`: `FlatList` con `useConsulta(productoService.listar)`, cargando y error. Necesita el servicio (crea `hooks/useConsulta` si falta). |
+| `pantalla --datos --uno` | `nuevo pantalla producto --datos producto --uno` | `app/producto/[id]`: toma el id de la ruta con `useLocalSearchParams` y usa `obtener(id)`. Se abre con `router.push('/producto/3')`. |
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta` con su `StyleSheet`. |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
-| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar). |
+| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar, y el hook `useConsulta`, si faltan). |
 | `tema` | `nuevo tema violeta --modo auto` | `constants/tema`: los colores del modo claro y del oscuro y `useTema()`, que devuelve los del modo actual. |
 
 ---

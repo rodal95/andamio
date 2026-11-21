@@ -14,6 +14,9 @@ Todos los cambios importantes de andamio. El proyecto usa
   necesita un `crud` entero ni escribir el `useEffect` a mano.
 - React: `nuevo servicio` también crea el hook `useConsulta` (si falta), que antes venía
   solo con el `crud`.
+- React Native: lo mismo con `nuevo pantalla <nombre> --datos <servicio>`: una `FlatList`
+  con `useConsulta`, cargando y error. Con `--uno` crea `app/<nombre>/[id]` y toma el id con
+  `useLocalSearchParams`. `nuevo servicio` también crea `hooks/useConsulta` (si falta).
 
 ### Corregido
 - React: `nuevo pagina ProductoLista` después de `nuevo crud producto` (o un `crud` después

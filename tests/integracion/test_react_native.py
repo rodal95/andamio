@@ -30,7 +30,63 @@ def con_piezas(proyecto):
     assert main(["nuevo", "hook", "contador"]) == 0
     assert main(["nuevo", "servicio", "producto", "nombre:str", "precio:decimal", "stock:int"]) == 0
     assert main(["nuevo", "servicio", "cliente", "nombre", "email:email"]) == 0
+    assert main(["nuevo", "pantalla", "productos", "--datos", "producto"]) == 0
+    assert main(["nuevo", "pantalla", "cliente", "--carpeta", "clientes", "--datos", "cliente", "--uno"]) == 0
     return proyecto
+
+
+def test_servicio_trae_el_hook_de_consulta(con_piezas):
+    assert "export function useConsulta<T>" in leer(con_piezas / "hooks/useConsulta.ts")
+
+
+def test_pantalla_sin_datos_queda_igual(proyecto):
+    assert main(["nuevo", "pantalla", "acerca"]) == 0
+    pantalla = leer(proyecto / "app/acerca.tsx")
+    assert pantalla.startswith("import { Stack } from 'expo-router';\nimport { StyleSheet, Text, View } from 'react-native';\n\n//")
+    assert "useConsulta" not in pantalla and "@@" not in pantalla
+    assert not (proyecto / "hooks/useConsulta.ts").exists()
+
+
+def test_pantalla_con_datos_lista(con_piezas):
+    pantalla = leer(con_piezas / "app/productos.tsx")
+    for esperado in (
+        "import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';",
+        "import { useConsulta } from '@/hooks/useConsulta';",
+        "import { productoService } from '@/services/productoService';",
+        "const { datos, cargando, error } = useConsulta(productoService.listar);",
+        "renderItem={({ item }) => <Text style={styles.item}>{item.nombre}</Text>}",
+        "  item: {",
+    ):
+        assert esperado in pantalla, esperado
+
+
+def test_pantalla_con_datos_de_uno(con_piezas, capsys):
+    pantalla = leer(con_piezas / "app/clientes/cliente/[id].tsx")
+    for esperado in (
+        "import { Stack, useLocalSearchParams } from 'expo-router';",
+        "const id = Number(useLocalSearchParams().id);",
+        "useConsulta(() => clienteService.obtener(id), [id]);",
+        "<Text style={styles.etiqueta}>Email</Text>",
+        "<Text>{datos.email}</Text>",
+        "/** Pantalla en la ruta /clientes/cliente/[id] */",
+    ):
+        assert esperado in pantalla, esperado
+    capsys.readouterr()
+    assert main(["nuevo", "pantalla", "producto", "--datos", "producto", "--uno"]) == 0
+    assert "router.push('/producto/1');" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "argumentos, mensaje",
+    [
+        (["pantalla", "pedidos", "--datos", "pedido"], "services/pedidoService.ts, que todavía no existe"),
+        (["pantalla", "acerca", "--uno"], "--uno va junto con --datos"),
+    ],
+)
+def test_pantalla_con_datos_errores(proyecto, capsys, argumentos, mensaje):
+    capsys.readouterr()
+    assert main(["nuevo", *argumentos]) == 1
+    assert mensaje in capsys.readouterr().err
 
 
 def test_estructura_del_proyecto(proyecto):
@@ -107,7 +163,7 @@ def test_detecta_react_native_antes_que_react(proyecto):
 
 
 def test_menu_pantalla_con_carpeta(proyecto, respuestas, capsys):
-    respuestas(["1", "detalle", "mal!", "(Tabs)", "s"])
+    respuestas(["1", "detalle", "mal!", "(Tabs)", "", "s"])
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out

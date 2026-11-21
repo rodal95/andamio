@@ -215,10 +215,22 @@ export default function PruebaUso() {
 """
 
 
+def test_react_native_js_pantalla_con_datos(movil_js):
+    assert main(["nuevo", "servicio", "producto", "nombre:str", "activo:bool"]) == 0
+    assert main(["nuevo", "pantalla", "productos", "--datos", "producto"]) == 0
+    assert main(["nuevo", "pantalla", "producto", "--datos", "producto", "--uno"]) == 0
+    assert (movil_js / "hooks/useConsulta.js").is_file()
+    assert "useConsulta(productoService.listar)" in leer(movil_js / "app/productos.jsx")
+    assert "<Text>{datos.activo ? 'Sí' : 'No'}</Text>" in leer(movil_js / "app/producto/[id].jsx")
+
+
 @pytest.mark.lento
 @requiere_node
 def test_react_native_js_npm_install_y_export(movil_js):
-    for argumentos in (["pantalla", "detalle", "--carpeta", "productos"], ["componente", "Tarjeta"], ["hook", "contador"], ["servicio", "producto", "nombre"]):
+    for argumentos in (
+        ["pantalla", "detalle", "--carpeta", "productos"], ["componente", "Tarjeta"], ["hook", "contador"], ["servicio", "producto", "nombre"],
+        ["pantalla", "lista", "--carpeta", "productos", "--datos", "producto"], ["pantalla", "producto", "--datos", "producto", "--uno"],
+    ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (movil_js / "app/prueba-uso.jsx").write_text(PANTALLA_JS, encoding="utf-8")
     npm_install(movil_js)

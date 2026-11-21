@@ -144,25 +144,7 @@ def normalizar_carpeta(texto: str) -> str:
     return "/".join(partes)
 
 
-def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
-    carpeta = sol.opciones.get("carpeta", "")
-    archivo = sol.nombre.kebab
-    ruta = f"{carpeta}/{archivo}" if carpeta else archivo
-    # Los grupos "(tabs)" no forman parte de la URL, y "index" es la ruta de la carpeta.
-    segmentos = [p for p in ruta.split("/") if not p.startswith("(")]
-    if segmentos and segmentos[-1] == "index":
-        segmentos.pop()
-    return {"ruta_pantalla": ruta, "url_pantalla": "/" + "/".join(segmentos)}
-
-
-MARCADORES_PANTALLA = {
-    **MARCADORES_EXTENSION,
-    "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto",
-    "url_pantalla": "ruta para navegar: /productos/detalle-producto",
-}
-
-
-# --- Página con datos de la API (pagina --datos producto [--uno]) ----------------------
+# --- Datos de la API en una página o pantalla (--datos producto [--uno]) ---------------
 
 
 def normalizar_datos(texto: str) -> str:
@@ -171,10 +153,67 @@ def normalizar_datos(texto: str) -> str:
     if parece_plural(palabras):
         raise AndamioError(
             f"--datos va con el nombre del servicio en singular: '{texto}' parece plural.",
-            "Ejemplo: --datos producto (usa src/services/productoService)",
+            "Ejemplo: --datos producto (usa el servicio productoService)",
         )
     return snake(palabras)
 
+
+def _sin_datos(sol: Solicitud) -> None:
+    """--uno sin --datos no tiene sentido: no se sabe qué mostrar."""
+    if sol.opciones.get("uno"):
+        raise AndamioError(
+            f"--uno va junto con --datos: dice que la {sol.pieza.titulo.lower()} muestra uno solo de esos datos.",
+            f"Ejemplo: {consola.programa()} nuevo {sol.pieza.clave} {sol.nombre.kebab} --datos producto --uno",
+        )
+
+
+def servicio_de_datos(sol: Solicitud, carpeta: str) -> tuple[str, str, list]:
+    """Para --datos: el servicio que se usa (productoService), su archivo y sus campos.
+
+    El servicio tiene que existir (no se crea: necesitaría los campos). Los campos salen del
+    historial (con qué campos se generó); si no está, la lista vacía.
+    """
+    datos = sol.opciones["datos"]
+    ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    servicio = f"{camel(datos.split('_'))}Service"
+    archivo = f"{carpeta}/{servicio}.{ext}"
+    if not (sol.raiz / archivo).is_file():
+        raise AndamioError(
+            f"La {sol.pieza.titulo.lower()} usa {archivo}, que todavía no existe.",
+            f"Generá primero el servicio, con los campos de la API: {consola.programa()} nuevo servicio {datos} nombre:str precio:decimal",
+        )
+    campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) or []
+    return servicio, archivo, campos
+
+
+def campo_de_texto(campos, datos: str, variable: str = "item") -> str:
+    """Lo que se muestra de cada registro en una lista: {item.nombre}, o {`Producto ${item.id}`}."""
+    para_texto = next((c for c in campos if c.tipo in ("str", "email")), None)
+    if para_texto:
+        return f"{{{variable}.{para_texto.nombre}}}"
+    return f"{{`{titulo(datos.split('_'))} ${{{variable}.id}}`}}"
+
+
+def _consulta(sol: Solicitud, servicio: str, parametros: str) -> list[str]:
+    """La llamada a useConsulta: la lista, o uno solo con el id de la ruta (--uno)."""
+    if sol.opciones.get("uno"):
+        explicacion = "// El id sale de la ruta; si cambia, useConsulta vuelve a pedir los datos."
+        lineas = [
+            f"const id = Number({parametros}.id);",
+            f"const {{ datos, cargando, error }} = useConsulta(() => {servicio}.obtener(id), [id]);",
+        ]
+    else:
+        explicacion = "// useConsulta pide los datos a la API (con useEffect) y avisa si está cargando o si falló."
+        lineas = [f"const {{ datos, cargando, error }} = useConsulta({servicio}.listar);"]
+    # Con guía, una línea que explica la consulta (la guía de los bloques se arma acá, no en la plantilla).
+    return ([explicacion] if sol.guia else []) + lineas
+
+
+def _valor(campo, variable: str = "datos") -> str:
+    return f"{{{variable}.{campo.nombre} ? 'Sí' : 'No'}}" if campo.tipo == "bool" else f"{{{variable}.{campo.nombre}}}"
+
+
+# React (pagina)
 
 MARCADORES_PAGINA = {
     "ruta_pagina": "la ruta de la página: /contacto, o /producto-detalle/:id con --uno",
@@ -186,72 +225,42 @@ MARCADORES_PAGINA = {
     "datos_hook": "el archivo de useConsulta (vacío sin --datos)",
 }
 
-
-def contexto_pagina(sol: Solicitud) -> dict[str, str]:
-    datos = sol.opciones.get("datos")
-    uno = bool(sol.opciones.get("uno"))
-    ruta = f"/{sol.nombre.kebab}"
-    if not datos:
-        if uno:
-            raise AndamioError(
-                "--uno va junto con --datos: dice que la página muestra uno solo de esos datos.",
-                f"Ejemplo: {consola.programa()} nuevo pagina {sol.nombre.pascal} --datos producto --uno",
-            )
-        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
-        return {**dict.fromkeys(vacios, ""), "ruta_pagina": ruta, "url_pagina": ruta}
-
-    ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
-    servicio = f"{camel(datos.split('_'))}Service"
-    archivo_servicio = f"src/services/{servicio}.{ext}"
-    if not (sol.raiz / archivo_servicio).is_file():
-        raise AndamioError(
-            f"La página usa {archivo_servicio}, que todavía no existe.",
-            f"Generá primero el servicio, con los campos de la API: {consola.programa()} nuevo servicio {datos} nombre:str precio:decimal",
-        )
-    campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) or []
-    # Con guía, una línea que explica la consulta (la guía de los bloques se arma acá, no en la plantilla).
-    if uno:
-        explicacion = "// El id sale de la ruta; si cambia, useConsulta vuelve a pedir los datos."
-        consulta = [
-            "const id = Number(useParams().id);",
-            f"const {{ datos, cargando, error }} = useConsulta(() => {servicio}.obtener(id), [id]);",
-        ]
-        imports = ["import { useParams } from 'react-router';"]
-        contenido = _contenido_uno(campos)
-    else:
-        explicacion = "// useConsulta pide los datos a la API (con useEffect) y avisa si está cargando o si falló."
-        consulta = [f"const {{ datos, cargando, error }} = useConsulta({servicio}.listar);"]
-        imports = []
-        contenido = _contenido_lista(campos, datos)
-    imports += ["import { useConsulta } from '../../hooks/useConsulta';", f"import {{ {servicio} }} from '../../services/{servicio}';"]
-    if sol.guia:
-        consulta.insert(0, explicacion)
-    return {
-        "ruta_pagina": f"{ruta}/:id" if uno else ruta,
-        "url_pagina": f"{ruta}/1" if uno else ruta,
-        "datos_imports": "\n".join(imports),
-        "datos_consulta": "\n".join(consulta) + "\n",
-        "datos_contenido": "\n".join(contenido),
-        "datos_servicio": archivo_servicio,
-        "datos_hook": f"src/hooks/useConsulta.{ext}",
-    }
-
-
 _CARGANDO_Y_ERROR = [
     "{cargando && <p>Cargando…</p>}",
     "{error && <p role=\"alert\">No se pudo cargar: {error}</p>}",
 ]
 
 
+def contexto_pagina(sol: Solicitud) -> dict[str, str]:
+    datos = sol.opciones.get("datos")
+    uno = bool(sol.opciones.get("uno"))
+    ruta = f"/{sol.nombre.kebab}"
+    if not datos:
+        _sin_datos(sol)
+        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
+        return {**dict.fromkeys(vacios, ""), "ruta_pagina": ruta, "url_pagina": ruta}
+
+    servicio, archivo_servicio, campos = servicio_de_datos(sol, "src/services")
+    imports = ["import { useParams } from 'react-router';"] if uno else []
+    imports += ["import { useConsulta } from '../../hooks/useConsulta';", f"import {{ {servicio} }} from '../../services/{servicio}';"]
+    return {
+        "ruta_pagina": f"{ruta}/:id" if uno else ruta,
+        "url_pagina": f"{ruta}/1" if uno else ruta,
+        "datos_imports": "\n".join(imports),
+        "datos_consulta": "\n".join(_consulta(sol, servicio, "useParams()")) + "\n",
+        "datos_contenido": "\n".join(_contenido_uno(campos) if uno else _contenido_lista(campos, datos)),
+        "datos_servicio": archivo_servicio,
+        "datos_hook": f"src/hooks/useConsulta.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}",
+    }
+
+
 def _contenido_lista(campos, datos: str) -> list[str]:
-    para_texto = next((c for c in campos if c.tipo in ("str", "email")), None)
-    texto = f"{{item.{para_texto.nombre}}}" if para_texto else f"{{`{titulo(datos.split('_'))} ${{item.id}}`}}"
     return [
         *_CARGANDO_Y_ERROR,
         "{datos?.length === 0 && <p>Todavía no hay registros.</p>}",
         "<ul>",
         "  {datos?.map((item) => (",
-        f"    <li key={{item.id}}>{texto}</li>",
+        f"    <li key={{item.id}}>{campo_de_texto(campos, datos)}</li>",
         "  ))}",
         "</ul>",
     ]
@@ -263,8 +272,7 @@ def _contenido_uno(campos) -> list[str]:
         return [*_CARGANDO_Y_ERROR, "{datos && <pre>{JSON.stringify(datos, null, 2)}</pre>}"]
     filas = []
     for c in campos:
-        valor = f"{{datos.{c.nombre} ? 'Sí' : 'No'}}" if c.tipo == "bool" else f"{{datos.{c.nombre}}}"
-        filas += [f"    <dt>{c.titulo}</dt>", f"    <dd>{valor}</dd>"]
+        filas += [f"    <dt>{c.titulo}</dt>", f"    <dd>{_valor(c)}</dd>"]
     return [*_CARGANDO_Y_ERROR, "{datos && (", "  <dl>", *filas, "  </dl>", ")}"]
 
 
@@ -273,6 +281,105 @@ def pasos_pagina(sol: Solicitud) -> list[str]:
     if sol.opciones.get("datos"):
         pasos.append("# Necesita la API andando (Django, FastAPI o Express), con el recurso que usa el servicio.")
     return pasos_router(pasos)(sol)
+
+
+# React Native (pantalla)
+
+def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
+    carpeta = sol.opciones.get("carpeta", "")
+    archivo = sol.nombre.kebab
+    if sol.opciones.get("uno"):
+        # Uno solo: el id es parte de la ruta. En Expo Router, [id] es la parte variable.
+        archivo += "/[id]"
+    ruta = f"{carpeta}/{archivo}" if carpeta else archivo
+    # Los grupos "(tabs)" no forman parte de la URL, y "index" es la ruta de la carpeta.
+    segmentos = [p for p in ruta.split("/") if not p.startswith("(")]
+    if segmentos and segmentos[-1] == "index":
+        segmentos.pop()
+    url = "/" + "/".join(segmentos)
+    return {
+        "ruta_pantalla": ruta,
+        "url_pantalla": url,
+        "url_abrir": url.replace("[id]", "1"),
+        **_contexto_pantalla_datos(sol),
+    }
+
+
+def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
+    """React Native: los bloques de una pantalla con --datos (lista con FlatList, o uno solo)."""
+    datos = sol.opciones.get("datos")
+    if not datos:
+        _sin_datos(sol)
+        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_estilos", "datos_servicio", "datos_hook")
+        return {**dict.fromkeys(vacios, ""), "expo_router": "Stack", "react_native": "StyleSheet, Text, View"}
+
+    uno = bool(sol.opciones.get("uno"))
+    servicio, archivo_servicio, campos = servicio_de_datos(sol, "services")
+    if uno:
+        contenido = [
+            "{cargando && <ActivityIndicator />}",
+            "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
+            *_contenido_uno_rn(campos),
+        ]
+        componentes = "ActivityIndicator, StyleSheet, Text, View"
+    else:
+        contenido = [
+            "{cargando && <ActivityIndicator />}",
+            "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
+            "<FlatList",
+            "  data={datos ?? []}",
+            "  keyExtractor={(item) => String(item.id)}",
+            f"  renderItem={{({{ item }}) => <Text style={{styles.item}}>{campo_de_texto(campos, datos)}</Text>}}",
+            "  ListEmptyComponent={cargando ? undefined : <Text>Todavía no hay registros.</Text>}",
+            "/>",
+        ]
+        componentes = "ActivityIndicator, FlatList, StyleSheet, Text, View"
+    estilos = [
+        "error: {",
+        "  color: '#b91c1c',",
+        "  marginVertical: 8,",
+        "},",
+        "item: {" if not uno else "etiqueta: {",
+        "  paddingVertical: 8," if not uno else "  fontWeight: 'bold',",
+        "  borderBottomWidth: StyleSheet.hairlineWidth," if not uno else "  marginTop: 8,",
+        "},",
+    ]
+    imports = ["", "import { useConsulta } from '@/hooks/useConsulta';", f"import {{ {servicio} }} from '@/services/{servicio}';"]
+    return {
+        "expo_router": "Stack, useLocalSearchParams" if uno else "Stack",
+        "react_native": componentes,
+        "datos_imports": "\n".join(imports),
+        "datos_consulta": "\n".join(_consulta(sol, servicio, "useLocalSearchParams()")) + "\n",
+        "datos_contenido": "\n".join(contenido),
+        "datos_estilos": "\n".join(estilos),
+        "datos_servicio": archivo_servicio,
+        "datos_hook": f"hooks/useConsulta.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}",
+    }
+
+
+def _contenido_uno_rn(campos) -> list[str]:
+    if not campos:
+        return ["{datos && <Text>{JSON.stringify(datos, null, 2)}</Text>}"]
+    filas = []
+    for c in campos:
+        filas += [f"    <Text style={{styles.etiqueta}}>{c.titulo}</Text>", f"    <Text>{_valor(c)}</Text>"]
+    return ["{datos && (", "  <View>", *filas, "  </View>", ")}"]
+
+
+MARCADORES_PANTALLA = {
+    **MARCADORES_EXTENSION,
+    "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto (con --uno: producto/[id])",
+    "url_pantalla": "ruta para navegar: /productos/detalle-producto (con --uno: /producto/[id])",
+    "url_abrir": "una dirección de ejemplo para abrirla: /producto/1 con --uno",
+    "expo_router": "lo que se importa de expo-router: Stack (y useLocalSearchParams con --uno)",
+    "react_native": "lo que se importa de react-native: StyleSheet, Text, View (y FlatList, ActivityIndicator con --datos)",
+    "datos_imports": "imports del hook y del servicio (vacío sin --datos)",
+    "datos_consulta": "la llamada a useConsulta (vacío sin --datos)",
+    "datos_contenido": "cargando, error y los datos: FlatList, o uno solo con --uno (vacío sin --datos)",
+    "datos_estilos": "estilos de la lista o del detalle (vacío sin --datos)",
+    "datos_servicio": "el archivo del servicio que usa (vacío sin --datos)",
+    "datos_hook": "el archivo de useConsulta (vacío sin --datos)",
+}
 
 
 # --- Router (React) ---------------------------------------------------------------------
