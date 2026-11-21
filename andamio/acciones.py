@@ -125,6 +125,7 @@ ALIAS_PIEZAS = {
     "theme": "tema",
     "style": "estilo",
     "search": "busqueda",
+    "action": "accion",
 }
 
 

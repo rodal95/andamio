@@ -91,6 +91,12 @@ TECNOLOGIAS = {
                 "uso": "GET    /api/productos/                  lista (un array JSON)\nPOST   /api/productos/                  crea\nGET    /api/productos/1/                ve uno\nPATCH  /api/productos/1/                modifica\nDELETE /api/productos/1/                elimina\n\nGET    /api/productos/?search=yerba     busca\nGET    /api/productos/?ordering=-precio ordena\nGET    /api/productos/?stock=10         filtra\n\nCon --protegido: leer es libre; crear, modificar y eliminar piden login.",
                 "uso_lenguaje": "texto",
             },
+            "accion": {
+                "comando": "nuevo accion producto destacar",
+                "explicacion": "Una acción propia sobre un recurso que ya existe, además de listar, crear, ver, modificar y eliminar: un @action en el ViewSet con la marca TODO(logica) donde va lo que hace, su test y la petición para probarla en el archivo .http.",
+                "uso": "POST /api/productos/3/destacar/     ejecuta la acción sobre el producto 3\n                                     y responde con el producto (200)",
+                "uso_lenguaje": "texto",
+            },
             "login": {
                 "comando": "nuevo login",
                 "explicacion": "Agrega el login con tokens JWT (SimpleJWT): una app cuentas con registro de usuarios, el token de acceso y el usuario actual, con 6 tests. La API acepta el token en el encabezado Authorization: Bearer <token>. No lleva nombre: se genera una vez por proyecto. Después, los recursos que generes con --protegido piden login para crear, modificar y eliminar.",
@@ -577,7 +583,7 @@ CARPETAS = {
 # concepto que no es una pieza (por ejemplo, el router), definida en TEMAS.
 CAMINO = {
     "python": ["entidad", "tema:menu", "menu", "busqueda"],
-    "django": ["recurso", "tema:rutas", "login"],
+    "django": ["recurso", "tema:rutas", "accion", "login"],
     "django-web": ["tema:mvt", "crud", "tema:plantillas", "pagina"],
     "web": ["pagina", "tema:modulos", "componente", "servicio", "crud"],
     "vue": ["componente", "pagina", "tema:router", "composable", "servicio", "crud"],
@@ -1402,7 +1408,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
+_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1463,6 +1469,8 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
+        elif opcion == "solo_lectura":
+            filas.append({"comando": f"{base} --solo-lectura", "descripcion": "La API solo lista y muestra (ReadOnlyModelViewSet); los datos se cargan desde /admin/."})
         elif opcion == "sin_menu":
             filas.append({"comando": f"{base} --sin-menu", "descripcion": "Solo la tabla y las funciones, sin el menú de consola (después: nuevo menu producto)."})
         elif opcion == "carpeta" and "--carpeta" not in comando:

@@ -75,7 +75,10 @@ def _menu_piezas(stack: Stack, raiz: Path) -> int:
     consola.escribir()
     nombre = _pedir_nombre(stack, pieza, raiz)
     extras = _pedir_opciones(pieza)
-    campos = _pedir_campos(stack, acciones.campos_reservados(pieza, nombre)) if pieza.usa_campos else []
+    if pieza.usa_campos and not pieza.define_campos:
+        campos = _pedir_nombres(pieza)
+    else:
+        campos = _pedir_campos(stack, acciones.campos_reservados(pieza, nombre)) if pieza.usa_campos else []
     consola.escribir()
     sol = Solicitud(stack, pieza, raiz, nombre, campos, extras, variante=variante, guia=ajustes.guia(raiz))
     return acciones.generar_pieza(sol, confirmar=True)
@@ -125,6 +128,10 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
         extras["protegido"] = consola.confirmar(
             "¿Proteger el recurso? (solo usuarios con login pueden crear, modificar y eliminar)", defecto=False
         )
+    if "solo_lectura" in pieza.opciones and not extras.get("protegido"):
+        extras["solo_lectura"] = consola.confirmar(
+            "¿Solo lectura? (la API solo lista y muestra; los datos se cargan desde /admin/)", defecto=False
+        )
     if "modo" in pieza.opciones:
         extras["modo"] = consola.elegir(
             "¿Modo del tema?",
@@ -159,6 +166,22 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
             )
             extras["uno"], extras["form"] = que == "uno", que == "form"
     return extras
+
+
+def _pedir_nombres(pieza: Pieza) -> list[Campo]:
+    """Para piezas como busqueda o accion: solo nombres (de campos o de acciones), sin tipo."""
+    que = "acción" if pieza.clave == "accion" else "campo"
+    consola.escribir()
+    consola.escribir(consola.color(f"Escribí un {que} por vez. Cuando termines, apretá Enter sin escribir nada.", "gris"))
+    nombres: list[Campo] = []
+    while True:
+        nombre = consola.preguntar(f"Nombre del {que} (Enter para terminar)", validar=validar_nombre_campo, permitir_vacio=True)
+        if not nombre:
+            if nombres:
+                return nombres
+            consola.escribir(consola.color("  Escribí al menos uno.", "amarillo"))
+            continue
+        nombres.append(Campo(nombre, "str"))
 
 
 def _pedir_campos(stack: Stack, reservados: dict[str, str]) -> list[Campo]:

@@ -2,13 +2,14 @@
 # guía: Usa el modelo (models.py) y el serializer (serializers.py); urls.py le da la ruta /api/@@plural@@/.
 from rest_framework import viewsets
 @@import_permisos@@
+# --- andamio:imports (no borrar esta línea) ---
 
 from .models import @@Nombre@@
 from .serializers import @@Nombre@@Serializer
 
 
-class @@Nombre@@ViewSet(viewsets.ModelViewSet):
-    """Listar, crear, ver, modificar y eliminar: /api/@@plural@@/
+class @@Nombre@@ViewSet(viewsets.@@clase_viewset@@):
+    """@@doc_viewset@@: /api/@@plural@@/
 
     La lista acepta estos parámetros:
         ?search=texto       busca en los campos de search_fields
@@ -26,3 +27,6 @@ class @@Nombre@@ViewSet(viewsets.ModelViewSet):
     # TODO(logica): reglas al guardar (lo que no manda el cliente). Ejemplo:
     # def perform_create(self, serializer):
     #     serializer.save(codigo=generar_codigo())
+
+    # Acciones propias (nuevo accion @@nombre@@ <accion>): POST /api/@@plural@@/<id>/<accion>/
+    # --- andamio:acciones (no borrar esta línea) ---

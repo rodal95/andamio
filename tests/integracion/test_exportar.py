@@ -4,6 +4,8 @@ import pytest
 
 from andamio import stacks
 from andamio.cli import main
+from andamio.nucleo import plantillas
+from andamio.nucleo.generador import carpeta_pieza
 from andamio.nucleo.nombres import MARCADORES_NOMBRE
 
 
@@ -35,7 +37,7 @@ def test_exporta_todas_las_piezas_con_su_leeme(stack, en_carpeta, monkeypatch, c
             assert f"`@@{marcador}@@`" in leeme, marcador
         if "## Además" in leeme:
             assert "@@" not in leeme.split("## Además")[1]
-        if pieza.clave != "busqueda":  # busqueda no tiene archivos: solo agrega a una entidad que ya existe
+        if plantillas.leer_arbol(carpeta_pieza(stack, pieza, next(iter(stack.variantes), ""))):  # busqueda y accion solo agregan
             assert any(p.name != "LEEME.md" for p in carpeta.rglob("*") if p.is_file())
 
 

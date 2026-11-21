@@ -206,7 +206,7 @@ def test_python_del_proyecto_prefiere_el_entorno_virtual(tmp_path, monkeypatch):
 
 
 def test_menu_interactivo(proyecto, respuestas, capsys):
-    preguntas = respuestas(["1", "producto", "", "n", "nombre", "1", "precio", "4", "", "s", "n"])
+    preguntas = respuestas(["1", "producto", "", "n", "n", "nombre", "1", "precio", "4", "", "s", "n"])
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out
@@ -265,7 +265,7 @@ def test_login_genera_la_app_y_configura_jwt(proyecto, capsys):
 
 
 def test_login_en_el_menu_usa_cuenta_con_enter(proyecto, respuestas):
-    preguntas = respuestas(["2", "", "s"])
+    preguntas = respuestas(["3", "", "s"])
     assert main([]) == 0
     assert any("Nombre de la app del login" in p for p in preguntas)
     assert (proyecto / "cuentas/urls.py").is_file()
@@ -380,3 +380,50 @@ def test_relacion_migra_y_funciona(proyecto):
     for argumentos in (["makemigrations"], ["test"], ["spectacular", "--validate", "--fail-on-warn", "--file", "schema.yml"]):
         resultado = manage(proyecto, *argumentos)
         assert resultado.returncode == 0, f"manage.py {' '.join(argumentos)}\n{resultado.stdout}\n{resultado.stderr}"
+
+
+# --- Acciones y solo lectura ---------------------------------------------------------
+
+
+def test_accion_en_un_recurso_que_existe(proyecto, capsys):
+    assert main(["nuevo", "accion", "producto", "destacar"]) == 1
+    assert "nuevo recurso producto" in capsys.readouterr().err
+    assert main(["nuevo", "recurso", "producto", "nombre", "--protegido"]) == 0
+    assert main(["nuevo", "accion", "producto", "destacar", "marcar-vendido"]) == 0
+    vistas = leer(proyecto / "productos/views.py")
+    assert "from rest_framework.decorators import action\nfrom rest_framework.response import Response\n# --- andamio:imports" in vistas
+    assert '    @action(detail=True, methods=["post"])\n    def destacar(self, request, pk=None):' in vistas
+    assert '@action(detail=True, methods=["post"], url_path="marcar-vendido")' in vistas
+    assert "# TODO(logica): qué hace la acción" in vistas
+    assert '    def test_marcar_vendido(self):\n        objeto = self.crear()\n        respuesta = self.client.post(f"{URL}{objeto.pk}/marcar-vendido/")' in leer(proyecto / "productos/tests.py")
+    assert "POST {{base}}/1/destacar/\nAuthorization: Bearer {{token}}" in leer(proyecto / "http/productos.http")
+    # Otra vez: no se repite nada.
+    antes = vistas
+    assert main(["nuevo", "accion", "producto", "destacar"]) == 0
+    assert leer(proyecto / "productos/views.py") == antes
+    capsys.readouterr()
+    assert main(["nuevo", "accion", "producto", "destroy"]) == 1
+    assert "el ViewSet ya usa ese nombre" in capsys.readouterr().err
+
+
+def test_recurso_solo_lectura(proyecto, capsys):
+    assert main(["nuevo", "recurso", "pais", "nombre", "--plural", "paises", "--solo-lectura"]) == 0
+    assert "class PaisViewSet(viewsets.ReadOnlyModelViewSet):" in leer(proyecto / "paises/views.py")
+    tests = leer(proyecto / "paises/tests.py")
+    assert "def test_solo_lectura(self):" in tests and "def test_crear" not in tests
+    assert "responden 405" in leer(proyecto / "http/paises.http")
+    assert main(["nuevo", "recurso", "producto", "nombre", "--solo-lectura", "--protegido"]) == 1
+    assert "no tienen sentido" in capsys.readouterr().err
+
+
+@pytest.mark.django
+@requiere_django
+def test_accion_y_solo_lectura_funcionan(proyecto):
+    assert main(["nuevo", "recurso", "pais", "nombre", "--plural", "paises", "--solo-lectura"]) == 0
+    assert main(["nuevo", "recurso", "producto", "nombre", "precio:decimal"]) == 0
+    assert main(["nuevo", "accion", "producto", "destacar", "marcar-vendido"]) == 0
+    for argumentos in (["makemigrations"], ["test"], ["spectacular", "--validate", "--fail-on-warn", "--file", "schema.yml"]):
+        resultado = manage(proyecto, *argumentos)
+        assert resultado.returncode == 0, f"manage.py {' '.join(argumentos)}\n{resultado.stdout}\n{resultado.stderr}"
+        if argumentos[0] == "test":
+            assert "Ran 10 tests" in resultado.stderr  # país: 3; producto: 5 + 2 acciones

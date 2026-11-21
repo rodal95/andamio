@@ -7,6 +7,7 @@
 # Antes, poné en marcha la API: @@comando_api@@
 # Las peticiones van en orden: "Crear uno" agrega el registro que usan las de abajo
 # (si ya había otros, cambiá el 1 por el id que devolvió).
+@@http_solo_lectura@@
 
 # Si la API está en otra dirección o en otro puerto, cambiala acá:
 @api = @@url_api@@

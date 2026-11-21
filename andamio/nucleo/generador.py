@@ -47,7 +47,7 @@ def validar_nombre_pieza(stack: Stack, raiz: Path, nombre: Nombre, pieza: Pieza 
     # Primero la validación de la pieza: es la más específica y da el mejor consejo.
     if pieza is not None and pieza.validar_nombre:
         pieza.validar_nombre(raiz, nombre)
-    if stack.validar_nombre:
+    if stack.validar_nombre and not (pieza is not None and pieza.usa_existente):
         stack.validar_nombre(raiz, nombre)
 
 

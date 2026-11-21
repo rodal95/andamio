@@ -31,6 +31,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --form                                        con --datos: el formulario para crear y editar
 │     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
+│     --solo-lectura       (--read-only)            la API solo lista y muestra (Django)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
@@ -55,6 +56,7 @@ Qué opciones acepta cada pieza:
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
 | `--sin-menu` | `entidad` (Python + SQLite) |
+| `--solo-lectura` | `recurso` (Django) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
@@ -99,8 +101,8 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `pendientes` | `todo`, `pending` |
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
-| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-menu`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-menu`, `--no-guide` |
+| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda`, `accion` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search`, `action` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-menu`, `--read-only`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `menu`, `info` y `--form` son iguales en los dos idiomas.
@@ -178,6 +180,8 @@ python manage.py runserver             http://127.0.0.1:8000/api/docs/
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int` | La app `productos/`: modelo, serializer, ViewSet (CRUD con filtros, búsqueda y orden), rutas `/api/productos/`, admin y 5 tests. La registra en `LOCAL_APPS` y en `config/urls.py`. |
 | `recurso` con relación | `nuevo recurso producto nombre:str categoria:fk` | Lo mismo, con `categoria = models.ForeignKey("categorias.Categoria", on_delete=models.SET_NULL, null=True, ...)`. La API recibe y devuelve el id, devuelve también `categoria_texto` y filtra con `?categoria=3`. Necesita el recurso `categoria`. |
+| `recurso --solo-lectura` | `nuevo recurso pais nombre:str --plural paises --solo-lectura` | Un `ReadOnlyModelViewSet`: la API solo lista y muestra (crear, modificar y eliminar responden 405) y los datos se cargan desde `/admin/`. Para catálogos fijos. |
+| `accion` | `nuevo accion producto destacar` | Una acción propia en el ViewSet que ya existe: `POST /api/productos/3/destacar/`, con la marca `TODO(logica)` para lo que hace, su test y su petición en el `.http`. Con varias: `nuevo accion producto destacar archivar`. |
 | `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo, con `permission_classes = [IsAuthenticatedOrReadOnly]` y un test más (sin login no se puede crear). |
 | `login` | `nuevo login` | La app `cuentas/` con SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/token/verify/`, `/api/registro/` y `/api/yo/`, 6 tests, y la configuración en `settings.py` y `requirements.txt`. No lleva nombre. |
 

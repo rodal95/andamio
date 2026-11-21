@@ -77,6 +77,9 @@ class Pieza:
     # False si los campos no definen datos sino que eligen de los de otra pieza (ej.: busqueda
     # producto nombre). `andamio mapa` no los compara con los de las demás piezas.
     define_campos: bool = True
+    # True si la pieza agrega a una que ya existe con ese nombre (ej.: accion producto, menu
+    # producto): no se controla que el nombre esté libre, como al crear una pieza nueva.
+    usa_existente: bool = False
     usa_plural: bool = False
     opciones: frozenset[str] = frozenset()  # opciones extra que acepta: "carpeta", "migrar"
     ajustar_palabras: Callable[[list[str]], list[str]] | None = None

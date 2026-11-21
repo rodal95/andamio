@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from andamio.nucleo import consola, ejemplos, relaciones
+from andamio.nucleo import consola, ejemplos, historial, relaciones
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -302,11 +302,67 @@ def _pasos_recurso(sol: Solicitud) -> list[str]:
 
 
 
+_TESTS_ESCRITURA = """\
+def test_crear(self):
+    respuesta = self.client.post(URL, DATOS, format="json")
+    self.assertEqual(respuesta.status_code, status.HTTP_201_CREATED, respuesta.json())
+    self.assertEqual({modelo}.objects.count(), 1)
+
+def test_actualizar(self):
+    objeto = self.crear()
+    respuesta = self.client.put(f"{{URL}}{{objeto.pk}}/", DATOS_MODIFICADOS, format="json")
+    self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.json())
+    objeto.refresh_from_db()
+    self.assertEqual(objeto.{campo}, {valor})
+
+def test_eliminar(self):
+    objeto = self.crear()
+    respuesta = self.client.delete(f"{{URL}}{{objeto.pk}}/")
+    self.assertEqual(respuesta.status_code, status.HTTP_204_NO_CONTENT)
+    self.assertFalse({modelo}.objects.filter(pk=objeto.pk).exists())"""
+
+_TESTS_SOLO_LECTURA = """\
+def test_solo_lectura(self):
+    # --solo-lectura: la API no crea, modifica ni elimina (405); los datos se cargan desde /admin/.
+    objeto = self.crear()
+    for respuesta in (
+        self.client.post(URL, DATOS, format="json"),
+        self.client.put(f"{URL}{objeto.pk}/", DATOS_MODIFICADOS, format="json"),
+        self.client.delete(f"{URL}{objeto.pk}/"),
+    ):
+        self.assertEqual(respuesta.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)"""
+
+
+def _contexto_lectura(sol: Solicitud, contexto: dict[str, str]) -> dict[str, str]:
+    """--solo-lectura: un ReadOnlyModelViewSet (listar y ver) y sus tests."""
+    if not sol.opciones.get("solo_lectura"):
+        return {
+            "clase_viewset": "ModelViewSet",
+            "doc_viewset": "Listar, crear, ver, modificar y eliminar",
+            "tests_escritura": _TESTS_ESCRITURA.format(
+                modelo=sol.nombre.pascal, campo=contexto["campo_verificado"], valor=contexto["valor_verificado"]
+            ),
+            "http_solo_lectura": "",
+        }
+    if sol.opciones.get("protegido"):
+        raise AndamioError(
+            "--solo-lectura y --protegido juntos no tienen sentido: con --solo-lectura la API no crea, modifica ni elimina.",
+            "Elegí una de las dos.",
+        )
+    return {
+        "clase_viewset": "ReadOnlyModelViewSet",
+        "doc_viewset": "Listar y ver (solo lectura: los datos se cargan desde /admin/)",
+        "tests_escritura": _TESTS_SOLO_LECTURA,
+        "http_solo_lectura": "#\n# Solo lectura (--solo-lectura): crear, reemplazar, modificar y eliminar responden 405.\n# Los datos se cargan desde el panel /admin/.",
+    }
+
+
 def _contexto_recurso_api(sol: Solicitud) -> dict[str, str]:
     """El del recurso, más el archivo http/<plural>.http para probar la API a mano."""
     protegido = bool(sol.opciones.get("protegido"))
     http = ejemplos.contexto_http(sol.campos, "http://127.0.0.1:8000/api", "python manage.py runserver", protegido)
-    return {**_contexto_recurso(sol), **http}
+    contexto = _contexto_recurso(sol)
+    return {**contexto, **http, **_contexto_lectura(sol, contexto)}
 
 
 RECURSO = Pieza(
@@ -325,7 +381,7 @@ RECURSO = Pieza(
     formas=("pascal", "snake"),
     usa_campos=True,
     usa_plural=True,
-    opciones=frozenset({"migrar", "protegido"}),
+    opciones=frozenset({"migrar", "protegido", "solo_lectura"}),
     contexto=_contexto_recurso_api,
     campos_reservados=_campos_reservados,
     marcadores={
@@ -351,6 +407,10 @@ RECURSO = Pieza(
         "permisos": "permission_classes del ViewSet (vacío sin --protegido)",
         "import_usuario": "import de get_user_model para los tests (vacío sin --protegido)",
         "preparar_tests": "setUp con un usuario y el test sin login (vacío sin --protegido)",
+        "clase_viewset": "ModelViewSet, o ReadOnlyModelViewSet con --solo-lectura",
+        "doc_viewset": "la primera línea del docstring del ViewSet: qué hace",
+        "tests_escritura": "los tests de crear, actualizar y eliminar (con --solo-lectura, uno que controla el 405)",
+        "http_solo_lectura": "con --solo-lectura, el aviso de que crear, modificar y eliminar responden 405",
     },
     existe_si=("@@plural@@",),
     inserciones=(
@@ -431,6 +491,124 @@ def _pasos_login(sol: Solicitud) -> list[str]:
     ]
 
 
+# --- Acciones propias de un recurso (nuevo accion producto destacar) -----------------
+
+# Métodos que ya tiene un ViewSet: una acción con ese nombre lo pisaría.
+_METODOS_VIEWSET = {
+    "list", "create", "retrieve", "update", "partial_update", "destroy", "get_object", "get_queryset",
+    "get_serializer", "get_serializer_class", "perform_create", "perform_update", "perform_destroy",
+    "initial", "dispatch", "options", "filter_queryset", "paginate_queryset", "action", "request", "response",
+}  # fmt: skip
+
+_CODIGO_ACCION = """
+@action(detail=True, methods=["post"]{url_path})
+def {accion}(self, request, pk=None):
+    \"\"\"POST /api/{plural}/<id>/{ruta}/: {descripcion}\"\"\"
+    {variable} = self.get_object()
+    # TODO(logica): qué hace la acción. Ejemplo: {variable}.{accion}_en = timezone.now(); {variable}.save()
+    return Response(self.get_serializer({variable}).data)"""
+
+_TEST_ACCION = """
+def test_{accion}(self):
+    objeto = self.crear()
+    respuesta = self.client.post(f"{{URL}}{{objeto.pk}}/{ruta}/")
+    self.assertEqual(respuesta.status_code, status.HTTP_200_OK, respuesta.json())"""
+
+_HTTP_ACCION = """
+### Acción {ruta} sobre el registro 1
+POST {{{{base}}}}/1/{ruta}/
+{auth}"""
+
+
+def _contexto_accion(sol: Solicitud) -> dict[str, str]:
+    entrada = historial.ultima(sol.raiz, sol.nombre.snake, ("recurso",))
+    nombre = entrada.nombre if entrada else sol.nombre
+    vistas = sol.raiz / nombre.plural / "views.py"
+    try:
+        texto = vistas.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        texto = ""
+    if f"class {nombre.pascal}ViewSet(" not in texto:
+        raise AndamioError(
+            f"No existe el recurso '{nombre.snake}' ({nombre.plural}/views.py con {nombre.pascal}ViewSet).",
+            f"Generalo primero: python -m andamio nuevo recurso {nombre.snake} nombre:str",
+        )
+    protegido = bool(entrada and entrada.opciones.get("protegido"))
+    codigo, tests, http = [], [], []
+    for campo in sol.campos:
+        accion = campo.nombre
+        if accion in _METODOS_VIEWSET or accion == nombre.snake:
+            raise AndamioError(f"No se puede usar '{accion}' como acción: el ViewSet ya usa ese nombre.", "Elegí otro nombre.")
+        ruta = accion.replace("_", "-")
+        codigo.append(
+            _CODIGO_ACCION.format(
+                accion=accion,
+                url_path=f', url_path="{ruta}"' if ruta != accion else "",
+                plural=nombre.plural,
+                ruta=ruta,
+                descripcion=f"la acción {ruta} sobre un {' '.join(nombre.palabras)}.",
+                variable=nombre.snake,
+            )
+        )
+        tests.append(_TEST_ACCION.format(accion=accion, ruta=ruta))
+        http.append(_HTTP_ACCION.format(ruta=ruta, auth="Authorization: Bearer {{token}}" if protegido else "").rstrip())
+    return {
+        **nombre.marcadores(),
+        "codigo_acciones": "\n".join(codigo),
+        "tests_acciones": "\n".join(tests),
+        "http_acciones": "\n".join(http),
+    }
+
+
+ACCION = Pieza(
+    clave="accion",
+    lectura=(
+        ('@@plural@@/views.py', 'la acción, al final del ViewSet (con la marca para tu lógica)'),
+        ('@@plural@@/tests.py', 'su test: responde 200'),
+        ('http/@@plural@@.http', 'la petición para probarla a mano'),
+    ),
+    titulo="Acción",
+    descripcion="una acción propia en un recurso que ya existe: POST /api/<plural>/<id>/<acción>/",
+    ejemplo="producto destacar",
+    preparar=("recurso producto nombre:str precio:decimal",),
+    formas=("snake",),
+    usa_campos=True,
+    define_campos=False,
+    usa_existente=True,
+    contexto=_contexto_accion,
+    marcadores={
+        "codigo_acciones": "el @action de cada acción, para el final del ViewSet",
+        "tests_acciones": "un test por acción (responde 200)",
+        "http_acciones": "una petición POST por acción, para el archivo .http",
+    },
+    inserciones=(
+        Insercion(
+            "@@plural@@/views.py",
+            "from rest_framework.decorators import action\nfrom rest_framework.response import Response",
+            marcador="imports",
+            descripcion="imports de action y Response",
+            ubicacion="arriba, junto a from rest_framework import viewsets",
+        ),
+        Insercion(
+            "@@plural@@/views.py",
+            "@@codigo_acciones@@",
+            marcador="acciones",
+            descripcion="la acción en el ViewSet",
+            ubicacion="al final de la clase @@Nombre@@ViewSet (con 4 espacios de sangría)",
+        ),
+        Insercion(
+            "@@plural@@/tests.py",
+            "@@tests_acciones@@",
+            marcador="tests",
+            descripcion="el test de la acción",
+            ubicacion="al final de la clase @@Nombre@@APITest (con 4 espacios de sangría)",
+        ),
+        Insercion("http/@@plural@@.http", "@@http_acciones@@", descripcion="la petición (al final)"),
+    ),
+    siguiente_paso=["python manage.py test @@plural@@", "python manage.py runserver", "http://127.0.0.1:8000/api/docs/"],
+)
+
+
 LOGIN = Pieza(
     clave="login",
     lectura=(
@@ -487,7 +665,7 @@ STACK = Stack(
     senal="manage.py y config/settings.py",
     detectar=_detectar,
     tipos=TIPOS_RECURSO,
-    piezas={"recurso": RECURSO, "login": LOGIN},
+    piezas={"recurso": RECURSO, "accion": ACCION, "login": LOGIN},
     ejemplo_proyecto="mi-api",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

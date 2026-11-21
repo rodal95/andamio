@@ -47,8 +47,19 @@ Todos los cambios importantes de andamio. El proyecto usa
   - El menú de cada entidad tiene dos líneas nuevas (`andamio:opciones` y `andamio:acciones`)
     donde `busqueda` agrega sus opciones. En los menús generados antes, andamio muestra qué
     pegar y dónde.
+- Django:
+  - `nuevo accion <recurso> <acción>...` (`action`): un `@action` en el ViewSet que ya
+    existe (`POST /api/productos/3/destacar/`) con la marca `TODO(logica)`, su test y su
+    petición en el `.http`. Repetirla no duplica nada.
+  - `recurso --solo-lectura` (`--read-only`): un `ReadOnlyModelViewSet` (listar y ver; los
+    datos se cargan desde `/admin/`), con un test que controla el 405.
+  - Las vistas y los tests del recurso tienen líneas `andamio:imports`, `andamio:acciones` y
+    `andamio:tests`, donde `accion` agrega lo suyo. En los recursos generados antes, andamio
+    muestra qué pegar y dónde.
 - Piezas: `preparar` (lo que el ejemplo de una pieza necesita que exista antes, para los
-  tests y el sitio) y `define_campos` (`mapa` no compara los campos de una búsqueda).
+  tests y el sitio), `define_campos` (`mapa` no compara los campos de una búsqueda o de una
+  acción) y `usa_existente` (la pieza agrega a una que ya existe: no se controla que el
+  nombre esté libre). En el menú, `busqueda` y `accion` piden solo nombres, sin tipo.
 
 ### Cambiado
 - React: el formulario del `crud` usa `useFormulario` (la lógica de cargar, guardar y

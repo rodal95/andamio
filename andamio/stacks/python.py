@@ -265,6 +265,7 @@ MENU = Pieza(
     ejemplo="cliente",
     preparar=("entidad cliente nombre:str email:str --sin-menu",),
     formas=("snake", "menu_@@nombre@@"),
+    usa_existente=True,
     contexto=_contexto_menu,
     marcadores=_MARCADORES_ENTIDAD,
     existe_si=(_ARCHIVO_MENU,),
@@ -351,6 +352,7 @@ BUSQUEDA = Pieza(
     formas=("snake",),
     usa_campos=True,
     define_campos=False,
+    usa_existente=True,
     contexto=_contexto_busqueda,
     marcadores={
         "funciones_entidad": "buscar_por_<campo>(valor) para entidades/<nombre>.py",
