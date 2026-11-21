@@ -130,6 +130,19 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
             "¿Modo del tema?",
             [("auto", "auto: claro u oscuro según el sistema (recomendado)"), ("claro", "siempre claro"), ("oscuro", "siempre oscuro")],
         )
+    if "datos" in pieza.opciones:
+        datos = consola.preguntar(
+            "¿Muestra datos de la API? Escribí el nombre del servicio (Enter para una página sin datos)",
+            validar=pieza.normalizar_opcion.get("datos"),
+            permitir_vacio=True,
+            ejemplo="producto",
+        )
+        if datos:
+            extras["datos"] = datos
+            extras["uno"] = consola.elegir(
+                "¿Qué muestra?",
+                [(False, "la lista (listar)"), (True, "uno solo, con el id en la ruta (obtener)")],
+            )
     if "carpeta" in pieza.opciones:
         normalizar = pieza.normalizar_opcion.get("carpeta")
         carpeta = consola.preguntar(

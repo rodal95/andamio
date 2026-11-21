@@ -26,7 +26,7 @@ from andamio.nucleo.plan import Plan
 if TYPE_CHECKING:
     from importlib.resources.abc import Traversable
 
-    from andamio.stacks.base import Pieza, Solicitud, Stack
+    from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
 
 # --- Nombres ----------------------------------------------------------------
@@ -172,6 +172,17 @@ def contexto_pieza(sol: Solicitud) -> dict[str, str]:
     return contexto
 
 
+def archivos_de_la_pieza(sol: Solicitud, carpeta: Traversable) -> list[plantillas.ArchivoPlantilla]:
+    """Los archivos de la plantilla que corresponden a esta solicitud (sin los que omite)."""
+    omitidos = sol.pieza.omitir(sol) if sol.pieza.omitir else frozenset()
+    return [a for a in plantillas.leer_arbol(carpeta) if a.ruta not in omitidos]
+
+
+def inserciones_de_la_pieza(sol: Solicitud) -> list[Insercion]:
+    """Las inserciones que corresponden a esta solicitud (las que no tienen condición o la cumplen)."""
+    return [ins for ins in sol.pieza.inserciones if ins.condicion is None or ins.condicion(sol)]
+
+
 def planificar_pieza(sol: Solicitud) -> Plan:
     stack, pieza = sol.stack, sol.pieza
     sol.contexto = contexto = contexto_pieza(sol)
@@ -187,7 +198,7 @@ def planificar_pieza(sol: Solicitud) -> Plan:
     # archivos que ya existen, ese error es más claro (la pieza ya se generó).
     choques: list[AndamioError] = []
     centinela = _contexto_centinela(sol)
-    for archivo in plantillas.leer_arbol(carpeta):
+    for archivo in archivos_de_la_pieza(sol, carpeta):
         origen = f"{stack.clave}/{pieza.clave}/{archivo.ruta}"
         destino = renderizar_ruta(archivo.partes, contexto, origen)
         texto = archivo.texto
@@ -199,7 +210,7 @@ def planificar_pieza(sol: Solicitud) -> Plan:
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 
     conexiones = ajustes.de_proyecto(sol.raiz).conexiones
-    for ins in pieza.inserciones:
+    for ins in inserciones_de_la_pieza(sol):
         origen = f"inserción en {ins.archivo}"
         if ins.marcador and ins.marcador in conexiones:
             # andamio.json indica que ese punto de conexión está en otro archivo.

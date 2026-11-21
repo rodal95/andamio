@@ -17,6 +17,8 @@ _OPCIONES_PIEZA = {
     "protegido": "--protegido",
     "carpeta": "--carpeta <carpeta>",
     "modo": "--modo auto|claro|oscuro",
+    "datos": "--datos <servicio>",
+    "uno": "--uno",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 

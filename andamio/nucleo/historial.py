@@ -84,3 +84,16 @@ def leer(raiz: Path) -> tuple[list[Entrada], int]:
         except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
             malas += 1
     return entradas, malas
+
+
+def campos_de(raiz: Path, nombre: str, piezas: tuple[str, ...]) -> list[Campo] | None:
+    """Los campos con que se generó por última vez una de estas piezas con este nombre (snake).
+
+    Ej.: los campos del servicio `producto`, para que una página que lo usa sepa qué mostrar.
+    None si no está en el historial.
+    """
+    entradas, _ = leer(raiz)
+    for entrada in reversed(entradas):
+        if entrada.pieza in piezas and entrada.nombre.snake == nombre and entrada.campos:
+            return list(entrada.campos)
+    return None

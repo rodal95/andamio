@@ -60,7 +60,9 @@ def marcas_del_plan(plan: Plan) -> list[Pendiente]:
 
 
 def orden_de_lectura(lectura: tuple[tuple[str, str], ...], contexto: dict[str, str]) -> list[tuple[str, str]]:
-    return [(renderizar(ruta, contexto), renderizar(rol, contexto)) for ruta, rol in lectura]
+    # Una ruta que queda vacía es un archivo que esta vez no se generó (depende de una opción).
+    rutas = [(renderizar(ruta, contexto), rol) for ruta, rol in lectura]
+    return [(ruta, renderizar(rol, contexto)) for ruta, rol in rutas if ruta]
 
 
 def mostrar(lectura: list[tuple[str, str]], pendientes: list[Pendiente]) -> None:

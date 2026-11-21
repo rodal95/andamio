@@ -43,43 +43,73 @@ HOOK = Pieza(
 _RUTA_PAGINA = _js.validar_ruta_libre(lambda nombre: f"/{nombre.kebab}")
 
 
+_COMPONENTE_PAGINA = _js.validar_componentes_libres(lambda nombre: [f"{nombre.pascal}Page"])
+
+
 def _validar_pagina(raiz, nombre) -> None:
     _js.validar_componente(raiz, nombre)
     _RUTA_PAGINA(raiz, nombre)
+    _COMPONENTE_PAGINA(raiz, nombre)
 
 
-def _insercion_app(texto: str, marcador: str, descripcion: str, ubicacion: str, comentario: str) -> Insercion:
-    return Insercion("src/App.@@extx@@", texto, marcador=marcador, descripcion=descripcion, ubicacion=ubicacion, comentario=comentario)
+def _insercion_app(
+    texto: str, marcador: str, descripcion: str, ubicacion: str, comentario: str, condicion=None
+) -> Insercion:
+    return Insercion(
+        "src/App.@@extx@@", texto, marcador=marcador, descripcion=descripcion, ubicacion=ubicacion, comentario=comentario, condicion=condicion
+    )
+
+
+_HOOK_CONSULTA = frozenset({"src/hooks/useConsulta.ts", "src/hooks/useConsulta.js"})
+
+
+def _sin_uno(sol) -> bool:
+    return not sol.opciones.get("uno")
 
 
 PAGINA = Pieza(
     clave="pagina",
     lectura=(
+        ("@@datos_servicio@@", "las funciones que piden los datos a la API"),
+        ("@@datos_hook@@", "useConsulta: el useEffect que pide los datos, con cargando y error"),
         ('src/pages/@@Nombre@@Page/@@Nombre@@Page.@@extx@@', 'la página'),
         ('src/App.@@extx@@', 'su ruta y su enlace en el menú'),
     ),
     titulo="Página",
-    descripcion="página con su ruta y su enlace en el menú",
+    descripcion="página con su ruta y su enlace en el menú; con --datos, muestra datos de la API",
     ejemplo="Contacto",
     formas=("@@Nombre@@Page",),
+    opciones=frozenset({"datos", "uno"}),
+    normalizar_opcion={"datos": _js.normalizar_datos},
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_validar_pagina,
-    marcadores=_js.MARCADORES_EXTENSION,
+    contexto=_js.contexto_pagina,
+    marcadores={**_js.MARCADORES_EXTENSION, **_js.MARCADORES_PAGINA},
     existe_si=("src/pages/@@Nombre@@Page",),
+    # El hook se crea solo con --datos, y si ya existe (lo generó un crud o un servicio) no se toca.
+    si_no_existe=_HOOK_CONSULTA,
+    omitir=lambda sol: frozenset() if sol.opciones.get("datos") else _HOOK_CONSULTA,
     inserciones=(
         _insercion_app("import { @@Nombre@@Page } from './pages/@@Nombre@@Page';", "imports", "import", "arriba, junto a los otros import", "//"),
-        _insercion_app('<Route path="/@@nombreKebab@@" element={<@@Nombre@@Page />} />', "rutas", "ruta /@@nombreKebab@@", "dentro de <Routes>", "{/*"),
-        _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*"),
+        _insercion_app('<Route path="@@ruta_pagina@@" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@", "dentro de <Routes>", "{/*"),
+        # Una página de uno solo (--uno) necesita un id en la ruta: no va en el menú.
+        _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*", _sin_uno),
     ),
-    siguiente_paso=_js.pasos_router(["npm run dev", "http://localhost:5173/@@nombreKebab@@"]),
+    siguiente_paso=_js.pasos_pagina,
 )
 
 _RUTA_CRUD = _js.validar_ruta_libre(lambda nombre: "/" + "-".join(nombre.plural_palabras))
 
 
+_COMPONENTES_CRUD = _js.validar_componentes_libres(
+    lambda nombre: [f"{nombre.pascal}{pagina}Page" for pagina in ("Lista", "Detalle", "Form")]
+)
+
+
 def _validar_crud(raiz, nombre) -> None:
     _js.validar_componente(raiz, nombre)
     _RUTA_CRUD(raiz, nombre)
+    _COMPONENTES_CRUD(raiz, nombre)
 
 
 CRUD = Pieza(
@@ -153,6 +183,7 @@ SERVICIO = Pieza(
     lectura=(
         ('src/services/@@nombreCamel@@Service.@@ext@@', 'las funciones para usar /api/@@plural@@/'),
         ('src/services/http.@@ext@@', 'lo común a todas las llamadas: dirección de la API y errores'),
+        ('src/hooks/useConsulta.@@ext@@', 'el useEffect para pedir datos desde un componente, con cargando y error'),
     ),
     titulo="Servicio",
     descripcion="funciones para usar un recurso de la API (Django, FastAPI o Express)",
@@ -163,10 +194,15 @@ SERVICIO = Pieza(
     contexto=_js.contexto_servicio,
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("src/services/@@nombreCamel@@Service.@@ext@@",),
-    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}),
+    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}) | _HOOK_CONSULTA,
     siguiente_paso=[
-        "# Usalo en un componente:",
+        "# Una página que lo usa (lista, o uno solo con --uno):",
+        "python -m andamio nuevo pagina @@Nombre@@Lista --datos @@nombre@@",
+        "python -m andamio nuevo pagina @@Nombre@@Detalle --datos @@nombre@@ --uno",
+        "# O a mano, en un componente:",
+        "import { useConsulta } from './hooks/useConsulta';",
         "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",
+        "const { datos, cargando, error } = useConsulta(@@nombreCamel@@Service.listar);",
         "# Necesita la API andando (Django, FastAPI o Express) con el recurso /api/@@plural@@/",
     ],
 )

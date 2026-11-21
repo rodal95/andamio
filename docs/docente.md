@@ -219,10 +219,11 @@ Campos de `Pieza` que más se usan:
 | `marcadores` | descripción de esos marcadores: aparecen en el `LEEME.md` al exportar |
 | `existe_si` | rutas que, si existen, indican que la pieza ya se generó |
 | `si_no_existe` | archivos de la plantilla que se crean solo si faltan (ej.: `http.ts`) |
+| `omitir` | función `(Solicitud) -> frozenset` con archivos de la plantilla que esta vez no se crean (ej.: `useConsulta` en una `pagina` sin `--datos`) |
 | `inserciones` | líneas que se agregan a archivos existentes (ver abajo) |
 | `ajustar_palabras` | ej.: quitar `use` de `useContador` para no generar `useUseContador` |
 | `validar_nombre`, `campos_reservados` | nombres que romperían el código generado |
-| `opciones`, `normalizar_opcion` | opciones extra (`--carpeta`, `--migrar`, `--protegido`) |
+| `opciones`, `normalizar_opcion` | opciones extra (`--carpeta`, `--migrar`, `--protegido`, `--datos`) |
 | `nombre_defecto` | la pieza no necesita nombre (`nuevo login`); el menú no lo pregunta |
 | `siguiente_paso` | comandos a mostrar al final (`# ` = nota, `http...` = enlace) |
 | `despues`, `confirmaciones` | acción posterior (como `--migrar`) y su pregunta en el menú |
@@ -281,6 +282,8 @@ Insercion(
 
 - Sin `marcador`, el texto se agrega al final del archivo (`crear_si_falta=True`
   crea el archivo si no existe).
+- `condicion=lambda sol: ...` agrega la línea solo cuando se cumple (ej.: la `pagina`
+  de React con `--uno` no agrega el enlace en el menú, porque su ruta lleva un id).
 - La línea marcador va en la plantilla del proyecto:
   `# --- andamio:apps (no borrar esta línea) ---` (o `//` en TypeScript, con
   `comentario="//"` en la `Insercion`). Para otros archivos: `"{/*"` (JSX), `"{#"`

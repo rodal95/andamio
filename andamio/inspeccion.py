@@ -16,12 +16,14 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
 from andamio import acciones, stacks
-from andamio.nucleo import ajustes, consola, historial, plantillas
+from andamio.nucleo import ajustes, consola, historial
 from andamio.nucleo.campos import parsear_campo
 from andamio.nucleo.deteccion import buscar_proyecto
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.generador import (
+    archivos_de_la_pieza,
     contexto_pieza,
+    inserciones_de_la_pieza,
     nombre_para_pieza,
     nombre_variante,
     resolver_variante,
@@ -248,11 +250,11 @@ def revisar_entrada(stack: Stack, raiz: Path, entrada: historial.Entrada) -> Est
     try:
         contexto = contexto_pieza(sol)
         carpeta, _ = ubicar_plantilla(stack, pieza, raiz, variante)
-        for archivo in plantillas.leer_arbol(carpeta):
+        for archivo in archivos_de_la_pieza(sol, carpeta):
             ruta = renderizar_ruta(archivo.partes, contexto).as_posix()
             estado.archivos.append((ruta, (raiz / ruta).is_file()))
         conexiones = ajustes.de_proyecto(raiz).conexiones
-        for ins in pieza.inserciones:
+        for ins in inserciones_de_la_pieza(sol):
             if ins.marcador and ins.marcador in conexiones:
                 ruta = conexiones[ins.marcador]
             else:

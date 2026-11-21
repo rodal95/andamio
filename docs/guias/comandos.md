@@ -27,6 +27,8 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --protegido          (--protected)            crear, modificar y eliminar piden login
 │     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
 │     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
+│     --datos <servicio>   (--data)                 la página muestra datos de la API (React)
+│     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
@@ -49,6 +51,7 @@ Qué opciones acepta cada pieza:
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
+| `--datos`, `--uno` | `pagina` (React) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
@@ -94,7 +97,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--no-guide` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui` e `info` son iguales en los dos idiomas.
@@ -121,6 +124,8 @@ Opciones que sirven en todas las piezas:
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
 | `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
+| `--datos producto` | La página muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React). |
+| `--uno` | Con `--datos`: la página muestra uno solo; su ruta lleva el id (`/producto-detalle/:id`). |
 | `--js` | Al crear: el proyecto en JavaScript en lugar de TypeScript (Express, React, React Native, Next.js). |
 
 ---
@@ -297,8 +302,10 @@ npm run dev                                      http://localhost:5173
 |---|---|---|
 | `componente` | `nuevo componente Tarjeta` | `src/components/Tarjeta/` con su `.module.css`, exportado en `src/components/index`. |
 | `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage/`, con su ruta `/contacto` y su enlace en `src/App`. |
+| `pagina --datos` | `nuevo pagina ProductoLista --datos producto` | La página con la lista del servicio `productoService`: `useConsulta(productoService.listar)`, con cargando, error y lista vacía. Necesita el servicio (crea `useConsulta` si falta). |
+| `pagina --datos --uno` | `nuevo pagina ProductoDetalle --datos producto --uno` | La página de uno solo: toma el id de la ruta (`/producto-detalle/:id`) y usa `obtener(id)`. Muestra los campos con que se generó el servicio. No va en el menú. |
 | `hook` | `nuevo hook contador` | `src/hooks/useContador`. |
-| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http`, si falta). |
+| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http` y el hook `useConsulta`, si faltan). |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, el hook `useConsulta`, el servicio y las 4 rutas con su enlace. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |

@@ -29,6 +29,8 @@ def con_piezas(proyecto):
     assert main(["nuevo", "servicio", "producto", "nombre:str", "precio:decimal", "stock:int", "activo:bool", "vence:date"]) == 0
     assert main(["nuevo", "servicio", "cliente", "nombre", "email:email"]) == 0
     assert main(["nuevo", "crud", "producto", "nombre:str", "precio:decimal", "stock:int", "activo:bool", "vence:date"]) == 0
+    assert main(["nuevo", "pagina", "ClienteLista", "--datos", "cliente"]) == 0
+    assert main(["nuevo", "pagina", "ProductoFicha", "--datos", "producto", "--uno"]) == 0
     return proyecto
 
 
@@ -144,6 +146,112 @@ def test_pagina_registra_su_ruta_y_su_enlace(con_piezas):
     assert "import { ContactoPage } from './pages/ContactoPage';" in app
     assert '<Route path="/contacto" element={<ContactoPage />} />' in app
     assert '<Link to="/contacto">Contacto</Link>' in app
+
+
+def test_servicio_trae_el_hook_de_consulta(proyecto):
+    assert not (proyecto / "src/hooks/useConsulta.ts").exists()
+    assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
+    assert "export function useConsulta<T>" in leer(proyecto / "src/hooks/useConsulta.ts")
+
+
+def test_pagina_sin_datos_no_usa_la_api(proyecto):
+    assert main(["nuevo", "pagina", "Contacto"]) == 0
+    pagina = leer(proyecto / "src/pages/ContactoPage/ContactoPage.tsx")
+    assert pagina.startswith("import styles from './ContactoPage.module.css';")
+    assert "useConsulta" not in pagina and "@@" not in pagina
+    assert "export function ContactoPage() {\n  return (" in pagina
+    assert not (proyecto / "src/hooks/useConsulta.ts").exists(), "sin --datos no hace falta el hook"
+
+
+def test_pagina_con_datos_lista(con_piezas):
+    pagina = leer(con_piezas / "src/pages/ClienteListaPage/ClienteListaPage.tsx")
+    for esperado in (
+        "import { useConsulta } from '../../hooks/useConsulta';",
+        "import { clienteService } from '../../services/clienteService';",
+        "const { datos, cargando, error } = useConsulta(clienteService.listar);",
+        "{cargando && <p>Cargando…</p>}",
+        "{datos?.length === 0 && <p>Todavía no hay registros.</p>}",
+        "<li key={item.id}>{item.nombre}</li>",  # el primer campo de texto del servicio
+        "// useConsulta pide los datos a la API",
+    ):
+        assert esperado in pagina, esperado
+    app = leer(con_piezas / "src/App.tsx")
+    assert '<Route path="/cliente-lista" element={<ClienteListaPage />} />' in app
+    assert '<Link to="/cliente-lista">Cliente lista</Link>' in app
+
+
+def test_pagina_con_datos_de_uno(con_piezas):
+    pagina = leer(con_piezas / "src/pages/ProductoFichaPage/ProductoFichaPage.tsx")
+    for esperado in (
+        "import { useParams } from 'react-router';",
+        "const id = Number(useParams().id);",
+        "useConsulta(() => productoService.obtener(id), [id]);",
+        "<dt>Precio</dt>",
+        "<dd>{datos.activo ? 'Sí' : 'No'}</dd>",
+    ):
+        assert esperado in pagina, esperado
+    app = leer(con_piezas / "src/App.tsx")
+    assert '<Route path="/producto-ficha/:id" element={<ProductoFichaPage />} />' in app
+    assert '"/producto-ficha"' not in app, "una página con :id no va en el menú"
+
+
+def test_pagina_con_datos_sin_guia_y_sin_historial(proyecto):
+    assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
+    (proyecto / ".andamio/historial.jsonl").unlink()  # un servicio sin historial: no se saben los campos
+    assert main(["nuevo", "pagina", "Productos", "--datos", "producto", "--sin-guia"]) == 0
+    assert main(["nuevo", "pagina", "Producto", "--datos", "producto", "--uno"]) == 0
+    lista = leer(proyecto / "src/pages/ProductosPage/ProductosPage.tsx")
+    assert "<li key={item.id}>{`Producto ${item.id}`}</li>" in lista
+    assert "//" not in lista
+    assert "{datos && <pre>{JSON.stringify(datos, null, 2)}</pre>}" in leer(proyecto / "src/pages/ProductoPage/ProductoPage.tsx")
+
+
+def test_pagina_con_datos_reusa_el_hook(proyecto, capsys):
+    assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
+    hook = proyecto / "src/hooks/useConsulta.ts"
+    hook.write_text(leer(hook) + "// mío\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "pagina", "Productos", "--datos", "producto"]) == 0
+    assert leer(hook).endswith("// mío\n")
+    assert "src/hooks/useConsulta.ts" in capsys.readouterr().out  # en el orden de lectura
+
+
+@pytest.mark.parametrize(
+    "argumentos, mensaje",
+    [
+        (["pagina", "Productos", "--datos", "producto"], "src/services/productoService.ts, que todavía no existe"),
+        (["pagina", "Productos", "--datos", "productos"], "parece plural"),
+        (["pagina", "Contacto", "--uno"], "--uno va junto con --datos"),
+        (["componente", "Tarjeta", "--datos", "producto"], "no acepta la opción --datos"),
+    ],
+)
+def test_pagina_con_datos_errores(proyecto, capsys, argumentos, mensaje):
+    capsys.readouterr()
+    assert main(["nuevo", *argumentos]) == 1
+    assert mensaje in capsys.readouterr().err
+    assert not list((proyecto / "src/pages").glob("Productos*")) and not (proyecto / "src/pages/ContactoPage").exists()
+
+
+def test_pagina_y_crud_no_repiten_componentes(proyecto, capsys):
+    """El crud ya tiene ProductoListaPage: una página ProductoLista no compilaría (y al revés)."""
+    assert main(["nuevo", "crud", "producto", "nombre"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "pagina", "ProductoLista", "--datos", "producto"]) == 1
+    assert "ya usa un componente ProductoListaPage" in capsys.readouterr().err
+    assert main(["nuevo", "pagina", "ProductoDetalle"]) == 1
+    assert main(["nuevo", "pagina", "Catalogo", "--datos", "producto"]) == 0
+    assert main(["nuevo", "pagina", "ClienteForm"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "crud", "cliente", "nombre"]) == 1
+    assert "ya usa un componente ClienteFormPage" in capsys.readouterr().err
+
+
+def test_mapa_revisa_las_paginas_con_datos(con_piezas, capsys):
+    capsys.readouterr()
+    assert main(["mapa"]) == 0
+    salida = capsys.readouterr().out
+    assert "no se pudo revisar" not in salida
+    assert "pagina producto_ficha --datos producto --uno" in salida
 
 
 def test_crud(con_piezas):

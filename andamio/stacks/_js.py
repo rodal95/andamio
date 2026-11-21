@@ -6,9 +6,10 @@ import re
 from pathlib import Path
 from typing import Callable
 
+from andamio.nucleo import consola, historial, identificadores
 from andamio.nucleo.deteccion import dependencias_npm
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.nombres import Nombre, kebab, separar_palabras
+from andamio.nucleo.nombres import Nombre, camel, kebab, parece_plural, separar_palabras, snake, titulo
 from andamio.stacks.base import Solicitud
 from andamio.stacks.django import TIPOS as TIPOS_API
 
@@ -161,6 +162,119 @@ MARCADORES_PANTALLA = {
 }
 
 
+# --- Página con datos de la API (pagina --datos producto [--uno]) ----------------------
+
+
+def normalizar_datos(texto: str) -> str:
+    """--datos Producto, --datos item-pedido -> producto, item_pedido (el nombre del servicio, en singular)."""
+    palabras = separar_palabras(texto, "El nombre del servicio (--datos)")
+    if parece_plural(palabras):
+        raise AndamioError(
+            f"--datos va con el nombre del servicio en singular: '{texto}' parece plural.",
+            "Ejemplo: --datos producto (usa src/services/productoService)",
+        )
+    return snake(palabras)
+
+
+MARCADORES_PAGINA = {
+    "ruta_pagina": "la ruta de la página: /contacto, o /producto-detalle/:id con --uno",
+    "url_pagina": "la dirección para abrirla: /contacto, o /producto-detalle/1 con --uno",
+    "datos_imports": "imports del hook y del servicio (vacío sin --datos)",
+    "datos_consulta": "la llamada a useConsulta (vacío sin --datos)",
+    "datos_contenido": "cargando, error y los datos: una lista, o uno solo con --uno (vacío sin --datos)",
+    "datos_servicio": "el archivo del servicio que usa (vacío sin --datos)",
+    "datos_hook": "el archivo de useConsulta (vacío sin --datos)",
+}
+
+
+def contexto_pagina(sol: Solicitud) -> dict[str, str]:
+    datos = sol.opciones.get("datos")
+    uno = bool(sol.opciones.get("uno"))
+    ruta = f"/{sol.nombre.kebab}"
+    if not datos:
+        if uno:
+            raise AndamioError(
+                "--uno va junto con --datos: dice que la página muestra uno solo de esos datos.",
+                f"Ejemplo: {consola.programa()} nuevo pagina {sol.nombre.pascal} --datos producto --uno",
+            )
+        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
+        return {**dict.fromkeys(vacios, ""), "ruta_pagina": ruta, "url_pagina": ruta}
+
+    ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    servicio = f"{camel(datos.split('_'))}Service"
+    archivo_servicio = f"src/services/{servicio}.{ext}"
+    if not (sol.raiz / archivo_servicio).is_file():
+        raise AndamioError(
+            f"La página usa {archivo_servicio}, que todavía no existe.",
+            f"Generá primero el servicio, con los campos de la API: {consola.programa()} nuevo servicio {datos} nombre:str precio:decimal",
+        )
+    campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) or []
+    # Con guía, una línea que explica la consulta (la guía de los bloques se arma acá, no en la plantilla).
+    if uno:
+        explicacion = "// El id sale de la ruta; si cambia, useConsulta vuelve a pedir los datos."
+        consulta = [
+            "const id = Number(useParams().id);",
+            f"const {{ datos, cargando, error }} = useConsulta(() => {servicio}.obtener(id), [id]);",
+        ]
+        imports = ["import { useParams } from 'react-router';"]
+        contenido = _contenido_uno(campos)
+    else:
+        explicacion = "// useConsulta pide los datos a la API (con useEffect) y avisa si está cargando o si falló."
+        consulta = [f"const {{ datos, cargando, error }} = useConsulta({servicio}.listar);"]
+        imports = []
+        contenido = _contenido_lista(campos, datos)
+    imports += ["import { useConsulta } from '../../hooks/useConsulta';", f"import {{ {servicio} }} from '../../services/{servicio}';"]
+    if sol.guia:
+        consulta.insert(0, explicacion)
+    return {
+        "ruta_pagina": f"{ruta}/:id" if uno else ruta,
+        "url_pagina": f"{ruta}/1" if uno else ruta,
+        "datos_imports": "\n".join(imports),
+        "datos_consulta": "\n".join(consulta) + "\n",
+        "datos_contenido": "\n".join(contenido),
+        "datos_servicio": archivo_servicio,
+        "datos_hook": f"src/hooks/useConsulta.{ext}",
+    }
+
+
+_CARGANDO_Y_ERROR = [
+    "{cargando && <p>Cargando…</p>}",
+    "{error && <p role=\"alert\">No se pudo cargar: {error}</p>}",
+]
+
+
+def _contenido_lista(campos, datos: str) -> list[str]:
+    para_texto = next((c for c in campos if c.tipo in ("str", "email")), None)
+    texto = f"{{item.{para_texto.nombre}}}" if para_texto else f"{{`{titulo(datos.split('_'))} ${{item.id}}`}}"
+    return [
+        *_CARGANDO_Y_ERROR,
+        "{datos?.length === 0 && <p>Todavía no hay registros.</p>}",
+        "<ul>",
+        "  {datos?.map((item) => (",
+        f"    <li key={{item.id}}>{texto}</li>",
+        "  ))}",
+        "</ul>",
+    ]
+
+
+def _contenido_uno(campos) -> list[str]:
+    if not campos:
+        # Sin los campos (el servicio no está en el historial): se muestra todo lo que llegó.
+        return [*_CARGANDO_Y_ERROR, "{datos && <pre>{JSON.stringify(datos, null, 2)}</pre>}"]
+    filas = []
+    for c in campos:
+        valor = f"{{datos.{c.nombre} ? 'Sí' : 'No'}}" if c.tipo == "bool" else f"{{datos.{c.nombre}}}"
+        filas += [f"    <dt>{c.titulo}</dt>", f"    <dd>{valor}</dd>"]
+    return [*_CARGANDO_Y_ERROR, "{datos && (", "  <dl>", *filas, "  </dl>", ")}"]
+
+
+def pasos_pagina(sol: Solicitud) -> list[str]:
+    pasos = ["npm run dev", "http://localhost:5173@@url_pagina@@"]
+    if sol.opciones.get("datos"):
+        pasos.append("# Necesita la API andando (Django, FastAPI o Express), con el recurso que usa el servicio.")
+    return pasos_router(pasos)(sol)
+
+
 # --- Router (React) ---------------------------------------------------------------------
 
 # Rama 7: funciona con Node 20 (la 8 pide Node 22.22). Tiene que coincidir con package.json
@@ -168,15 +282,36 @@ MARCADORES_PANTALLA = {
 VERSION_ROUTER = "7.18.6"
 
 
-def _leer_app(raiz: Path) -> str:
+def _app(raiz: Path) -> tuple[str, str]:
     for nombre in ("App.tsx", "App.jsx"):
         archivo = raiz / "src" / nombre
         if archivo.is_file():
             try:
-                return archivo.read_text(encoding="utf-8-sig")
+                return nombre, archivo.read_text(encoding="utf-8-sig")
             except (OSError, UnicodeDecodeError):
-                return ""
-    return ""
+                return nombre, ""
+    return "App.tsx", ""
+
+
+def _leer_app(raiz: Path) -> str:
+    return _app(raiz)[1]
+
+
+def validar_componentes_libres(componentes: Callable[[Nombre], list[str]]) -> Callable[[Path, Nombre], None]:
+    """Rechaza una pieza si src/App ya importa un componente con el mismo nombre
+    (ej.: nuevo pagina ProductoLista después de nuevo crud producto: los dos son ProductoListaPage)."""
+
+    def validar(raiz: Path, nombre: Nombre) -> None:
+        archivo, texto = _app(raiz)
+        ocupados = identificadores.declarados(archivo, texto)
+        repetido = next((c for c in componentes(nombre) if c in ocupados), None)
+        if repetido:
+            raise AndamioError(
+                f"src/{archivo} ya usa un componente {repetido} (lo generó otra pieza): el código no compilaría.",
+                "Elegí otro nombre.",
+            )
+
+    return validar
 
 
 def validar_ruta_libre(ruta: Callable[[Nombre], str]) -> Callable[[Path, Nombre], None]:

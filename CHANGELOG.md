@@ -5,6 +5,21 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- React: `nuevo pagina <Nombre> --datos <servicio>` genera una página que muestra los datos
+  de un servicio que ya existe: `useConsulta(productoService.listar)`, con cargando, error y
+  lista vacía. Con `--uno`, muestra uno solo: la ruta lleva el id (`/producto-detalle/:id`),
+  usa `obtener(id)`, muestra los campos con que se generó el servicio y no va en el menú.
+  En el menú interactivo, la pieza `pagina` lo pregunta. Así, una página con datos no
+  necesita un `crud` entero ni escribir el `useEffect` a mano.
+- React: `nuevo servicio` también crea el hook `useConsulta` (si falta), que antes venía
+  solo con el `crud`.
+
+### Corregido
+- React: `nuevo pagina ProductoLista` después de `nuevo crud producto` (o un `crud` después
+  de una página con el mismo componente) generaba dos `ProductoListaPage` en `src/App` y el
+  proyecto no compilaba. Ahora andamio lo rechaza y explica por qué.
+
 ## [1.5.0] - 2026-11-20
 
 ### Agregado

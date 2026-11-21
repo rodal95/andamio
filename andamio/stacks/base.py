@@ -50,6 +50,9 @@ class Insercion:
     ubicacion: str = ""  # dónde pegarlo si falta el marcador: "dentro de LOCAL_APPS"
     comentario: str = "#"  # cómo empieza un comentario en ese archivo ("#" o "//")
     crear_si_falta: bool = False
+    # Si se agrega según la solicitud (ej.: el enlace del menú, que no va en una página con
+    # :id en la ruta). None = siempre.
+    condicion: Callable[[Solicitud], bool] | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,9 @@ class Pieza:
     marcadores: dict[str, str] = field(default_factory=dict)  # marcadores propios (para el LEEME)
     existe_si: tuple[str, ...] = ()  # si alguna de estas rutas existe, la pieza ya fue generada
     si_no_existe: frozenset[str] = frozenset()  # archivos de la plantilla que se crean solo si faltan
+    # Archivos de la plantilla que no se crean en esta solicitud (ej.: el hook useConsulta de
+    # una página sin --datos). Rutas como en si_no_existe. None = se crean todos.
+    omitir: Callable[[Solicitud], frozenset[str]] | None = None
     inserciones: tuple[Insercion, ...] = ()
     # Orden recomendado para leer lo que se generó: (ruta con marcadores, qué hace).
     # Se muestra después de generar, para que el código no sea una caja negra.

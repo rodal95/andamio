@@ -162,10 +162,26 @@ def test_react_js_crud(web_js):
     assert "export { ProductoDetalle } from './ProductoDetalle';" in leer(web_js / "src/components/index.js")
 
 
+def test_react_js_pagina_con_datos(web_js):
+    assert main(["nuevo", "servicio", "producto", "nombre:str", "activo:bool"]) == 0
+    assert (web_js / "src/hooks/useConsulta.js").is_file()
+    assert main(["nuevo", "pagina", "ProductoLista", "--datos", "producto"]) == 0
+    assert main(["nuevo", "pagina", "ProductoDetalle", "--datos", "producto", "--uno"]) == 0
+    lista = leer(web_js / "src/pages/ProductoListaPage/ProductoListaPage.jsx")
+    assert "useConsulta(productoService.listar)" in lista
+    assert "import { productoService } from '../../services/productoService';" in lista
+    detalle = leer(web_js / "src/pages/ProductoDetallePage/ProductoDetallePage.jsx")
+    assert "<dd>{datos.activo ? 'Sí' : 'No'}</dd>" in detalle
+    assert '<Route path="/producto-detalle/:id" element={<ProductoDetallePage />} />' in leer(web_js / "src/App.jsx")
+
+
 @pytest.mark.lento
 @requiere_node
 def test_react_js_npm_install_y_build(web_js):
-    for argumentos in (["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["servicio", "producto", "nombre"], ["crud", "producto", "nombre"]):
+    for argumentos in (
+        ["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["servicio", "producto", "nombre"], ["crud", "producto", "nombre"],
+        ["pagina", "Catalogo", "--datos", "producto"], ["pagina", "ProductoFicha", "--datos", "producto", "--uno"],
+    ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (web_js / "src/pages/PruebaUso.jsx").write_text(APP_JS.replace("function App()", "export function PruebaUso()").replace("export default App;\n", "").replace("./", "../").replace("import { ProductosPage } from '../pages/ProductosPage';\n", "").replace("      <ProductosPage />\n", ""), encoding="utf-8")
     npm_install(web_js)

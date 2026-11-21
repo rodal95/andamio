@@ -1390,7 +1390,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode"}
+_OPCIONES_EN_INGLES = {"--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1439,6 +1439,10 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": f"{base} --migrar", "descripcion": "Además crea y aplica la migración (la tabla en la base)."})
         elif opcion == "protegido":
             filas.append({"comando": f"{base} --protegido", "descripcion": "Leer es libre; crear, modificar y eliminar piden iniciar sesión."})
+        elif opcion == "datos":
+            filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
+        elif opcion == "uno":
+            filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
         elif opcion == "carpeta" and "--carpeta" not in comando:
             filas.append({"comando": f"{base} --carpeta productos", "descripcion": "Dentro de una carpeta de app/ (la carpeta es parte de la ruta)."})
     if pieza.usa_plural:
