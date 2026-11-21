@@ -27,7 +27,12 @@ def _ejemplo(stack: Stack, pieza: Pieza, raiz: Path) -> tuple[str, dict[str, str
     nombre = nombre_para_pieza(pieza, nombre_texto)
     campos = [parsear_campo(c, stack.tipos) for c in campos_texto]
     variante = variante_del_proyecto(stack, raiz)
-    contexto = contexto_pieza(Solicitud(stack, pieza, raiz, nombre, campos, variante=variante))
+    try:
+        contexto = contexto_pieza(Solicitud(stack, pieza, raiz, nombre, campos, variante=variante))
+    except AndamioError:
+        # La pieza usa algo que en este proyecto no existe (ej.: el menú de una entidad que no
+        # hay): se muestran solo los marcadores del nombre.
+        contexto = {**nombre.marcadores(), **stack.marcadores_variante.get(variante, {})}
     return f"{consola.programa()} nuevo {pieza.clave} {pieza.ejemplo}".rstrip(), contexto
 
 

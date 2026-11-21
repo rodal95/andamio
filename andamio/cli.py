@@ -123,6 +123,7 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--datos", "--data", dest="datos", help="la página muestra datos de la API con este servicio (React): --datos producto")
     nuevo.add_argument("--uno", "--one", dest="uno", action="store_true", help="con --datos: muestra uno solo, con el id en la ruta")
     nuevo.add_argument("--form", dest="form", action="store_true", help="con --datos: el formulario para crear y editar")
+    nuevo.add_argument("--sin-menu", "--no-menu", dest="sin_menu", action="store_true", help="la entidad sin su menú de consola (Python + SQLite)")
     nuevo.add_argument("--simular", "--dry-run", **simular)
     nuevo.add_argument("--sin-guia", "--no-guide", **sin_guia)
 
@@ -168,7 +169,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         stack = acciones.stack_por_clave(args.stack)
         return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia is not False)
     if args.comando == "nuevo":
-        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno, "form": args.form}
+        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno, "form": args.form, "sin_menu": args.sin_menu}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular, args.guia)
     if args.comando == "info":
         return acciones.info(cwd)

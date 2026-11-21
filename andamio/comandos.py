@@ -20,6 +20,7 @@ _OPCIONES_PIEZA = {
     "datos": "--datos <servicio>",
     "uno": "--uno",
     "form": "--form",
+    "sin_menu": "--sin-menu",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 

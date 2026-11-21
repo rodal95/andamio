@@ -57,6 +57,8 @@ def test_sin_guia_no_quedan_guias_y_quedan_las_marcas(stack, variante, clave, en
     assert main(["crear", stack.clave, "proy", "--sin-guia", *(["--variante", variante] if variante else [])]) == 0
     raiz = en_carpeta / "proy"
     monkeypatch.chdir(raiz)
+    for previo in pieza.preparar:
+        assert main(["nuevo", *previo.split(), "--sin-guia"]) == 0
     antes = {p: p.read_bytes() for p in raiz.rglob("*") if p.is_file()}
     nombre, *campos = pieza.ejemplo.split() or [pieza.nombre_defecto]
     assert main(["nuevo", clave, nombre, *campos, "--sin-guia"]) == 0

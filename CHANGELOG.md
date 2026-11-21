@@ -36,6 +36,20 @@ Todos los cambios importantes de andamio. El proyecto usa
     el formulario (`crud` o `--form`) la elige de la lista de `categoriaService` (un
     `<select>` en React, opciones para tocar en React Native) y el detalle muestra su texto.
 
+- Python + SQLite:
+  - `entidad --sin-menu` (`--no-menu`): solo la tabla y las funciones, sin el menú de
+    consola.
+  - `nuevo menu <entidad>`: el menú de consola de una entidad que ya existe (con los campos
+    con que se generó) y su opción en el menú principal.
+  - `nuevo busqueda <entidad> <campo>...` (`search`): `buscar_por_<campo>(valor)` en la
+    entidad (`LIKE` en los textos, `=` en los números) y su opción en el menú. Repetirla no
+    duplica nada.
+  - El menú de cada entidad tiene dos líneas nuevas (`andamio:opciones` y `andamio:acciones`)
+    donde `busqueda` agrega sus opciones. En los menús generados antes, andamio muestra qué
+    pegar y dónde.
+- Piezas: `preparar` (lo que el ejemplo de una pieza necesita que exista antes, para los
+  tests y el sitio) y `define_campos` (`mapa` no compara los campos de una búsqueda).
+
 ### Cambiado
 - React: el formulario del `crud` usa `useFormulario` (la lógica de cargar, guardar y
   mostrar los errores está en el hook, no repetida en cada formulario).

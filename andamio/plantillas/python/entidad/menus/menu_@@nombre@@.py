@@ -14,6 +14,7 @@ def mostrar_menu():
         print("2. Agregar")
         print("3. Modificar")
         print("4. Eliminar")
+        # --- andamio:opciones (no borrar esta línea) ---
         print("0. Volver")
         opcion = input("Elegí una opción: ").strip()
         if opcion == "1":
@@ -24,6 +25,7 @@ def mostrar_menu():
             modificar()
         elif opcion == "4":
             eliminar()
+        # --- andamio:acciones (no borrar esta línea) ---
         elif opcion == "0":
             return
         else:

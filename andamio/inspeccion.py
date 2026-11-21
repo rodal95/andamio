@@ -268,12 +268,13 @@ def revisar_entrada(stack: Stack, raiz: Path, entrada: historial.Entrada) -> Est
     return estado
 
 
-def _campos_distintos(estados: list[EstadoPieza]) -> list[str]:
+def _campos_distintos(stack: Stack, estados: list[EstadoPieza]) -> list[str]:
     """Regla 3: la API y la interfaz de un mismo recurso tienen que tener los mismos campos."""
     avisos = []
     por_nombre: dict[str, list[historial.Entrada]] = {}
     for estado in estados:
-        if estado.entrada.campos:
+        pieza = stack.piezas.get(estado.entrada.pieza)
+        if estado.entrada.campos and (pieza is None or pieza.define_campos):
             por_nombre.setdefault(estado.entrada.nombre.snake, []).append(estado.entrada)
     for nombre, entradas in por_nombre.items():
         distintos = {tuple((c.nombre, c.tipo) for c in e.campos) for e in entradas}
@@ -317,7 +318,7 @@ def mapa(cwd: Path) -> int:
         for ruta, que, esta in estado.conexiones:
             if not esta:
                 consola.escribir(f"      sin conectar: {ruta} ({que})")
-    avisos = _campos_distintos(estados)
+    avisos = _campos_distintos(stack, estados)
     if malas:
         avisos.append(
             f"{malas} {'línea' if malas == 1 else 'líneas'} de {historial.ARCHIVO.as_posix()} "

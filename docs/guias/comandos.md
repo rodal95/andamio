@@ -30,6 +30,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --datos <servicio>   (--data)                 la página o pantalla muestra datos de la API (React, React Native)
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --form                                        con --datos: el formulario para crear y editar
+│     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
@@ -53,6 +54,7 @@ Qué opciones acepta cada pieza:
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
+| `--sin-menu` | `entidad` (Python + SQLite) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
@@ -97,11 +99,11 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `pendientes` | `todo`, `pending` |
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
-| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-guide` |
+| `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-menu`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-menu`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
-`crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `info` y `--form` son iguales en los dos idiomas.
+`crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `menu`, `info` y `--form` son iguales en los dos idiomas.
 
 ```
 python -m andamio create django my-api
@@ -143,6 +145,9 @@ python main.py
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `entidad` | `nuevo entidad producto nombre:str precio:float stock:int` | La tabla en `sql/schema.sql`, `entidades/producto.py` (crear, listar, obtener, actualizar, eliminar) y `menus/menu_producto.py`, con su opción en el menú principal. |
+| `entidad --sin-menu` | `nuevo entidad producto nombre:str precio:float --sin-menu` | Solo la tabla y `entidades/producto.py`, sin el menú de consola (para usar las funciones desde tu código). |
+| `menu` | `nuevo menu producto` | `menus/menu_producto.py` para una entidad que ya existe (con los campos con que se generó), y su opción en el menú principal. |
+| `busqueda` | `nuevo busqueda producto nombre` | `buscar_por_nombre(valor)` al final de `entidades/producto.py` (`LIKE` en los textos: busca lo que contiene; `=` en los números) y su opción en el menú de la entidad. |
 | `entidad` con relación | `nuevo entidad producto nombre:str categoria:fk` | Lo mismo, con la columna `categoria_id` (`REFERENCES categorias(id) ON DELETE SET NULL`). `listar()` hace un `LEFT JOIN` para mostrar el nombre de la categoría, y el menú muestra las categorías y pide un id que exista. Necesita la entidad `categoria`. |
 
 ```python

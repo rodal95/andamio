@@ -61,6 +61,9 @@ class Pieza:
     titulo: str
     descripcion: str
     ejemplo: str  # ejemplo de uso: "producto nombre:str precio:float"
+    # Lo que el ejemplo necesita que exista antes: argumentos de `nuevo` (ej.: la entidad
+    # que usa un menú). Lo usan los tests y el sitio para generar el ejemplo.
+    preparar: tuple[str, ...] = ()
     # Nombre que se usa si no se escribe ninguno (ej.: "cuenta" en el login de Django).
     # Con nombre por defecto, el menú no pregunta el nombre.
     nombre_defecto: str = ""
@@ -71,6 +74,9 @@ class Pieza:
     # texto con marcadores, como "use@@Nombre@@".
     formas: tuple[str, ...] = ("snake",)
     usa_campos: bool = False
+    # False si los campos no definen datos sino que eligen de los de otra pieza (ej.: busqueda
+    # producto nombre). `andamio mapa` no los compara con los de las demás piezas.
+    define_campos: bool = True
     usa_plural: bool = False
     opciones: frozenset[str] = frozenset()  # opciones extra que acepta: "carpeta", "migrar"
     ajustar_palabras: Callable[[list[str]], list[str]] | None = None

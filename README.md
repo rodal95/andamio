@@ -35,7 +35,7 @@ en tu proyecto, escribí `python -m andamio info`.
 
 | Tipo de proyecto | `crear` | Piezas (`nuevo`) |
 |---|---|---|
-| Python + SQLite (consola) | `python` | `entidad` |
+| Python + SQLite (consola) | `python` | `entidad`, `menu`, `busqueda` |
 | Django REST (API) | `django` | `recurso`, `login` |
 | Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `tema`, `ui`, `estilo` |
 | FastAPI + SQLModel | `fastapi` | `recurso` |

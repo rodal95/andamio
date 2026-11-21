@@ -29,7 +29,7 @@ def test_una_guia_por_tecnologia_y_variante(datos):
         for variante in tecnologia["variantes"]:
             assert [p["clave"] for p in variante["piezas"]] == list(stack.piezas)
             for pieza in variante["piezas"]:
-                assert pieza["creados"], pieza["clave"]
+                assert pieza["creados"] or pieza["modificados"], pieza["clave"]
                 assert "Listo." in pieza["salida"] and "Error" not in pieza["salida"]
 
 
@@ -165,7 +165,7 @@ def test_cada_pieza_tiene_forma_general_y_variantes(datos):
                 assert len(set(comandos)) == len(comandos)
                 for opcion in pieza["opciones"]:
                     if opcion != "modo":
-                        assert any(f"--{opcion}" in c for c in comandos), (tecnologia["clave"], pieza["clave"], opcion)
+                        assert any(f"--{opcion.replace('_', '-')}" in c for c in comandos), (tecnologia["clave"], pieza["clave"], opcion)
 
 
 def test_el_proyecto_completo_se_arma_de_verdad(datos):

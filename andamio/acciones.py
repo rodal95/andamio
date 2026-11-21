@@ -124,6 +124,7 @@ ALIAS_PIEZAS = {
     "state": "estado",
     "theme": "tema",
     "style": "estilo",
+    "search": "busqueda",
 }
 
 

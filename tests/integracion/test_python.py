@@ -208,3 +208,87 @@ def test_menu_interactivo_crea_el_proyecto(en_carpeta, respuestas, capsys):
     assert main([]) == 0
     assert (en_carpeta / "mi-kiosco" / "main.py").is_file()
     assert "¿Qué proyecto querés crear?" in capsys.readouterr().out
+
+
+def ejecutar_main(raiz, teclas):
+    resultado = subprocess.run(
+        [sys.executable, "main.py"],
+        cwd=raiz,
+        input="\n".join(teclas) + "\n",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=60,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
+    assert resultado.returncode == 0, resultado.stderr
+    return resultado.stdout
+
+
+# --- Relaciones, --sin-menu, menu y busqueda -----------------------------------------
+
+
+def test_relacion_entre_entidades(proyecto, capsys):
+    assert main(["nuevo", "entidad", "producto", "nombre", "categoria:fk"]) == 1
+    assert "nuevo entidad categoria" in capsys.readouterr().err
+    assert main(["nuevo", "entidad", "categoria", "nombre"]) == 0
+    assert main(["nuevo", "entidad", "producto", "nombre", "precio:float", "categoria:fk"]) == 0
+    schema = leer(proyecto / "sql/schema.sql")
+    assert "categoria_id INTEGER REFERENCES categorias(id) ON DELETE SET NULL" in schema
+    entidad = leer(proyecto / "entidades/producto.py")
+    assert "def crear(nombre, precio, categoria_id):" in entidad
+    assert "LEFT JOIN categorias ON categorias.id = productos.categoria_id" in entidad
+    menu = leer(proyecto / "menus/menu_producto.py")
+    assert "from entidades import categoria" in menu and "def pedir_categoria(actual=None):" in menu
+    assert 'categoria_id = pedir_categoria(actual["categoria_id"])' in menu
+    # Categorías: 1 agregar Yerbas. Productos: agregar (id 9 no existe, después 1), listar;
+    # categorías: eliminar la 1; productos: listar (queda sin categoría).
+    salida = ejecutar_main(proyecto, ["1", "2", "Yerbas", "0", "2", "2", "Mate", "100", "9", "1", "1", "0", "1", "4", "1", "s", "0", "2", "1", "0", "0"])
+    assert "No existe ese id" in salida
+    assert "Mate   | 100.0  | 1            | Yerbas" in salida
+    assert "Mate   | 100.0  | None         | None" in salida
+
+
+def test_entidad_sin_menu_y_menu_despues(proyecto, capsys):
+    assert main(["nuevo", "entidad", "producto", "nombre", "precio:float", "--sin-menu"]) == 0
+    assert (proyecto / "entidades/producto.py").is_file()
+    assert not (proyecto / "menus/menu_producto.py").exists()
+    assert "menu_producto" not in leer(proyecto / "main.py")
+    assert "nuevo menu producto" in capsys.readouterr().out
+    assert main(["nuevo", "menu", "producto"]) == 0
+    menu = leer(proyecto / "menus/menu_producto.py")
+    assert 'precio = pedir("Precio", float)' in menu  # los campos de la entidad, del historial
+    assert "from menus import menu_producto" in leer(proyecto / "main.py")
+    assert "Mate   | 5.0" in ejecutar_main(proyecto, ["1", "2", "Mate", "5", "1", "0", "0"])
+
+
+def test_menu_y_busqueda_necesitan_la_entidad(proyecto, capsys):
+    assert main(["nuevo", "menu", "producto"]) == 1
+    assert "No existe la entidad 'producto'" in capsys.readouterr().err
+    assert main(["nuevo", "entidad", "producto", "nombre", "--sin-menu"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "busqueda", "producto", "nombre"]) == 1
+    assert "nuevo menu producto" in capsys.readouterr().err
+    assert main(["nuevo", "menu", "producto"]) == 0
+    assert main(["nuevo", "busqueda", "producto", "precio"]) == 1
+    assert "no tiene el campo 'precio'" in capsys.readouterr().err
+
+
+def test_busqueda(proyecto, capsys):
+    assert main(["nuevo", "entidad", "producto", "nombre", "precio:float"]) == 0
+    assert main(["nuevo", "busqueda", "producto", "precio", "nombre"]) == 0
+    entidad = leer(proyecto / "entidades/producto.py")
+    assert "WHERE nombre LIKE ?" in entidad and "WHERE precio = ?" in entidad
+    assert "\n\n\ndef buscar_por_nombre(valor):" in entidad
+    menu = leer(proyecto / "menus/menu_producto.py")
+    assert menu.index('print("5. Buscar por nombre")') < menu.index('print("6. Buscar por precio")')
+    # Otra vez: no se repite nada.
+    antes = menu
+    assert main(["nuevo", "busqueda", "producto", "nombre"]) == 0
+    assert leer(proyecto / "menus/menu_producto.py") == antes
+    salida = ejecutar_main(proyecto, ["1", "2", "Yerba mate", "10", "2", "Mate", "5", "5", "YERBA", "6", "5", "0", "0"])
+    assert "Yerba mate | 10.0" in salida.split("Nombre a buscar")[1].split("Precio a buscar")[0]
+    assert "Mate   | 5.0" in salida.split("Precio a buscar")[1]
+    capsys.readouterr()
+    assert main(["mapa"]) == 0
+    assert "campos distintos" not in capsys.readouterr().out

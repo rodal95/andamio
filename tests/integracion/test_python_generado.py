@@ -22,6 +22,11 @@ TODOS_LOS_TIPOS = ["texto:str", "detalle:text", "cantidad:int", "precio:decimal"
 def _piezas(stack):
     for clave, pieza in stack.piezas.items():
         nombre, *campos = pieza.ejemplo.split() or [pieza.nombre_defecto]
+        if pieza.preparar:
+            # Usa algo que ya existe (ej.: el menú de una entidad): primero eso, y el ejemplo tal cual.
+            yield from (p.split() for p in pieza.preparar)
+            yield [clave, nombre, *campos]
+            continue
         if clave not in ("tema", "ui", "login"):
             nombre = f"{nombre} {clave.replace('-', ' ')}"  # cada pieza con su nombre (crud y crud-api no chocan)
         if pieza.usa_campos:

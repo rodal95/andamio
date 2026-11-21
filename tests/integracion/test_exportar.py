@@ -35,7 +35,8 @@ def test_exporta_todas_las_piezas_con_su_leeme(stack, en_carpeta, monkeypatch, c
             assert f"`@@{marcador}@@`" in leeme, marcador
         if "## Además" in leeme:
             assert "@@" not in leeme.split("## Además")[1]
-        assert any(p.name != "LEEME.md" for p in carpeta.rglob("*") if p.is_file())
+        if pieza.clave != "busqueda":  # busqueda no tiene archivos: solo agrega a una entidad que ya existe
+            assert any(p.name != "LEEME.md" for p in carpeta.rglob("*") if p.is_file())
 
 
 def test_reexportar_no_pisa_nada(proyecto_python, capsys):

@@ -25,6 +25,8 @@ def test_cada_archivo_del_orden_de_lectura_existe(stack, variante, clave, en_car
     raiz = en_carpeta / "proy"
     monkeypatch.chdir(raiz)
     nombre, *campos = pieza.ejemplo.split() or [pieza.nombre_defecto]
+    for previo in pieza.preparar:
+        assert main(["nuevo", *previo.split()]) == 0
     capsys.readouterr()
     assert main(["nuevo", clave, nombre, *campos]) == 0
     salida = capsys.readouterr().out

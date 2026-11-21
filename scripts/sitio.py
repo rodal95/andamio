@@ -63,6 +63,18 @@ TECNOLOGIAS = {
                 "uso": 'from entidades import producto\n\nnuevo_id = producto.crear("Yerba", 1500.0, 10)\nfor fila in producto.listar():\n    print(fila["nombre"], fila["precio"])',
                 "uso_lenguaje": "python",
             },
+            "menu": {
+                "comando": "nuevo menu cliente",
+                "explicacion": "El menú de consola de una entidad que ya existe. Sirve cuando generaste la entidad con --sin-menu (solo la tabla y las funciones) y después querés manejarla desde el teclado: usa las funciones de la entidad y aparece como opción del menú principal.",
+                "uso": "python -m andamio nuevo entidad cliente nombre:str email:str --sin-menu\npython -m andamio nuevo menu cliente",
+                "uso_lenguaje": "texto",
+            },
+            "busqueda": {
+                "comando": "nuevo busqueda articulo nombre",
+                "explicacion": "Agrega a una entidad que ya existe una búsqueda por un campo: la función buscar_por_nombre() en entidades/ (con LIKE para los textos: busca lo que contiene) y su opción en el menú de la entidad.",
+                "uso": 'from entidades import articulo\n\nfor fila in articulo.buscar_por_nombre("yerba"):\n    print(fila["nombre"], fila["precio"])',
+                "uso_lenguaje": "python",
+            },
         },
         "extra": [
             ("python main.py", "Ejecuta la aplicación: muestra el menú principal."),
@@ -564,7 +576,7 @@ CARPETAS = {
 # Las piezas en el orden en que conviene aprenderlas. "tema:x" intercala una lección de un
 # concepto que no es una pieza (por ejemplo, el router), definida en TEMAS.
 CAMINO = {
-    "python": ["entidad", "tema:menu"],
+    "python": ["entidad", "tema:menu", "menu", "busqueda"],
     "django": ["recurso", "tema:rutas", "login"],
     "django-web": ["tema:mvt", "crud", "tema:plantillas", "pagina"],
     "web": ["pagina", "tema:modulos", "componente", "servicio", "crud"],
@@ -1390,7 +1402,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
+_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1451,6 +1463,8 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
+        elif opcion == "sin_menu":
+            filas.append({"comando": f"{base} --sin-menu", "descripcion": "Solo la tabla y las funciones, sin el menú de consola (después: nuevo menu producto)."})
         elif opcion == "carpeta" and "--carpeta" not in comando:
             filas.append({"comando": f"{base} --carpeta productos", "descripcion": "Dentro de una carpeta de app/ (la carpeta es parte de la ruta)."})
     if pieza.usa_plural:
@@ -1482,7 +1496,8 @@ RECORRIDOS = {
     "python": [
         ("crear python mi-kiosco", "Crea el proyecto de consola."),
         ("nuevo entidad categoria nombre:str", "La tabla de categorías, con su menú."),
-        ("nuevo entidad producto nombre:str precio:float stock:int", "La tabla de productos."),
+        ("nuevo entidad producto nombre:str precio:float stock:int categoria:fk", "La tabla de productos: cada uno con su categoría (categoria:fk)."),
+        ("nuevo busqueda producto nombre", "Buscar productos por nombre, con su opción en el menú de productos."),
         ("nuevo entidad cliente nombre:str telefono:str", "La tabla de clientes."),
         ("python main.py", "Ejecuta el programa: el menú principal ya tiene las tres opciones."),
     ],
@@ -1752,6 +1767,13 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
     piezas = []
     for clave_pieza, pieza in stack.piezas.items():
         datos_pieza = info["piezas"][clave_pieza]
+        for previo in pieza.preparar:
+            # Lo que el ejemplo necesita que exista (ej.: la entidad de un menú).
+            ya = _instantanea(proyecto)
+            _ejecutar(["nuevo", *shlex.split(previo)])
+            for ruta in _instantanea(proyecto):
+                if ruta not in ya:
+                    estado[ruta], origen[ruta] = "nuevo", previo.split()[0]
         antes = _instantanea(proyecto)
         salida = _ejecutar(shlex.split(datos_pieza["comando"]))
         despues = _instantanea(proyecto)
