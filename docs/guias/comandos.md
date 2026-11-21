@@ -15,6 +15,7 @@ python -m andamio --version                         la versión instalada
 python -m andamio --help                            la ayuda (también: <comando> --help)
 │
 ├── crear <tipo> <nombre>                (create)   crea un proyecto en una carpeta nueva
+├── crear <tipo> .                                  crea el proyecto en la carpeta actual (vacía)
 │     --simular            (--dry-run)              muestra qué crearía, sin tocar nada
 │     --variante ts|js     (--variant)              lenguaje (Express, React, React Native, Next.js)
 │     --js / --ts                                   atajos de --variante

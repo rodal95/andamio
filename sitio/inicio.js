@@ -105,7 +105,7 @@
 
   document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = A.version));
   document.querySelectorAll("[data-instalar]").forEach((el) => {
-    const comando = `${el.dataset.instalar} -m pip install ${A.urlWhl}`;
+    const comando = el.dataset.instalar === "pipx" ? `pipx install ${A.urlWhl}` : `${el.dataset.instalar} -m pip install ${A.urlWhl}`;
     el.outerHTML = A.comandoHtml(comando);
   });
 

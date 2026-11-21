@@ -29,7 +29,9 @@ y usá `python andamio.pyz` en lugar de `python -m andamio`.
 
 ## Qué podés crear y generar
 
-Con `python -m andamio crear <tipo> <nombre>` creás un proyecto. Adentro del proyecto
+Con `python -m andamio crear <tipo> <nombre>` creás un proyecto en una carpeta nueva; con
+`python -m andamio crear <tipo> .`, en la carpeta en la que estás (vacía), sin tener que
+entrar después. Adentro del proyecto
 (en cualquier subcarpeta), `python -m andamio nuevo <pieza> <nombre>` agrega piezas. Para ver qué se puede generar
 en tu proyecto, escribí `python -m andamio info`.
 
@@ -213,6 +215,19 @@ VS Code, si lo usás) y abrí una nueva. Es opcional.
 Probá con `py` en lugar de `python` (`py -m pip install ...`, `py -m andamio`).
 Si tampoco funciona, falta instalar Python (python.org o Microsoft Store, versión
 3.10 o más nueva).
+
+**Linux: `error: externally-managed-environment` al instalar.**
+Ubuntu, Debian y otras distribuciones nuevas no dejan instalar con pip en el Python del
+sistema (PEP 668). Instalalo con [pipx](https://pipx.pypa.io/), que le arma su propio entorno:
+
+```
+sudo apt install pipx
+pipx install https://github.com/rodal95/andamio/releases/download/v1.5.0/andamio-1.5.0-py3-none-any.whl
+pipx ensurepath
+```
+
+Cerrá la terminal, abrí una nueva y usá `andamio` en lugar de `python3 -m andamio`
+(`andamio crear react mi-web`). Sin instalar nada también funciona `python3 andamio.pyz`.
 
 **No tengo permisos de administrador / no tengo internet en el laboratorio.**
 Descargá `andamio.pyz` desde la [última versión](https://github.com/rodal95/andamio/releases/latest)

@@ -299,20 +299,50 @@ def contexto_proyecto(stack: Stack, texto: str, variante: str = "") -> dict[str,
     return contexto
 
 
+AQUI = "."  # crear <tipo> . : el proyecto en la carpeta actual
+
+
+def en_la_carpeta_actual(texto: str) -> bool:
+    return texto.strip() in (".", "./", ".\\")
+
+
+# Lo que puede haber en la carpeta actual antes de crear el proyecto ahí: lo de git y del editor.
+_PERMITIDOS_AQUI = {".git", ".gitattributes", ".vscode", ".idea", ".DS_Store", "Thumbs.db", "LICENSE"}
+
+
+def validar_carpeta_actual(padre: Path) -> None:
+    sobran = sorted(p.name for p in padre.iterdir() if p.name not in _PERMITIDOS_AQUI)
+    if sobran:
+        lista = ", ".join(sobran[:5]) + (f" y {len(sobran) - 5} más" if len(sobran) > 5 else "")
+        raise AndamioError(
+            f"Para crear el proyecto acá (con '.') la carpeta tiene que estar vacía, y tiene: {lista}.",
+            "Usá una carpeta vacía, o creá el proyecto en una carpeta nueva: escribí un nombre en lugar de '.'.",
+        )
+
+
 def planificar_proyecto(
     stack: Stack, texto: str, padre: Path, variante: str = "", guia: bool = True
 ) -> tuple[Plan, dict[str, str]]:
+    aqui = en_la_carpeta_actual(texto)
+    if aqui:
+        # El nombre del proyecto es el de la carpeta actual (ej.: mi-tienda).
+        validar_carpeta_actual(padre)
+        texto = padre.resolve().name
     contexto = contexto_proyecto(stack, texto, variante)
     nombre_carpeta = contexto["carpeta"]
-    destino = padre / nombre_carpeta
-    if destino.exists() and (not destino.is_dir() or any(destino.iterdir())):
-        raise AndamioError(
-            f"Ya existe '{nombre_carpeta}' en {padre} y no está vacía.",
-            "Elegí otro nombre para el proyecto, o creálo en otra carpeta.",
-        )
     plan = Plan(padre)
-    plan.crear_carpeta(nombre_carpeta)
-    base = PurePosixPath(nombre_carpeta)
+    if aqui:
+        contexto["aqui"] = "1"
+        base = PurePosixPath()
+    else:
+        destino = padre / nombre_carpeta
+        if destino.exists() and (not destino.is_dir() or any(destino.iterdir())):
+            raise AndamioError(
+                f"Ya existe '{nombre_carpeta}' en {padre} y no está vacía.",
+                "Elegí otro nombre para el proyecto, o creálo en otra carpeta (o creálo acá mismo con '.').",
+            )
+        plan.crear_carpeta(nombre_carpeta)
+        base = PurePosixPath(nombre_carpeta)
     for archivo in archivos_proyecto(stack, variante):
         origen = f"{stack.clave}/{plantillas.CARPETA_PROYECTO}/{archivo.ruta}"
         destino_rel = base / renderizar_ruta(archivo.partes, contexto, origen)
@@ -327,4 +357,7 @@ def planificar_proyecto(
 
 
 def pasos_proyecto(stack: Stack, contexto: dict[str, str]) -> list[str]:
-    return [renderizar(p, contexto) for p in stack.siguiente_paso_proyecto]
+    pasos = stack.siguiente_paso_proyecto
+    if contexto.get("aqui"):
+        pasos = [p for p in pasos if not p.startswith("cd ")]  # ya estás en la carpeta
+    return [renderizar(p, contexto) for p in pasos]

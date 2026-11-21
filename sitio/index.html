@@ -134,6 +134,17 @@
               <li><span data-instalar="python3"></span><p>Descarga e instala andamio.</p></li>
               <li><div class="comando"><code>python3 -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python3 -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado. En Linux y Mac, los comandos de esta página van con <code>python3</code>.</p></li>
             </ol>
+            <div class="aviso-caja">
+              <p><b>¿Dice <code>externally-managed-environment</code>?</b> Pasa en Ubuntu, Debian y otras distribuciones nuevas:
+                no dejan instalar con pip en el Python del sistema. Instalalo con <b>pipx</b>, que le arma su propio entorno:</p>
+              <ol class="pasos-marcha">
+                <li><div class="comando"><code>sudo apt install pipx</code><button type="button" class="comando__copiar" data-copiar="sudo apt install pipx">Copiar</button></div></li>
+                <li><span data-instalar="pipx"></span></li>
+                <li><div class="comando"><code>pipx ensurepath</code><button type="button" class="comando__copiar" data-copiar="pipx ensurepath">Copiar</button></div><p>Cerrá la terminal y abrí una nueva.</p></li>
+              </ol>
+              <p>Después escribí <code>andamio</code> en lugar de <code>python3 -m andamio</code> (por ejemplo, <code>andamio crear react mi-web</code>).
+                Otra opción, sin instalar nada: <code>andamio.pyz</code> (pestaña "Sin instalar").</p>
+            </div>
           </div>
           <div class="instalar__panel" id="instalar-pyz" role="tabpanel" hidden>
             <p>

@@ -6,6 +6,11 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
+- `crear <tipo> .`: crea el proyecto en la carpeta actual, sin crear otra ni tener que
+  entrar después (`cd`). El nombre del proyecto es el de la carpeta. La carpeta tiene que
+  estar vacía (se permiten `.git`, `.vscode` y `LICENSE`). En el menú, `.` como nombre.
+- Instalación en Linux: si pip responde `externally-managed-environment` (Ubuntu, Debian),
+  el README y la página explican cómo instalarlo con pipx.
 - React: `nuevo pagina <Nombre> --datos <servicio>` genera una página que muestra los datos
   de un servicio que ya existe: `useConsulta(productoService.listar)`, con cargando, error y
   lista vacía. Con `--uno`, muestra uno solo: la ruta lleva el id (`/producto-detalle/:id`),

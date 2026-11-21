@@ -88,11 +88,15 @@ def crear_proyecto(
     plan, contexto = planificar_proyecto(stack, texto_nombre, padre, variante, guia)
     if not guia:
         # Sin guía queda anotado, así los "nuevo" de este proyecto también la omiten.
-        plan.crear(PurePosixPath(contexto["carpeta"]) / ajustes.ARCHIVO, ajustes.texto(stack.clave, variante, guia_activada=False))
-    consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
+        base = PurePosixPath() if contexto.get("aqui") else PurePosixPath(contexto["carpeta"])
+        plan.crear(base / ajustes.ARCHIVO, ajustes.texto(stack.clave, variante, guia_activada=False))
+    if contexto.get("aqui"):
+        consola.escribir(f"Se usará la carpeta actual: {consola.color(str(padre), 'negrita')} (proyecto {contexto['carpeta']})")
+    else:
+        consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
     if variante:
         consola.escribir(f"Variante: {consola.color(nombre_variante(stack, variante), 'negrita')}")
-    existente = buscar_proyecto(padre)
+    existente = None if contexto.get("aqui") else buscar_proyecto(padre)
     if existente:
         consola.aviso(
             f"Estás dentro de un proyecto {existente[0].titulo} ({existente[1]}). "

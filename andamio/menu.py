@@ -13,7 +13,9 @@ from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.generador import (
     carpeta_proyecto,
     describir_nombre,
+    en_la_carpeta_actual,
     nombre_variante,
+    validar_carpeta_actual,
     validar_nombre_pieza,
     variante_del_proyecto,
 )
@@ -42,6 +44,9 @@ def _menu_crear(cwd: Path) -> int:
     consola.escribir()
 
     def validar(texto: str) -> str:
+        if en_la_carpeta_actual(texto):
+            validar_carpeta_actual(cwd)
+            return texto
         carpeta = carpeta_proyecto(texto)
         if (cwd / carpeta).exists() and any((cwd / carpeta).iterdir()):
             raise AndamioError(f"Ya existe la carpeta '{carpeta}' y no está vacía. Elegí otro nombre.")
@@ -55,7 +60,7 @@ def _menu_crear(cwd: Path) -> int:
         ]
         variante = consola.elegir("¿En qué lenguaje?", opciones_variante)
         consola.escribir()
-    texto = consola.preguntar("Nombre del proyecto", validar=validar, ejemplo=stack.ejemplo_proyecto)
+    texto = consola.preguntar("Nombre del proyecto (o . para crearlo en esta carpeta)", validar=validar, ejemplo=stack.ejemplo_proyecto)
     return acciones.crear_proyecto(stack, texto, cwd, confirmar=True, variante=variante)
 
 

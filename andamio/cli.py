@@ -99,7 +99,7 @@ def construir_parser() -> argparse.ArgumentParser:
 
     crear = comando("crear", help="crea un proyecto nuevo", description="Crea un proyecto nuevo en una carpeta.")
     crear.add_argument("stack", metavar="tipo", help=f"tipo de proyecto: {claves}")
-    crear.add_argument("nombre", help="nombre del proyecto (ej: mi-tienda)")
+    crear.add_argument("nombre", help="nombre del proyecto (ej: mi-tienda), o . para crearlo en la carpeta actual (vacía)")
     crear.add_argument("--simular", "--dry-run", **simular)
     crear.add_argument("--sin-guia", "--no-guide", **sin_guia)
     crear.add_argument("--variante", "--variant", dest="variante", help="variante del proyecto: ts o js (Express, React, React Native, Next.js)")
