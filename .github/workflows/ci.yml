@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Una vez por semana aunque nadie suba nada: los proyectos generados dependen de
+  # paquetes de npm y de PyPI, y del entorno de GitHub, que cambian solos.
+  schedule:
+    - cron: "23 6 * * 1"  # lunes 06:23 UTC
+  # A mano (Actions > Tests > Run workflow), sobre cualquier rama: para probar un
+  # arreglo antes de subirlo a main.
+  workflow_dispatch:
 
 jobs:
   tests:

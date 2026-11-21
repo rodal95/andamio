@@ -367,7 +367,10 @@ python -m pytest --lento            # además instala y compila los proyectos ge
   `python -m tests.integracion.barrido react crud --variante js --campos`.
 - Los archivos `.http` se ejecutan contra la API en marcha (`test_http.py`, con `--lento`).
 - El CI (GitHub Actions) corre los tests en Ubuntu y Windows con Python 3.10 y
-  3.13, y un trabajo aparte con `--lento`.
+  3.13, y un trabajo aparte con `--lento`: en cada push a `main`, en cada pull
+  request, **todos los lunes** (06:23 UTC, aunque nadie haya subido nada: npm, PyPI y
+  las acciones de GitHub cambian solos) y a mano, sobre cualquier rama, desde
+  **Actions → Tests → Run workflow** (para probar un arreglo antes de subirlo a `main`).
 
 ## Actualizar versiones de las dependencias
 
