@@ -313,17 +313,16 @@
         "1. Instalá andamio",
         `${A.comandoHtml(`python -m pip install ${A.urlWhl}`)}
         <p class="bajada">Para comprobar que quedó instalado:</p>${A.comandoHtml("python -m andamio --version")}
-        <p class="nota">Todos los comandos empiezan con <code>python -m andamio</code>, que funciona en cualquier PC (en Linux o Mac, <code>python3</code>).
+        <p class="nota">Todos los comandos empiezan con <code>python -m andamio</code>, que funciona en cualquier PC (en Mac, <code>python3 -m andamio</code>; en Linux, con pipx, <code>andamio</code>).
         ¿Sin permisos o sin internet? Mirá <a href="index.html#instalar">las otras formas de instalarlo</a>.</p>
-        <details class="consola"><summary>¿En Linux dice <code>externally-managed-environment</code>?</summary>
-          <p>No es un error de andamio. Ubuntu, Debian y otras distribuciones nuevas (con Python 3.12 o más nuevo) no dejan que
-          <code>pip</code> instale nada en el Python del sistema, porque el sistema operativo también lo usa (es la regla PEP 668):
-          el mismo comando va a fallar siempre, con cualquier paquete. Instalalo con <b>pipx</b>, que le arma su propio entorno:</p>
-          ${A.comandoHtml("sudo apt install pipx")}${A.comandoHtml(`pipx install ${A.urlWhl}`)}${A.comandoHtml("pipx ensurepath")}
-          <p>Cerrá la terminal, abrí una nueva y escribí <code>andamio</code> en lugar de <code>python3 -m andamio</code>
-          (por ejemplo: <code>andamio crear ${e(clave)} mi-proyecto</code>). Sin <code>sudo</code>, usá <code>andamio.pyz</code>
-          (en <a href="index.html#instalar">Instalar → Sin instalar</a>).</p></details>`,
-        "Una sola vez en la PC. En Windows, en CMD o PowerShell:",
+        <h4>En Linux: con pipx (es necesario)</h4>
+        <p>En Linux <code>pip install</code> no funciona: Ubuntu, Debian y las demás distribuciones nuevas no dejan que pip instale
+        programas en el Python del sistema (responde <code>externally-managed-environment</code>). andamio se instala con <b>pipx</b>,
+        que le arma su propio entorno:</p>
+        ${A.comandoHtml("sudo apt install pipx")}${A.comandoHtml(`pipx install ${A.urlWhl}`)}${A.comandoHtml("pipx ensurepath")}
+        <p class="nota">Cerrá la terminal y abrí una nueva. En Linux se escribe <code>andamio</code> donde esta guía dice
+        <code>python -m andamio</code> (por ejemplo: <code>andamio crear ${e(clave)} mi-proyecto</code>).</p>`,
+        "Una sola vez en la PC. En Windows o Mac (en Mac, con <code>python3</code>), en la terminal (en Windows: CMD o PowerShell):",
       )}
       ${bloque(
         "2. Creá el proyecto",

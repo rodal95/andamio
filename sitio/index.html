@@ -114,7 +114,8 @@
           <p class="seccion__bajada">Necesitás Python 3.10 o más nuevo. Se instala una sola vez en cada PC. andamio es un programa de Python: por eso todos los comandos empiezan con <code>python -m</code>.</p>
           <div class="pestanas pestanas--claras" role="tablist" aria-label="Forma de instalar" id="pestanas-instalar">
             <button role="tab" aria-selected="true" data-panel="instalar-windows">Windows</button>
-            <button role="tab" aria-selected="false" data-panel="instalar-unix">Linux o Mac</button>
+            <button role="tab" aria-selected="false" data-panel="instalar-unix">Linux</button>
+            <button role="tab" aria-selected="false" data-panel="instalar-mac">Mac</button>
             <button role="tab" aria-selected="false" data-panel="instalar-pyz">Sin instalar</button>
           </div>
           <div class="instalar__panel" id="instalar-windows" role="tabpanel">
@@ -130,24 +131,29 @@
             <p class="nota">¿Dice que "python" no se reconoce? Probá con <code>py</code> en lugar de <code>python</code>.</p>
           </div>
           <div class="instalar__panel" id="instalar-unix" role="tabpanel" hidden>
+            <p><b>En Linux, andamio se instala con pipx</b> (es necesario: <code>pip install</code> no funciona). Ubuntu, Debian y las
+              demás distribuciones nuevas no dejan que <code>pip</code> instale programas en el Python del sistema, porque el sistema
+              operativo también lo usa (si lo intentás, responde <code>externally-managed-environment</code>). pipx le arma a andamio
+              su propio entorno aparte y deja el comando <code>andamio</code> listo en cualquier carpeta. En la terminal:</p>
             <ol class="pasos-marcha">
-              <li><span data-instalar="python3"></span><p>Descarga e instala andamio.</p></li>
-              <li><div class="comando"><code>python3 -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python3 -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado. En Linux y Mac, los comandos de esta página van con <code>python3</code>.</p></li>
+              <li><div class="comando"><code>sudo apt install pipx</code><button type="button" class="comando__copiar" data-copiar="sudo apt install pipx">Copiar</button></div><p>Instala pipx (una sola vez; pide tu contraseña). En Fedora: <code>sudo dnf install pipx</code>.</p></li>
+              <li><span data-instalar="pipx"></span><p>Instala andamio.</p></li>
+              <li><div class="comando"><code>pipx ensurepath</code><button type="button" class="comando__copiar" data-copiar="pipx ensurepath">Copiar</button></div><p>Deja el comando <code>andamio</code> disponible. Después cerrá la terminal y abrí una nueva.</p></li>
+              <li><div class="comando"><code>andamio --version</code><button type="button" class="comando__copiar" data-copiar="andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado.</p></li>
             </ol>
             <div class="aviso-caja">
-              <p><b>¿Dice <code>externally-managed-environment</code>?</b> No es un error de andamio: Ubuntu, Debian y otras
-                distribuciones nuevas (con Python 3.12 o más nuevo) no dejan que <code>pip</code> instale nada en el Python del sistema,
-                porque el sistema operativo también lo usa y un paquete podría romperlo (es la regla PEP 668). Por eso el mismo comando
-                va a fallar siempre, con cualquier paquete. La solución es instalarlo con <b>pipx</b>, que le arma a andamio su propio
-                entorno aparte y deja el comando <code>andamio</code> listo para usar en cualquier carpeta:</p>
-              <ol class="pasos-marcha">
-                <li><div class="comando"><code>sudo apt install pipx</code><button type="button" class="comando__copiar" data-copiar="sudo apt install pipx">Copiar</button></div></li>
-                <li><span data-instalar="pipx"></span></li>
-                <li><div class="comando"><code>pipx ensurepath</code><button type="button" class="comando__copiar" data-copiar="pipx ensurepath">Copiar</button></div><p>Cerrá la terminal y abrí una nueva.</p></li>
-              </ol>
-              <p>Después escribí <code>andamio</code> en lugar de <code>python3 -m andamio</code> (por ejemplo, <code>andamio crear react mi-web</code>).
-                Otra opción, sin instalar nada: <code>andamio.pyz</code> (pestaña "Sin instalar").</p>
+              <p><b>En Linux se escribe <code>andamio</code></b> donde esta página dice <code>python -m andamio</code>:
+                por ejemplo, <code>andamio crear react mi-web</code> o <code>andamio nuevo recurso producto nombre:str</code>.
+                Para actualizarlo a una versión nueva: <code>pipx install --force</code> con el enlace nuevo.</p>
             </div>
+          </div>
+          <div class="instalar__panel" id="instalar-mac" role="tabpanel" hidden>
+            <ol class="pasos-marcha">
+              <li><span data-instalar="python3"></span><p>Descarga e instala andamio.</p></li>
+              <li><div class="comando"><code>python3 -m andamio --version</code><button type="button" class="comando__copiar" data-copiar="python3 -m andamio --version">Copiar</button></div><p>Si muestra la versión, quedó instalado. En Mac, los comandos de esta página van con <code>python3</code>.</p></li>
+            </ol>
+            <p class="nota">¿Python de Homebrew y dice <code>externally-managed-environment</code>? Instalalo como en Linux, con pipx:
+              <code>brew install pipx</code>, después <code>pipx install</code> con el enlace de andamio y <code>pipx ensurepath</code>.</p>
           </div>
           <div class="instalar__panel" id="instalar-pyz" role="tabpanel" hidden>
             <p>
