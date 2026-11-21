@@ -11,20 +11,9 @@ componentes, pantallas) para que te concentres en la lógica. Funciona con
 python -m pip install https://github.com/rodal95/andamio/releases/download/v1.5.0/andamio-1.5.0-py3-none-any.whl
 ```
 
-En Mac, escribí `python3` en lugar de `python`.
-
-**En Linux es necesario instalarlo con pipx** (`pip install` no funciona: Ubuntu, Debian y las
-demás distribuciones nuevas no dejan que pip instale programas en el Python del sistema y
-responden `externally-managed-environment`):
-
-```
-sudo apt install pipx
-pipx install https://github.com/rodal95/andamio/releases/download/v1.5.0/andamio-1.5.0-py3-none-any.whl
-pipx ensurepath
-```
-
-Cerrá la terminal y abrí una nueva. En Linux se escribe `andamio` donde esta guía dice
-`python -m andamio` (por ejemplo, `andamio crear react mi-web`).
+En Mac, escribí `python3` en lugar de `python`. **En Linux es necesario instalarlo con pipx**
+(pip responde `externally-managed-environment`): `sudo apt install pipx`, `pipx install <el enlace
+de arriba>` y `pipx ensurepath`; después se escribe `andamio` en lugar de `python -m andamio`.
 
 **Usar.** andamio es un programa de Python: los comandos empiezan con `python -m andamio`
 y así funcionan en cualquier PC.
