@@ -186,6 +186,7 @@ def test_react_js_npm_install_y_build(web_js):
         ["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["servicio", "producto", "nombre"], ["crud", "producto", "nombre"],
         ["pagina", "Catalogo", "--datos", "producto"], ["pagina", "ProductoFicha", "--datos", "producto", "--uno"],
         ["pagina", "ProductoAlta", "--datos", "producto", "--form"],
+        ["servicio", "cliente", "nombre"], ["crud", "pedido", "numero:int", "cliente:fk"], ["pagina", "PedidoAlta", "--datos", "pedido", "--form"],
     ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (web_js / "src/pages/PruebaUso.jsx").write_text(APP_JS.replace("function App()", "export function PruebaUso()").replace("export default App;\n", "").replace("./", "../").replace("import { ProductosPage } from '../pages/ProductosPage';\n", "").replace("      <ProductosPage />\n", ""), encoding="utf-8")
@@ -239,6 +240,7 @@ def test_react_native_js_npm_install_y_export(movil_js):
         ["pantalla", "detalle", "--carpeta", "productos"], ["componente", "Tarjeta"], ["hook", "contador"], ["servicio", "producto", "nombre"],
         ["pantalla", "lista", "--carpeta", "productos", "--datos", "producto"], ["pantalla", "producto", "--datos", "producto", "--uno"],
         ["pantalla", "editar-producto", "--datos", "producto", "--form"],
+        ["servicio", "cliente", "nombre"], ["servicio", "pedido", "numero:int", "cliente:fk"], ["pantalla", "editar-pedido", "--datos", "pedido", "--form"],
     ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (movil_js / "app/prueba-uso.jsx").write_text(PANTALLA_JS, encoding="utf-8")

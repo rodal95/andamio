@@ -1,6 +1,7 @@
 """Menú de consola para @@titulo@@."""
 
 from entidades import @@nombre@@
+@@imports_relaciones@@
 from menus.entrada import confirmar, mostrar_filas, pedir
 
 
@@ -59,3 +60,4 @@ def eliminar():
     if confirmar("¿Seguro que querés eliminarlo?"):
         @@nombre@@.eliminar(id_@@nombre@@)
         print("Eliminado.")
+@@funciones_relaciones@@

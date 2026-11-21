@@ -321,3 +321,62 @@ def test_login_y_protegido_funcionan(proyecto):
             assert "Ran 12 tests" in resultado.stderr
     # Swagger tiene el botón Authorize para el token.
     assert "bearerFormat: JWT" in leer(proyecto / "schema.yml")
+
+
+# --- Relaciones (campo:fk) -----------------------------------------------------------
+
+PRUEBA_RELACION = '''\
+from rest_framework.test import APITestCase
+
+from categorias.models import Categoria
+
+
+class RelacionTest(APITestCase):
+    def test_la_relacion_funciona(self):
+        yerbas = Categoria.objects.create(nombre="Yerbas")
+        respuesta = self.client.post("/api/productos/", {"nombre": "Mate", "categoria": yerbas.pk}, format="json")
+        self.assertEqual(respuesta.status_code, 201, respuesta.json())
+        self.assertEqual(respuesta.json()["categoria_texto"], "Yerbas")
+        self.assertEqual(self.client.get(f"/api/productos/?categoria={yerbas.pk}").json()[0]["nombre"], "Mate")
+        # Un id que no existe: 400 con el error en el campo.
+        respuesta = self.client.post("/api/productos/", {"nombre": "Otro", "categoria": 999}, format="json")
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("categoria", respuesta.json())
+        # Si se borra la categoría, el producto queda sin categoría.
+        yerbas.delete()
+        self.assertIsNone(self.client.get("/api/productos/").json()[0]["categoria"])
+'''
+
+
+def test_relacion_genera_la_foreign_key(proyecto, capsys):
+    assert main(["nuevo", "recurso", "producto", "nombre", "categoria:fk"]) == 1
+    assert "python -m andamio nuevo recurso categoria" in capsys.readouterr().err
+    assert main(["nuevo", "recurso", "categoria", "nombre"]) == 0
+    assert main(["nuevo", "recurso", "producto", "nombre", "precio:decimal", "categoria:fk"]) == 0
+    modelo = leer(proyecto / "productos/models.py")
+    assert 'categoria = models.ForeignKey("categorias.Categoria", on_delete=models.SET_NULL, null=True, blank=True, related_name="productos"' in modelo
+    serializer = leer(proyecto / "productos/serializers.py")
+    assert 'categoria_texto = serializers.StringRelatedField(source="categoria", read_only=True)' in serializer
+    assert '"categoria", "categoria_texto"' in serializer
+    assert 'queryset = Producto.objects.select_related("categoria")' in leer(proyecto / "productos/views.py")
+    assert 'list_filter = ["categoria"]' in leer(proyecto / "productos/admin.py")
+    assert '"categoria": null' in leer(proyecto / "http/productos.http")
+    # Sin relaciones, el ViewSet queda como siempre.
+    assert "queryset = Categoria.objects.all()" in leer(proyecto / "categorias/views.py")
+    assert "_texto" not in leer(proyecto / "categorias/serializers.py")
+
+
+def test_relacion_consigo_mismo(proyecto, capsys):
+    assert main(["nuevo", "recurso", "categoria", "nombre", "categoria:fk"]) == 1
+    assert "apunta a la misma pieza" in capsys.readouterr().err
+
+
+@pytest.mark.django
+@requiere_django
+def test_relacion_migra_y_funciona(proyecto):
+    assert main(["nuevo", "recurso", "categoria", "nombre"]) == 0
+    assert main(["nuevo", "recurso", "producto", "nombre", "categoria:fk"]) == 0
+    (proyecto / "productos/test_relacion.py").write_text(PRUEBA_RELACION, encoding="utf-8")
+    for argumentos in (["makemigrations"], ["test"], ["spectacular", "--validate", "--fail-on-warn", "--file", "schema.yml"]):
+        resultado = manage(proyecto, *argumentos)
+        assert resultado.returncode == 0, f"manage.py {' '.join(argumentos)}\n{resultado.stdout}\n{resultado.stderr}"

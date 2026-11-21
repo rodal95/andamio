@@ -17,7 +17,7 @@ class @@Nombre@@ViewSet(viewsets.ModelViewSet):
     """
 
     @@permisos@@
-    queryset = @@Nombre@@.objects.all()
+    queryset = @@queryset@@
     serializer_class = @@Nombre@@Serializer
     filterset_fields = [@@campos_filtro@@]
     search_fields = [@@campos_busqueda@@]

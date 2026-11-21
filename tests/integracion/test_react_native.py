@@ -33,7 +33,25 @@ def con_piezas(proyecto):
     assert main(["nuevo", "pantalla", "productos", "--datos", "producto"]) == 0
     assert main(["nuevo", "pantalla", "cliente", "--carpeta", "clientes", "--datos", "cliente", "--uno"]) == 0
     assert main(["nuevo", "pantalla", "editar-producto", "--datos", "producto", "--form"]) == 0
+    assert main(["nuevo", "servicio", "pedido", "numero:int", "cliente:fk"]) == 0
+    assert main(["nuevo", "pantalla", "editar-pedido", "--datos", "pedido", "--form"]) == 0
+    assert main(["nuevo", "pantalla", "pedido", "--datos", "pedido", "--uno"]) == 0
     return proyecto
+
+
+def test_relacion_en_el_formulario(con_piezas):
+    pantalla = leer(con_piezas / "app/editar-pedido.tsx")
+    for esperado in (
+        "Pressable, ScrollView",
+        "import { useConsulta } from '@/hooks/useConsulta';",
+        "import { clienteService } from '@/services/clienteService';",
+        "const { datos: clientes } = useConsulta(clienteService.listar);",
+        "onPress={() => cambiar('cliente', opcion.id)}",
+        "style={[styles.opcion, datos.cliente === opcion.id && styles.elegida]}",
+        "  elegida: {",
+    ):
+        assert esperado in pantalla, esperado
+    assert "{datos.cliente_texto ?? datos.cliente}" in leer(con_piezas / "app/pedido/[id].tsx")
 
 
 def test_pantalla_con_formulario(con_piezas):

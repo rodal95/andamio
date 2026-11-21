@@ -3,6 +3,7 @@
 import { useNavigate, useParams } from 'react-router';
 import { useFormulario } from '../../hooks/useFormulario';
 import { @@nombreCamel@@Service } from '../../services/@@nombreCamel@@Service';
+@@imports_relaciones@@
 import styles from './@@pluralKebab@@.module.css';
 
 /** @typedef {import('../../services/@@nombreCamel@@Service').@@Nombre@@Datos} @@Nombre@@Datos */
@@ -36,6 +37,7 @@ export function @@Nombre@@FormPage() {
     VACIO,
     aDatos,
   );
+  @@consultas_relaciones@@
 
   async function enviar() {
     // TODO(logica): validaciones del formulario antes de enviar (la API también valida).

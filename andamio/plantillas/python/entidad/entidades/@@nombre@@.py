@@ -23,7 +23,7 @@ def crear(@@parametros@@):
 def listar():
     """Devuelve todos los registros como una lista de diccionarios."""
     with get_conexion() as conexion:
-        filas = conexion.execute("SELECT * FROM @@plural@@ ORDER BY id").fetchall()
+        filas = conexion.execute("@@sql_listar@@").fetchall()
         return [dict(fila) for fila in filas]
 
 

@@ -23,6 +23,8 @@ VALORES = {
     "date": ("2025-01-15", "2025-02-20"),
     "datetime": ("2025-01-15T10:30:00Z", "2025-02-20T18:45:00Z"),
     "email": ("prueba@ejemplo.com", "modificado@ejemplo.com"),
+    # Una relación (categoria:fk): null, o el id de una categoría que exista.
+    "fk": (None, None),
 }
 
 

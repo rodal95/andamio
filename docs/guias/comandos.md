@@ -143,6 +143,7 @@ python main.py
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `entidad` | `nuevo entidad producto nombre:str precio:float stock:int` | La tabla en `sql/schema.sql`, `entidades/producto.py` (crear, listar, obtener, actualizar, eliminar) y `menus/menu_producto.py`, con su opción en el menú principal. |
+| `entidad` con relación | `nuevo entidad producto nombre:str categoria:fk` | Lo mismo, con la columna `categoria_id` (`REFERENCES categorias(id) ON DELETE SET NULL`). `listar()` hace un `LEFT JOIN` para mostrar el nombre de la categoría, y el menú muestra las categorías y pide un id que exista. Necesita la entidad `categoria`. |
 
 ```python
 from entidades import producto
@@ -152,7 +153,7 @@ for fila in producto.listar():
     print(fila["nombre"], fila["precio"])
 ```
 
-Tipos: `str`, `int`, `float`.
+Tipos: `str`, `int`, `float` y `fk` (relación con otra entidad).
 
 ---
 
@@ -171,6 +172,7 @@ python manage.py runserver             http://127.0.0.1:8000/api/docs/
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int` | La app `productos/`: modelo, serializer, ViewSet (CRUD con filtros, búsqueda y orden), rutas `/api/productos/`, admin y 5 tests. La registra en `LOCAL_APPS` y en `config/urls.py`. |
+| `recurso` con relación | `nuevo recurso producto nombre:str categoria:fk` | Lo mismo, con `categoria = models.ForeignKey("categorias.Categoria", on_delete=models.SET_NULL, null=True, ...)`. La API recibe y devuelve el id, devuelve también `categoria_texto` y filtra con `?categoria=3`. Necesita el recurso `categoria`. |
 | `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo, con `permission_classes = [IsAuthenticatedOrReadOnly]` y un test más (sin login no se puede crear). |
 | `login` | `nuevo login` | La app `cuentas/` con SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/token/verify/`, `/api/registro/` y `/api/yo/`, 6 tests, y la configuración en `settings.py` y `requirements.txt`. No lleva nombre. |
 

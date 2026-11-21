@@ -6,16 +6,19 @@ import re
 from pathlib import Path
 from typing import Callable
 
-from andamio.nucleo import consola, historial, identificadores
+from andamio.nucleo import consola, historial, identificadores, relaciones
 from andamio.nucleo.deteccion import dependencias_npm
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre, camel, kebab, pascal, parece_plural, separar_palabras, snake, titulo
 from andamio.stacks.base import Solicitud
 from andamio.stacks.django import TIPOS as TIPOS_API
+from andamio.stacks.django import TIPOS_RECURSO
 
 # Los servicios usan los mismos tipos que el recurso de Django, FastAPI y Express, para que el
 # mismo comando sirva en los dos lados: nombre:str precio:decimal ...
 TIPOS = TIPOS_API
+# React y React Native también aceptan relaciones (categoria:fk), como el recurso de Django.
+TIPOS_CON_RELACIONES = TIPOS_RECURSO
 
 _TIPOS_TS = {
     "str": "string",
@@ -27,15 +30,18 @@ _TIPOS_TS = {
     "date": "string",
     "datetime": "string",
     "email": "string",
+    "fk": "number | null",
 }
 
 _COMENTARIOS_TS = {
+    "fk": "  // id de la relación (null: sin elegir)",
     "decimal": "  // La API lo envía como número (no como texto)",
     "date": '  // fecha: "2025-03-15"',
     "datetime": '  // fecha y hora: "2025-03-15T10:30:00Z"',
 }
 
 _COMENTARIOS_JSDOC = {
+    "fk": "id de la relación (null: sin elegir)",
     "decimal": "número con 2 decimales",
     "date": 'fecha: "2025-03-15"',
     "datetime": 'fecha y hora: "2025-03-15T10:30:00Z"',
@@ -72,11 +78,15 @@ MARCADORES_SERVICIO = {
 
 def contexto_servicio(sol: Solicitud) -> dict[str, str]:
     # Los campos quedan en snake_case, igual que en el JSON que devuelve la API.
-    lineas_ts = [f"{c.nombre}: {_TIPOS_TS[c.tipo]};{_COMENTARIOS_TS.get(c.tipo, '')}" for c in sol.campos]
-    lineas_jsdoc = [
-        f"* @property {{{_TIPOS_TS[c.tipo]}}} {c.nombre}" + (f" {_COMENTARIOS_JSDOC[c.tipo]}" if c.tipo in _COMENTARIOS_JSDOC else "")
-        for c in sol.campos
-    ]
+    lineas_ts, lineas_jsdoc = [], []
+    for c in sol.campos:
+        lineas_ts.append(f"{c.nombre}: {_TIPOS_TS[c.tipo]};{_COMENTARIOS_TS.get(c.tipo, '')}")
+        comentario = f" {_COMENTARIOS_JSDOC[c.tipo]}" if c.tipo in _COMENTARIOS_JSDOC else ""
+        lineas_jsdoc.append(f"* @property {{{_TIPOS_TS[c.tipo]}}} {c.nombre}{comentario}")
+        if c.tipo == relaciones.TIPO:
+            # Opcional (?): solo lo devuelve la API de Django, y no se manda al crear o modificar.
+            lineas_ts.append(f"{c.nombre}_texto?: string | null; // su texto, como lo muestra la API (solo lectura)")
+            lineas_jsdoc.append(f"* @property {{string | null}} [{c.nombre}_texto] su texto, como lo muestra la API (solo lectura)")
     return {"campos_ts": "\n".join(lineas_ts), "campos_jsdoc": "\n".join(lineas_jsdoc)}
 
 
@@ -292,7 +302,12 @@ def _import_servicio(sol: Solicitud, servicio: str, ruta: str, nombre_tipo: str)
 
 
 def _valor(campo, variable: str = "datos") -> str:
-    return f"{{{variable}.{campo.nombre} ? 'Sí' : 'No'}}" if campo.tipo == "bool" else f"{{{variable}.{campo.nombre}}}"
+    if campo.tipo == "bool":
+        return f"{{{variable}.{campo.nombre} ? 'Sí' : 'No'}}"
+    if campo.tipo == relaciones.TIPO:
+        # El texto que manda la API de Django; si no está (otras APIs), el id.
+        return f"{{{variable}.{campo.nombre}_texto ?? {variable}.{campo.nombre}}}"
+    return f"{{{variable}.{campo.nombre}}}"
 
 
 _VACIOS_DATOS = ("datos_imports", "datos_previo", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
@@ -312,7 +327,9 @@ def hooks_a_omitir(carpeta: str) -> Callable[[Solicitud], frozenset[str]]:
 
     def omitir(sol: Solicitud) -> frozenset[str]:
         modo = sol.opciones.get("datos") and ("form" if sol.opciones.get("form") else "consulta")
-        sobran = {"consulta": HOOK_FORMULARIO, "form": HOOK_CONSULTA}.get(modo, HOOK_CONSULTA + HOOK_FORMULARIO)
+        if modo == "form" and usa_relaciones(sol):
+            modo = "ambos"  # el formulario carga con useConsulta la lista de cada relación
+        sobran = {"consulta": HOOK_FORMULARIO, "form": HOOK_CONSULTA, "ambos": ()}.get(modo, HOOK_CONSULTA + HOOK_FORMULARIO)
         return frozenset(f"{carpeta}/{archivo}" for archivo in sobran)
 
     return omitir
@@ -320,6 +337,47 @@ def hooks_a_omitir(carpeta: str) -> Callable[[Solicitud], frozenset[str]]:
 
 def hooks(carpeta: str) -> frozenset[str]:
     return frozenset(f"{carpeta}/{archivo}" for archivo in HOOK_CONSULTA + HOOK_FORMULARIO)
+
+
+# Relaciones (campo:fk) en los formularios: se elige de la lista del otro servicio.
+
+
+class RelacionJs:
+    """Un campo :fk en un formulario: su servicio (categoriaService) y la lista (categorias)."""
+
+    def __init__(self, rel: relaciones.Relacion, servicio: str, variable: str) -> None:
+        self.campo, self.servicio, self.variable = rel.campo, servicio, variable
+        self.etiqueta = campo_de_texto(rel.campos, rel.campo.nombre, "opcion")
+
+
+def relaciones_formulario(sol: Solicitud, campos, propio: Nombre, carpeta: str) -> dict[str, RelacionJs]:
+    """Los campos :fk de un formulario, controlando que exista el servicio de cada uno."""
+    ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    resultado = {}
+    for rel in relaciones.de_campos(sol.raiz, campos, propio, ("servicio", "crud")):
+        servicio = f"{rel.destino.camel}Service"
+        if not (sol.raiz / carpeta / f"{servicio}.{ext}").is_file():
+            raise relaciones.falta(
+                rel.campo, f"el servicio {servicio} (para elegir de su lista)", f"python -m andamio nuevo servicio {rel.campo.nombre} nombre:str"
+            )
+        resultado[rel.campo.nombre] = RelacionJs(rel, servicio, camel(rel.destino.plural_palabras))
+    return resultado
+
+
+def _imports_relaciones(rels: dict[str, RelacionJs], ruta: str) -> list[str]:
+    return [f"import {{ {r.servicio} }} from '{ruta}/{r.servicio}';" for r in rels.values()]
+
+
+def _consultas_relaciones(rels: dict[str, RelacionJs]) -> list[str]:
+    # Cada relación se elige de una lista: se pide con useConsulta, como cualquier otra lista.
+    return [f"const {{ datos: {r.variable} }} = useConsulta({r.servicio}.listar);" for r in rels.values()]
+
+
+def usa_relaciones(sol: Solicitud) -> bool:
+    """Si el servicio que usa la página (--datos) tiene campos :fk (el formulario necesita useConsulta)."""
+    datos = sol.opciones.get("datos")
+    campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) if datos else None
+    return any(c.tipo == relaciones.TIPO for c in campos or [])
 
 
 # React (pagina)
@@ -383,9 +441,12 @@ def contexto_pagina(sol: Solicitud) -> dict[str, str]:
     tipo = pascal(datos.split("_"))
     ruta_servicio = f"../../services/{servicio}"
     if modo == "form":
-        imports = ["import { useNavigate, useParams } from 'react-router';", "import { useFormulario } from '../../hooks/useFormulario';"]
-        consulta = ["const navegar = useNavigate();", *_formulario(sol, servicio, "useParams()", "navegar(-1)")]
-        contenido = _contenido_formulario(campos)
+        rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "src/services")
+        imports = ["import { useNavigate, useParams } from 'react-router';"]
+        imports += ["import { useConsulta } from '../../hooks/useConsulta';"] if rels else []
+        imports += ["import { useFormulario } from '../../hooks/useFormulario';", *_imports_relaciones(rels, "../../services")]
+        consulta = ["const navegar = useNavigate();", *_formulario(sol, servicio, "useParams()", "navegar(-1)"), *_consultas_relaciones(rels)]
+        contenido = _contenido_formulario(campos, rels)
     else:
         imports = (["import { useParams } from 'react-router';"] if modo == "uno" else []) + ["import { useConsulta } from '../../hooks/useConsulta';"]
         consulta = _consulta(sol, servicio, "useParams()")
@@ -426,8 +487,8 @@ def _contenido_uno(campos) -> list[str]:
     return [*_CARGANDO_Y_ERROR, "{datos && (", "  <dl>", *filas, "  </dl>", ")}"]
 
 
-def _contenido_formulario(campos) -> list[str]:
-    controles = [f"  {linea}" for c in campos for linea in _campo_formulario(c)]
+def _contenido_formulario(campos, rels) -> list[str]:
+    controles = [f"  {linea}" for c in campos for linea in _campo_formulario(c, rels)]
     return [
         "{!cargado && <p>Cargando…</p>}",
         "<form",
@@ -499,13 +560,21 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
         "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
     ]
     if modo == "form":
-        hook = "import { useFormulario } from '@/hooks/useFormulario';"
-        consulta = _formulario(sol, servicio, "useLocalSearchParams()", "router.back()")
-        contenido = _contenido_formulario_rn(campos)
-        componentes = "ActivityIndicator, Button, ScrollView, StyleSheet, Switch, Text, TextInput, View"
+        rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "services")
+        hook = "\n".join(
+            (["import { useConsulta } from '@/hooks/useConsulta';"] if rels else [])
+            + ["import { useFormulario } from '@/hooks/useFormulario';", *_imports_relaciones(rels, "@/services")]
+        )
+        consulta = [*_formulario(sol, servicio, "useLocalSearchParams()", "router.back()"), *_consultas_relaciones(rels)]
+        contenido = _contenido_formulario_rn(campos, rels)
+        componentes = "ActivityIndicator, Button, " + ("Pressable, " if rels else "") + "ScrollView, StyleSheet, Switch, Text, TextInput, View"
         router = "Stack, router, useLocalSearchParams"
         estilos = [*_ESTILO_ERROR, "etiqueta: {", "  fontWeight: 'bold',", "  marginTop: 12,", "},", "entrada: {",
                    "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 6,", "  padding: 8,", "  marginTop: 4,", "},"]  # fmt: skip
+        if rels:
+            estilos += ["opciones: {", "  flexDirection: 'row',", "  flexWrap: 'wrap',", "  gap: 8,", "  marginTop: 4,", "},",
+                        "opcion: {", "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 16,", "  paddingHorizontal: 12,", "  paddingVertical: 6,", "},",
+                        "elegida: {", "  borderColor: '#2563eb',", "  backgroundColor: '#dbeafe',", "},"]  # fmt: skip
     elif modo == "uno":
         hook = "import { useConsulta } from '@/hooks/useConsulta';"
         consulta = _consulta(sol, servicio, "useLocalSearchParams()")
@@ -554,9 +623,25 @@ _TECLADOS_RN = {"int": "number-pad", "decimal": "decimal-pad", "float": "decimal
 _EJEMPLOS_RN = {"date": "2025-03-15", "datetime": "2025-03-15T10:30"}
 
 
-def _campo_formulario_rn(campo) -> list[str]:
+def _campo_formulario_rn(campo, rels=None) -> list[str]:
     n = campo.nombre
-    if campo.tipo == "bool":
+    if rels and n in rels:
+        rel = rels[n]
+        # Se elige tocando una de las opciones (la elegida queda resaltada).
+        control = [
+            "<View style={styles.opciones}>",
+            f"  {{{rel.variable}?.map((opcion) => (",
+            "    <Pressable",
+            "      key={opcion.id}",
+            f"      onPress={{() => cambiar('{n}', opcion.id)}}",
+            f"      style={{[styles.opcion, datos.{n} === opcion.id && styles.elegida]}}",
+            "    >",
+            f"      <Text>{rel.etiqueta}</Text>",
+            "    </Pressable>",
+            "  ))}",
+            "</View>",
+        ]
+    elif campo.tipo == "bool":
         control = [f"<Switch value={{datos.{n}}} onValueChange={{(valor) => cambiar('{n}', valor)}} />"]
     elif campo.tipo in ("int", "decimal", "float"):
         # Sin value (no controlado): así se puede escribir "12." mientras se tipea un decimal.
@@ -592,8 +677,8 @@ def _campo_formulario_rn(campo) -> list[str]:
     ]
 
 
-def _contenido_formulario_rn(campos) -> list[str]:
-    controles = [f"    {linea}" for c in campos for linea in _campo_formulario_rn(c)]
+def _contenido_formulario_rn(campos, rels) -> list[str]:
+    controles = [f"    {linea}" for c in campos for linea in _campo_formulario_rn(c, rels)]
     return [
         "{!cargado ? (",
         "  <ActivityIndicator />",
@@ -695,16 +780,21 @@ def pasos_router(pasos: list[str]) -> Callable[[Solicitud], list[str]]:
 def _contexto_crud(sol: Solicitud) -> dict[str, str]:
     contexto = contexto_servicio(sol)
     variable = sol.nombre.camel
+    rels = relaciones_formulario(sol, sol.campos, sol.nombre, "src/services")
+    contexto["imports_relaciones"] = "\n".join(
+        (["import { useConsulta } from '../../hooks/useConsulta';"] if rels else []) + _imports_relaciones(rels, "../../services")
+    )
+    contexto["consultas_relaciones"] = "\n".join(_consultas_relaciones(rels))
     para_texto = next((c for c in sol.campos if c.tipo in ("str", "email")), None)
     contexto["texto_item"] = f"item.{para_texto.nombre}" if para_texto else f"`{sol.nombre.pascal} ${{item.id}}`"
 
     detalle, vacios, copiar, formulario = [], [], [], []
     for c in sol.campos:
         valor = f"{variable}.{c.nombre}"
-        detalle += [f"<dt>{c.titulo}</dt>", f"<dd>{{{valor} ? 'Sí' : 'No'}}</dd>" if c.tipo == "bool" else f"<dd>{{{valor}}}</dd>"]
+        detalle += [f"<dt>{c.titulo}</dt>", f"<dd>{_valor(c, variable)}</dd>"]
         vacios.append(f"{c.nombre}: {_VACIOS[c.tipo]},")
         copiar.append(f"{c.nombre}: registro.{c.nombre}{'.slice(0, 16)' if c.tipo == 'datetime' else ''},")
-        formulario += _campo_formulario(c)
+        formulario += _campo_formulario(c, rels)
     contexto.update(
         campos_detalle="\n".join(detalle),
         valores_vacios="\n".join(vacios),
@@ -714,14 +804,27 @@ def _contexto_crud(sol: Solicitud) -> dict[str, str]:
     return contexto
 
 
-_VACIOS = {"str": "''", "text": "''", "email": "''", "date": "''", "datetime": "''", "int": "0", "decimal": "0", "float": "0", "bool": "false"}
+_VACIOS = {"str": "''", "text": "''", "email": "''", "date": "''", "datetime": "''", "int": "0", "decimal": "0", "float": "0", "bool": "false", "fk": "null"}
 
 _PASOS_NUMERICOS = {"int": "1", "decimal": "0.01", "float": "any"}
 
 
-def _campo_formulario(campo) -> list[str]:
+def _campo_formulario(campo, rels=None) -> list[str]:
     n = campo.nombre
-    if campo.tipo == "bool":
+    if rels and n in rels:
+        rel = rels[n]
+        # Se elige de la lista del otro servicio; "" (sin elegir) se guarda como null.
+        control = "\n  ".join([
+            f"<select value={{datos.{n} ?? ''}} onChange={{(e) => cambiar('{n}', e.target.value === '' ? null : Number(e.target.value))}}>",
+            "  <option value=\"\">(sin elegir)</option>",
+            f"  {{{rel.variable}?.map((opcion) => (",
+            "    <option key={opcion.id} value={opcion.id}>",
+            f"      {rel.etiqueta}",
+            "    </option>",
+            "  ))}",
+            "</select>",
+        ])  # fmt: skip
+    elif campo.tipo == "bool":
         control = f"<input type=\"checkbox\" checked={{datos.{n}}} onChange={{(e) => cambiar('{n}', e.target.checked)}} />"
     elif campo.tipo in _PASOS_NUMERICOS:
         control = (
@@ -749,6 +852,8 @@ MARCADORES_CRUD = {
     "valores_vacios": "valores iniciales del formulario: nombre: '',",
     "campos_copiar": "copia un registro de la API a los datos del formulario: nombre: registro.nombre,",
     "campos_formulario": "un <label> con su <input> (según el tipo) y su error, por campo",
+    "imports_relaciones": "React: imports de useConsulta y del servicio de cada relación (vacío sin campos :fk)",
+    "consultas_relaciones": "React: la lista de cada relación, para elegir en el formulario (vacío sin campos :fk)",
 }
 
 contexto_crud = _contexto_crud

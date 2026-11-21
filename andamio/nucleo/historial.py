@@ -86,6 +86,12 @@ def leer(raiz: Path) -> tuple[list[Entrada], int]:
     return entradas, malas
 
 
+def ultima(raiz: Path, nombre: str, piezas: tuple[str, ...]) -> Entrada | None:
+    """La última vez que se generó una de estas piezas con este nombre (snake), o None."""
+    entradas, _ = leer(raiz)
+    return next((e for e in reversed(entradas) if e.pieza in piezas and e.nombre.snake == nombre), None)
+
+
 def campos_de(raiz: Path, nombre: str, piezas: tuple[str, ...]) -> list[Campo] | None:
     """Los campos con que se generó por última vez una de estas piezas con este nombre (snake).
 

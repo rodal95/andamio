@@ -32,7 +32,38 @@ def con_piezas(proyecto):
     assert main(["nuevo", "pagina", "ClienteLista", "--datos", "cliente"]) == 0
     assert main(["nuevo", "pagina", "ProductoFicha", "--datos", "producto", "--uno"]) == 0
     assert main(["nuevo", "pagina", "ProductoEditar", "--datos", "producto", "--form"]) == 0
+    # Relaciones: un pedido es de un cliente (clienteService ya existe).
+    assert main(["nuevo", "crud", "pedido", "numero:int", "cliente:fk"]) == 0
+    assert main(["nuevo", "pagina", "PedidoAlta", "--datos", "pedido", "--form"]) == 0
+    assert main(["nuevo", "pagina", "PedidoFicha", "--datos", "pedido", "--uno"]) == 0
     return proyecto
+
+
+def test_relacion_en_el_servicio_y_el_crud(con_piezas):
+    servicio = leer(con_piezas / "src/services/pedidoService.ts")
+    assert "  cliente: number | null;" in servicio
+    assert "  cliente_texto?: string | null;" in servicio
+    formulario = leer(con_piezas / "src/pages/pedidos/PedidoFormPage.tsx")
+    for esperado in (
+        "import { clienteService } from '../../services/clienteService';",
+        "const { datos: clientes } = useConsulta(clienteService.listar);",
+        "<select value={datos.cliente ?? ''}",
+        "{opcion.nombre}",
+        "  cliente: null,",
+    ):
+        assert esperado in formulario, esperado
+    assert "{pedido.cliente_texto ?? pedido.cliente}" in leer(con_piezas / "src/components/PedidoDetalle/PedidoDetalle.tsx")
+    alta = leer(con_piezas / "src/pages/PedidoAltaPage/PedidoAltaPage.tsx")
+    assert "useConsulta(clienteService.listar)" in alta and "<select" in alta
+    assert "{datos.cliente_texto ?? datos.cliente}" in leer(con_piezas / "src/pages/PedidoFichaPage/PedidoFichaPage.tsx")
+
+
+def test_relacion_necesita_el_otro_servicio(proyecto, capsys):
+    assert main(["nuevo", "servicio", "pedido", "numero:int", "cliente:fk"]) == 0  # el servicio solo guarda el id
+    capsys.readouterr()
+    assert main(["nuevo", "crud", "venta", "total:decimal", "cliente:fk"]) == 1
+    assert "nuevo servicio cliente" in capsys.readouterr().err
+    assert main(["nuevo", "pagina", "PedidoAlta", "--datos", "pedido", "--form"]) == 1
 
 
 def test_estructura_del_proyecto(proyecto):

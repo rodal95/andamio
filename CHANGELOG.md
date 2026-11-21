@@ -24,6 +24,18 @@ Todos los cambios importantes de andamio. El proyecto usa
   edita si se abre con `?id=3` y al guardar vuelve atrás. Necesita los campos del servicio
   (del historial). `servicio` también crea `useFormulario` (si falta).
 
+- Relaciones: el tipo de campo `fk` (`categoria:fk`) relaciona la pieza con otra que ya
+  existe y se llama igual que el campo. Es opcional: si se borra la categoría, el producto
+  queda sin categoría.
+  - Django (`recurso`): `ForeignKey` con `SET_NULL`; la API devuelve además
+    `categoria_texto`, filtra con `?categoria=3` y usa `select_related`.
+  - Python + SQLite (`entidad`): la columna `categoria_id` con `REFERENCES ... ON DELETE SET
+    NULL`; `listar()` hace un `LEFT JOIN` para mostrar el nombre, y el menú muestra las
+    categorías y pide un id que exista.
+  - React y React Native: el servicio tiene `categoria: number | null` (y `categoria_texto`);
+    el formulario (`crud` o `--form`) la elige de la lista de `categoriaService` (un
+    `<select>` en React, opciones para tocar en React Native) y el detalle muestra su texto.
+
 ### Cambiado
 - React: el formulario del `crud` usa `useFormulario` (la lógica de cargar, guardar y
   mostrar los errores está en el hook, no repetida en cada formulario).

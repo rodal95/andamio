@@ -3,6 +3,7 @@
 import { useNavigate, useParams } from 'react-router';
 import { useFormulario } from '../../hooks/useFormulario';
 import { @@nombreCamel@@Service, type @@Nombre@@, type @@Nombre@@Datos } from '../../services/@@nombreCamel@@Service';
+@@imports_relaciones@@
 import styles from './@@pluralKebab@@.module.css';
 
 // Valores del formulario al crear uno nuevo.
@@ -27,6 +28,7 @@ export function @@Nombre@@FormPage() {
     VACIO,
     aDatos,
   );
+  @@consultas_relaciones@@
 
   async function enviar() {
     // TODO(logica): validaciones del formulario antes de enviar (la API también valida).

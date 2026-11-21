@@ -157,6 +157,25 @@ Los campos se escriben `nombre:tipo`. Si no ponés el tipo, se usa `str`.
 | `date` | — | fecha (`2025-03-15`) |
 | `datetime` | — | fecha y hora |
 | `email` | — | correo electrónico |
+| `fk` | relación con otra entidad: `categoria:fk` guarda `categoria_id` y al listar muestra su texto | relación con otro recurso (Django, y en React y React Native el servicio y el formulario con la lista para elegir). Ver [Relaciones](#relaciones) |
+
+### Relaciones
+
+Un campo `categoria:fk` relaciona la pieza con otra que **ya existe** y se llama igual que el
+campo (`categoria`). Es opcional: si se borra la categoría, el producto queda sin categoría.
+
+```
+python -m andamio nuevo recurso categoria nombre:str
+python -m andamio nuevo recurso producto nombre:str precio:decimal categoria:fk
+```
+
+- **Django**: `ForeignKey` a `categorias.Categoria`; la API acepta y devuelve el id
+  (`"categoria": 3`), devuelve también `categoria_texto` y filtra con `?categoria=3`.
+- **Python + SQLite**: la columna `categoria_id` con su `REFERENCES`; `listar()` hace un
+  `LEFT JOIN` para mostrar el nombre, y el menú muestra las categorías y pide un id que exista.
+- **React y React Native**: el servicio tiene `categoria: number | null`; el formulario (`crud`
+  o `--form`) la elige de una lista cargada con `categoriaService.listar()` (generá antes
+  `nuevo servicio categoria ...`).
 
 **Para que una web o una app usen tu API** (HTML, React, Vue, Next.js, React Native o Reflex),
 generá el servicio (o el `crud`) con **los mismos campos** que el recurso:

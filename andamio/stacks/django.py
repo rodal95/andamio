@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from andamio.nucleo import consola, ejemplos
+from andamio.nucleo import consola, ejemplos, relaciones
 from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.nombres import Nombre
 from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
@@ -26,6 +26,9 @@ TIPOS = {
     "datetime": "fecha y hora",
     "email": "correo electrónico",
 }
+
+# El recurso de la API también acepta relaciones: categoria:fk (Django con plantillas, todavía no).
+TIPOS_RECURSO = {**TIPOS, relaciones.TIPO: relaciones.descripcion("otro recurso")}
 
 _CAMPO_MODELO = {
     "str": 'models.CharField("{t}", max_length=200)',
@@ -50,6 +53,8 @@ _VALORES_PRUEBA = {
     "date": ("2025-01-15", "2025-02-20"),
     "datetime": ("2025-01-15T10:30:00Z", "2025-02-20T18:45:00Z"),
     "email": ("prueba@ejemplo.com", "modificado@ejemplo.com"),
+    # Una relación es opcional: los tests no necesitan crear la categoría.
+    relaciones.TIPO: (None, None),
 }
 
 # Cómo se ve en Python el valor modificado después de leerlo de la base.
@@ -76,25 +81,58 @@ def _lista(nombres: list[str]) -> str:
     return ", ".join(f'"{n}"' for n in nombres)
 
 
+def _relaciones(sol: Solicitud) -> list[relaciones.Relacion]:
+    """Los campos :fk, controlando que exista la app del recurso al que apuntan."""
+    lista = relaciones.de_campos(sol.raiz, sol.campos, sol.nombre, ("recurso",))
+    for rel in lista:
+        try:
+            modelos = (sol.raiz / rel.destino.plural / "models.py").read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeDecodeError):
+            modelos = ""
+        if f"class {rel.destino.pascal}(" not in modelos:
+            raise relaciones.falta(rel.campo, f"el recurso '{rel.campo.nombre}' (la app {rel.destino.plural})", f"python -m andamio nuevo recurso {rel.campo.nombre} nombre:str")
+    return lista
+
+
+def _campo_modelo(campo, plural_propio: str, destinos: dict) -> str:
+    if campo.nombre in destinos:
+        destino = destinos[campo.nombre]
+        # SET_NULL: si se borra la categoría, el producto queda sin categoría (no se pierde ni falla).
+        return (
+            f'models.ForeignKey("{destino.plural}.{destino.pascal}", on_delete=models.SET_NULL, null=True, blank=True, '
+            f'related_name="{plural_propio}", verbose_name="{campo.titulo}")'
+        )
+    return _CAMPO_MODELO[campo.tipo].format(t=campo.titulo)
+
+
 def _contexto_recurso(sol: Solicitud) -> dict[str, str]:
     campos = sol.campos
     nombres = [c.nombre for c in campos]
+    rels = _relaciones(sol)
+    destinos = {r.campo.nombre: r.destino for r in rels}
+    con_texto = [n for c in campos for n in ((c.nombre, f"{c.nombre}_texto") if c.nombre in destinos else (c.nombre,))]
     para_str = next((c for c in campos if c.tipo in ("str", "email")), None)
-    verificado = campos[0]
+    verificado = next((c for c in campos if c.tipo != relaciones.TIPO), campos[0])
     valor_verificado, import_necesario = _VALOR_EN_PYTHON.get(
         verificado.tipo, (_literal(_VALORES_PRUEBA[verificado.tipo][1]), None)
     )
     return {
-        "campos_modelo": "\n".join(f"{c.nombre} = {_CAMPO_MODELO[c.tipo].format(t=c.titulo)}" for c in campos),
+        "campos_modelo": "\n".join(f"{c.nombre} = {_campo_modelo(c, sol.nombre.plural, destinos)}" for c in campos),
         "verbose": " ".join(sol.nombre.palabras),
         "verbose_plural": " ".join(sol.nombre.plural_palabras),
         "str_modelo": f"self.{para_str.nombre}" if para_str else f'f"{sol.nombre.pascal} {{self.pk}}"',
-        "campos_serializer": _lista(["id", *nombres, "creado", "actualizado"]),
+        "campos_serializer": _lista(["id", *con_texto, "creado", "actualizado"]),
+        # La API devuelve el id de la relación y, además, su texto (para mostrarlo sin otra consulta).
+        "campos_relacion": "".join(
+            f'{n}_texto = serializers.StringRelatedField(source="{n}", read_only=True)\n' for n in destinos
+        ),
+        # select_related trae la relación en la misma consulta (si no, una consulta por fila).
+        "queryset": f"{sol.nombre.pascal}.objects.select_related({_lista(list(destinos))})" if destinos else f"{sol.nombre.pascal}.objects.all()",
         "campos_filtro": _lista([c.nombre for c in campos if c.tipo != "text"]),
         "campos_busqueda": _lista([c.nombre for c in campos if c.tipo in _TEXTO]),
         "campos_orden": _lista(["id", *nombres, "creado", "actualizado"]),
         "campos_admin": _lista(["id", *[c.nombre for c in campos if c.tipo != "text"]]),
-        "campos_admin_filtro": _lista([c.nombre for c in campos if c.tipo in ("bool", "date", "datetime")]),
+        "campos_admin_filtro": _lista([c.nombre for c in campos if c.tipo in ("bool", "date", "datetime", relaciones.TIPO)]),
         "datos_prueba": "\n".join(f'"{c.nombre}": {_literal(_VALORES_PRUEBA[c.tipo][0])},' for c in campos),
         "datos_modificados": "\n".join(f'"{c.nombre}": {_literal(_VALORES_PRUEBA[c.tipo][1])},' for c in campos),
         "campo_verificado": verificado.nombre,
@@ -301,7 +339,9 @@ RECURSO = Pieza(
         "campos_busqueda": "campos de texto para ?search=",
         "campos_orden": "campos para ?ordering=",
         "campos_admin": "columnas de la lista del admin",
-        "campos_admin_filtro": "filtros laterales del admin (sí/no y fechas)",
+        "campos_admin_filtro": "filtros laterales del admin (sí/no, fechas y relaciones)",
+        "campos_relacion": "en el serializer, el texto de cada relación: categoria_texto = ... (vacío sin campos :fk)",
+        "queryset": "la consulta del ViewSet: Producto.objects.all(), o con select_related si hay relaciones",
         "datos_prueba": 'datos de ejemplo para los tests: "nombre": "Texto de prueba",',
         "datos_modificados": "datos de ejemplo para el test de modificación",
         "campo_verificado": "campo que se controla en el test de modificación",
@@ -446,7 +486,7 @@ STACK = Stack(
     titulo="Django REST",
     senal="manage.py y config/settings.py",
     detectar=_detectar,
-    tipos=TIPOS,
+    tipos=TIPOS_RECURSO,
     piezas={"recurso": RECURSO, "login": LOGIN},
     ejemplo_proyecto="mi-api",
     siguiente_paso_proyecto=[
