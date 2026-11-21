@@ -6,6 +6,16 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
+- `andamio-guia.html` en cada proyecto: una página para abrir en el navegador con el tipo
+  de proyecto, cómo ponerlo en marcha, lo que ya se generó (con sus archivos y si sigue
+  conectado), dónde va la lógica propia (`TODO(logica)`), cada pieza que se puede generar
+  (forma general, ejemplo, opciones y qué archivos crea) y los puntos de conexión. Se crea
+  con `crear`, se actualiza sola con cada `nuevo` (no con `--simular`) y va en `.gitignore`.
+  En los proyectos creados antes, `init` la crea (y la suma al `.gitignore`).
+- Sitio: pestaña "Paso a paso" en React, React Native, Django y Python + SQLite: todos los
+  comandos en su forma general y con un ejemplo, y un proyecto armado comando por comando,
+  con la consola animada, el proyecto que crece, el código nuevo resaltado y una
+  demostración que se puede usar (la app, la API o la consola).
 - `crear <tipo> .`: crea el proyecto en la carpeta actual, sin crear otra ni tener que
   entrar después (`cd`). El nombre del proyecto es el de la carpeta. La carpeta tiene que
   estar vacía (se permiten `.git`, `.vscode` y `LICENSE`). En el menú, `.` como nombre.

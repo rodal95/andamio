@@ -353,6 +353,12 @@ def planificar_proyecto(
         plan.crear(destino_rel, renderizar(texto_plantilla, contexto, origen, guia))
         if archivo.ruta == ".env.example" and stack.contexto_env:
             plan.crear(base / ".env", renderizar(texto_plantilla, {**contexto, **stack.contexto_env()}, origen, guia))
+    # La página andamio-guia.html (se escribe al terminar) no se sube al repositorio.
+    from andamio import guia_html
+
+    gitignore = plan.nuevos.get(plan._ruta(base / ".gitignore"))
+    if gitignore is not None:
+        gitignore.contenido = gitignore.contenido.rstrip(b"\n") + b"\n" + guia_html.LINEA_GITIGNORE.encode("utf-8")
     return plan, contexto
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from andamio import stacks
+from andamio import guia_html, stacks
 from andamio.nucleo import ajustes, consola, lectura, plantillas
 from andamio.nucleo.campos import Campo, parsear_campo, validar_campos
 from andamio.nucleo.deteccion import buscar_proyecto, error_no_detectado
@@ -103,6 +103,13 @@ def crear_proyecto(
             "El proyecto nuevo se va a crear adentro."
         )
     if _cerrar(plan, simular, confirmar, "¿Crear el proyecto?"):
+        raiz = padre if contexto.get("aqui") else padre / contexto["carpeta"]
+        if guia_html.escribir(stack, raiz, variante):
+            consola.escribir()
+            consola.escribir(
+                f"Para guiarte, abrí en el navegador {consola.color(guia_html.ARCHIVO, 'negrita')} (doble clic): "
+                "qué es el proyecto, qué podés generar y dónde va cada cosa. Se actualiza sola."
+            )
         mostrar_pasos(pasos_proyecto(stack, contexto))
     return 0
 
@@ -211,6 +218,7 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
                 sol.opciones[opcion] = consola.confirmar(pregunta, defecto=True)
     if sol.pieza.despues:
         sol.pieza.despues(sol)
+    guia_html.actualizar(sol.stack, sol.raiz, sol.variante)
     lectura.mostrar(lectura.orden_de_lectura(sol.pieza.lectura, sol.contexto), lectura.marcas_del_plan(plan))
     mostrar_pasos(pasos_pieza(sol))
     return 0

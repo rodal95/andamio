@@ -62,6 +62,7 @@ def test_estructura_del_proyecto(proyecto, variante):
         ".env",
         ".env.example",
         ".gitignore",
+        "andamio-guia.html",
         "README.md",
         "package.json",
         f"prisma.config.{ext}",

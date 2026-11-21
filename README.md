@@ -31,7 +31,15 @@ y usá `python andamio.pyz` en lugar de `python -m andamio`.
 
 Con `python -m andamio crear <tipo> <nombre>` creás un proyecto en una carpeta nueva; con
 `python -m andamio crear <tipo> .`, en la carpeta en la que estás (vacía), sin tener que
-entrar después. Adentro del proyecto
+entrar después.
+
+Cada proyecto trae **`andamio-guia.html`**: abrilo con doble clic y tenés, en el navegador,
+qué tipo de proyecto es, cómo ponerlo en marcha, lo que ya generaste (con sus archivos y
+dónde quedó conectado), dónde va tu lógica (`TODO(logica)`) y cada pieza que podés generar
+con su comando. Se actualiza sola después de cada `nuevo` y está en `.gitignore` (no se sube
+al repositorio). En un proyecto creado antes, `python -m andamio init` la crea.
+
+Adentro del proyecto
 (en cualquier subcarpeta), `python -m andamio nuevo <pieza> <nombre>` agrega piezas. Para ver qué se puede generar
 en tu proyecto, escribí `python -m andamio info`.
 

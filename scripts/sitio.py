@@ -44,6 +44,8 @@ PROGRAMA = "python -m andamio"
 
 # La demo se ejecuta en una carpeta temporal; en la página se muestra una ruta
 # típica de un alumno en Windows.
+# andamio-guia.html se actualiza con cada pieza: en la página es un archivo del proyecto, no un cambio de cada pieza.
+GUIA_LOCAL = "andamio-guia.html"
 CARPETA_EJEMPLO = "C:\\Users\\alumno"
 _base_actual = ""
 
@@ -544,6 +546,7 @@ _COMUNES = [
     (".env", "Configuración de tu PC (direcciones, claves). No se sube a git."),
     (".env.example", "Modelo del .env sin datos privados. Se sube a git para que tus compañeros sepan qué completar."),
     (".gitignore", "Lista de archivos que git no sube: dependencias, base de datos, .env."),
+    ("andamio-guia.html", "La página de andamio para guiarte: qué es el proyecto, qué generaste, dónde va tu lógica y qué más podés generar. Abrila con doble clic; se actualiza sola y no se sube a git."),
     ("README.md", "Explica cómo instalar y ejecutar el proyecto."),
     ("*.gitkeep", "Archivo vacío para que git guarde la carpeta aunque todavía esté vacía."),
     (".andamio/historial.jsonl", "Lo que se generó con andamio (una línea por pieza). Lo usa python -m andamio mapa."),
@@ -1669,7 +1672,7 @@ def recorrido(base: Path, stack, variante: str) -> list[dict]:
                 andamio=True,
                 salida=salida,
                 creados=[r for r in despues if r not in antes],
-                modificados=[r for r in despues if r in antes and antes[r] != despues[r]],
+                modificados=[r for r in despues if r in antes and antes[r] != despues[r] and r != GUIA_LOCAL],
             )
         pasos.append(paso)
     return pasos
@@ -1786,7 +1789,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
         salida = _ejecutar(shlex.split(datos_pieza["comando"]))
         despues = _instantanea(proyecto)
         creados = [r for r in despues if r not in antes]
-        modificados = [r for r in despues if r in antes and antes[r] != despues[r]]
+        modificados = [r for r in despues if r in antes and antes[r] != despues[r] and r != GUIA_LOCAL]
         for ruta in creados:
             estado[ruta], origen[ruta] = "nuevo", clave_pieza
         for ruta in modificados:
@@ -2178,7 +2181,7 @@ def _sesion_consola(proyecto: Path, teclas: list[str]) -> str:
 
 
 def _ignorado(ruta: str) -> bool:
-    return ruta.endswith(".gitkeep") or ruta.startswith(".andamio/")
+    return ruta.endswith(".gitkeep") or ruta.startswith(".andamio/") or ruta == GUIA_LOCAL
 
 
 def armado(base: Path, stack, variante: str) -> dict | None:

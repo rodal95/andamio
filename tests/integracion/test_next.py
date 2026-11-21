@@ -58,6 +58,7 @@ def test_proyecto_frontend(web, variante):
         ".env",
         ".env.example",
         ".gitignore",
+        "andamio-guia.html",
         "README.md",
         "package.json",
         "jsconfig.json" if variante == "js" else "tsconfig.json",

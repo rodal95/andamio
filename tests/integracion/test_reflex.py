@@ -45,6 +45,7 @@ def test_estructura_del_proyecto(proyecto):
         ".env",
         ".env.example",
         ".gitignore",
+        "andamio-guia.html",
         "README.md",
         "requirements.txt",
         "rxconfig.py",

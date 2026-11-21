@@ -60,7 +60,7 @@ def buscar_pendientes(raiz: Path) -> list[Pendiente]:
         subcarpetas[:] = sorted(s for s in subcarpetas if s not in CARPETAS_IGNORADAS)
         for nombre in sorted(archivos):
             ruta = Path(carpeta, nombre)
-            if ruta.suffix not in EXTENSIONES:
+            if ruta.suffix not in EXTENSIONES or nombre == "andamio-guia.html":  # la guía las nombra, no son lógica pendiente
                 continue
             try:
                 texto = ruta.read_text(encoding="utf-8")
@@ -202,6 +202,8 @@ def init(cwd: Path, tipo: str | None = None, variante: str | None = None, simula
     if (raiz / ajustes.ARCHIVO).exists():
         ajustes.leer(raiz)  # avisa si tiene un error
         consola.aviso(f"Ya existe {ajustes.ARCHIVO}: no se modifica.")
+        if not simular:
+            _guia(stack, raiz, variante)
         return 0
     plan = Plan(raiz)
     plan.crear(ajustes.ARCHIVO, ajustes.texto(stack.clave, variante))
@@ -213,7 +215,24 @@ def init(cwd: Path, tipo: str | None = None, variante: str | None = None, simula
     plan.aplicar()
     consola.exito(f"Se creó {ajustes.ARCHIVO}: desde ahora andamio usa esta configuración en esta carpeta.")
     consola.escribir(f"Para ver qué podés generar: {consola.comando(consola.programa() + ' info')}")
+    _guia(stack, raiz, variante)
     return 0
+
+
+def _guia(stack: Stack, raiz: Path, variante: str) -> None:
+    """init también arma andamio-guia.html (y la suma al .gitignore, si hay uno)."""
+    from andamio import guia_html
+
+    if not guia_html.escribir(stack, raiz, variante):
+        return
+    gitignore = raiz / ".gitignore"
+    try:
+        if gitignore.is_file() and guia_html.ARCHIVO not in gitignore.read_text(encoding="utf-8-sig"):
+            with gitignore.open("a", encoding="utf-8") as archivo:
+                archivo.write(guia_html.LINEA_GITIGNORE)
+    except (OSError, UnicodeDecodeError):
+        pass
+    consola.escribir(f"Para guiarte, abrí {consola.color(guia_html.ARCHIVO, 'negrita')} en el navegador: se actualiza sola con cada nuevo.")
 
 
 # --- mapa -------------------------------------------------------------------------------

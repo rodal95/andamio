@@ -158,6 +158,8 @@ def barrer(
         assert codigo == 0, salida
         raiz = carpeta / "barrido"
         os.chdir(raiz)
+        # Sin la guía local: se rearma con cada nuevo (cientos acá) y no es lo que se prueba.
+        (raiz / "andamio-guia.html").unlink(missing_ok=True)
         tocados: dict[str, list[Path]] = {}
         vistos: set[str] = set()
         for indice, candidato in enumerate(lista, 1):
