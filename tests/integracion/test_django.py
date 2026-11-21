@@ -427,3 +427,10 @@ def test_accion_y_solo_lectura_funcionan(proyecto):
         assert resultado.returncode == 0, f"manage.py {' '.join(argumentos)}\n{resultado.stdout}\n{resultado.stderr}"
         if argumentos[0] == "test":
             assert "Ran 10 tests" in resultado.stderr  # país: 3; producto: 5 + 2 acciones
+
+
+def test_accion_en_un_recurso_que_se_llama_como_el_parametro(proyecto):
+    assert main(["nuevo", "recurso", "request", "nombre"]) == 0
+    assert main(["nuevo", "accion", "request", "destacar"]) == 0
+    vistas = leer(proyecto / "requestes/views.py")  # el plural automático, con las reglas del español
+    assert "objeto = self.get_object()" in vistas and "request = self.get_object()" not in vistas

@@ -292,3 +292,9 @@ def test_busqueda(proyecto, capsys):
     capsys.readouterr()
     assert main(["mapa"]) == 0
     assert "campos distintos" not in capsys.readouterr().out
+
+
+def test_entidad_sin_menu_controla_tambien_el_menu(proyecto, capsys):
+    """El menú se puede generar después: un nombre que lo rompería se rechaza desde la entidad."""
+    assert main(["nuevo", "entidad", "agregar", "nombre", "--sin-menu"]) == 1
+    assert "No se puede usar 'agregar'" in capsys.readouterr().err

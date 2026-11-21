@@ -119,6 +119,24 @@ class Resultado:
         return f"{len(self.generados)} generados, {len(self.rechazados)} rechazados, {len(self.problemas)} problemas"
 
 
+def _con_preparar(pieza, nombre: str, campo: str | None) -> tuple[list[str], list[list[str]]]:
+    """Los comandos de `preparar` y el de la pieza, con otro nombre (y, si se prueba un campo,
+    con ese campo en lugar del del ejemplo)."""
+    base, *campos_ejemplo = pieza.ejemplo.split()
+    previos = []
+    for previo in pieza.preparar:
+        partes = previo.split()
+        partes = [nombre if p == base else p for p in partes]
+        if campo is not None and campos_ejemplo and pieza.define_campos is False and pieza.clave != "accion":
+            partes = [f"{campo}:{p.split(':', 1)[1]}" if p.split(":")[0] == campos_ejemplo[0] else p for p in partes]
+        previos.append(["nuevo", *partes])
+    if campo is not None:
+        argumentos = ["nuevo", pieza.clave, nombre, campo]
+    else:
+        argumentos = ["nuevo", pieza.clave, nombre, *campos_ejemplo]
+    return argumentos, previos
+
+
 def barrer(
     stack_clave: str,
     pieza_clave: str,
@@ -143,7 +161,23 @@ def barrer(
         tocados: dict[str, list[Path]] = {}
         vistos: set[str] = set()
         for indice, candidato in enumerate(lista, 1):
-            if campos:
+            if pieza.preparar:
+                # La pieza usa algo que ya existe (la entidad de un menú, el recurso de una acción):
+                # primero eso, con el nombre (o el campo) que se prueba.
+                nombre = f"ficha_{indice}" if campos else candidato
+                argumentos, previos = _con_preparar(pieza, nombre, candidato if campos else None)
+                rechazo = None
+                for previo in previos:
+                    codigo, salida = _andamio(*previo)
+                    if "error inesperado" in salida:
+                        resultado.problemas.append(f"[{candidato}] error inesperado de andamio al preparar:\n{salida}")
+                    if codigo != 0:
+                        rechazo = salida.strip().splitlines()[0] if salida.strip() else "?"
+                        break
+                if rechazo is not None:
+                    resultado.rechazados[candidato] = rechazo
+                    continue
+            elif campos:
                 argumentos = ["nuevo", pieza_clave, f"ficha {indice}", f"{candidato}:str"]
             else:
                 argumentos = ["nuevo", pieza_clave, candidato, *(["dato:str"] if pieza.usa_campos else [])]

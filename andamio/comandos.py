@@ -67,7 +67,9 @@ def _opciones(parser: argparse.ArgumentParser) -> list[tuple[str, str]]:
 
 
 # El nombre de cada pieza en la forma general: qué se escribe en lugar del ejemplo.
-_MARCADOR_NOMBRE = {"tema": "<color>", "ui": "<parte>"}
+_MARCADOR_NOMBRE = {"tema": "<color>", "ui": "<parte>", "menu": "<entidad>", "busqueda": "<entidad>", "accion": "<recurso>"}
+# Piezas cuyos "campos" no definen datos: qué se escribe en su lugar.
+_MARCADOR_CAMPOS = {"busqueda": "<campo>...", "accion": "<acción>..."}
 
 
 def forma_general(clave: str, pieza) -> str:
@@ -78,7 +80,8 @@ def forma_general(clave: str, pieza) -> str:
         nombre = _MARCADOR_NOMBRE.get(clave, "<Nombre>" if pieza.ejemplo[:1].isupper() else "<nombre>")
         if pieza.nombre_defecto:
             nombre = f"[{nombre}]"
-    partes = ["nuevo", clave, nombre, "<campo:tipo>..." if pieza.usa_campos else ""]
+    campos = _MARCADOR_CAMPOS.get(clave, "<campo:tipo>...") if pieza.usa_campos else ""
+    partes = ["nuevo", clave, nombre, campos]
     return " ".join(p for p in partes if p)
 
 

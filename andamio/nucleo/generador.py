@@ -198,14 +198,20 @@ def planificar_pieza(sol: Solicitud) -> Plan:
     # archivos que ya existen, ese error es más claro (la pieza ya se generó).
     choques: list[AndamioError] = []
     centinela = _contexto_centinela(sol)
+    # Los nombres se controlan en todos los archivos de la plantilla, también en los que esta
+    # vez no se crean (ej.: el menú de una entidad --sin-menu, que se puede generar después).
+    if centinela is not None:
+        for archivo in plantillas.leer_arbol(carpeta):
+            if archivo.texto is None or archivo.ruta in pieza.si_no_existe:
+                continue
+            origen = f"{stack.clave}/{pieza.clave}/{archivo.ruta}"
+            forma = identificadores.conflicto(archivo.partes[-1], renderizar(archivo.texto, centinela, origen), sol.nombre)
+            if forma:
+                choques.append(_error_identificador(pieza, forma, str(renderizar_ruta(archivo.partes, contexto, origen))))
     for archivo in archivos_de_la_pieza(sol, carpeta):
         origen = f"{stack.clave}/{pieza.clave}/{archivo.ruta}"
         destino = renderizar_ruta(archivo.partes, contexto, origen)
         texto = archivo.texto
-        if texto is not None and centinela is not None and archivo.ruta not in pieza.si_no_existe:
-            forma = identificadores.conflicto(archivo.partes[-1], renderizar(texto, centinela, origen), sol.nombre)
-            if forma:
-                choques.append(_error_identificador(pieza, forma, str(destino)))
         contenido = renderizar(texto, contexto, origen, sol.guia) if texto is not None else archivo.contenido
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 

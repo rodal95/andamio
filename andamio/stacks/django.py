@@ -547,7 +547,8 @@ def _contexto_accion(sol: Solicitud) -> dict[str, str]:
                 plural=nombre.plural,
                 ruta=ruta,
                 descripcion=f"la acción {ruta} sobre un {' '.join(nombre.palabras)}.",
-                variable=nombre.snake,
+                # El nombre del recurso, salvo que choque con lo que ya usa el método.
+                variable=nombre.snake if nombre.snake not in ("self", "request", "pk", "action", "status") else "objeto",
             )
         )
         tests.append(_TEST_ACCION.format(accion=accion, ruta=ruta))
