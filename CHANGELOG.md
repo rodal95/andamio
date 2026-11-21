@@ -17,6 +17,16 @@ Todos los cambios importantes de andamio. El proyecto usa
 - React Native: lo mismo con `nuevo pantalla <nombre> --datos <servicio>`: una `FlatList`
   con `useConsulta`, cargando y error. Con `--uno` crea `app/<nombre>/[id]` y toma el id con
   `useLocalSearchParams`. `nuevo servicio` también crea `hooks/useConsulta` (si falta).
+- React y React Native: `--form` (con `--datos`) genera el formulario para crear y editar,
+  con el hook nuevo `useFormulario`: carga el registro si hay un id, guarda con `crear` o
+  `actualizar` y deja los errores de la API por campo. En React la página queda en
+  `/producto-editar` (crear) y `/producto-editar/:id` (editar); en React Native, la pantalla
+  edita si se abre con `?id=3` y al guardar vuelve atrás. Necesita los campos del servicio
+  (del historial). `servicio` también crea `useFormulario` (si falta).
+
+### Cambiado
+- React: el formulario del `crud` usa `useFormulario` (la lógica de cargar, guardar y
+  mostrar los errores está en el hook, no repetida en cada formulario).
 
 ### Corregido
 - React: `nuevo pagina ProductoLista` después de `nuevo crud producto` (o un `crud` después

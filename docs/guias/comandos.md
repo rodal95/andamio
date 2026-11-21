@@ -29,6 +29,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
 │     --datos <servicio>   (--data)                 la página o pantalla muestra datos de la API (React, React Native)
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
+│     --form                                        con --datos: el formulario para crear y editar
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
 │
 ├── info                                            qué proyecto detectó y qué piezas acepta
@@ -51,7 +52,7 @@ Qué opciones acepta cada pieza:
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
-| `--datos`, `--uno` | `pagina` (React), `pantalla` (React Native) |
+| `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
 
 ## La forma general de cada pieza
@@ -100,7 +101,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
-`crud`, `crud-api`, `login`, `hook`, `composable`, `ui` e `info` son iguales en los dos idiomas.
+`crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `info` y `--form` son iguales en los dos idiomas.
 
 ```
 python -m andamio create django my-api
@@ -126,6 +127,7 @@ Opciones que sirven en todas las piezas:
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
 | `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
 | `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
+| `--form` | Con `--datos`: el formulario para crear y editar, con el hook `useFormulario` (React, React Native). |
 | `--js` | Al crear: el proyecto en JavaScript en lugar de TypeScript (Express, React, React Native, Next.js). |
 
 ---
@@ -304,9 +306,10 @@ npm run dev                                      http://localhost:5173
 | `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage/`, con su ruta `/contacto` y su enlace en `src/App`. |
 | `pagina --datos` | `nuevo pagina ProductoLista --datos producto` | La página con la lista del servicio `productoService`: `useConsulta(productoService.listar)`, con cargando, error y lista vacía. Necesita el servicio (crea `useConsulta` si falta). |
 | `pagina --datos --uno` | `nuevo pagina ProductoDetalle --datos producto --uno` | La página de uno solo: toma el id de la ruta (`/producto-detalle/:id`) y usa `obtener(id)`. Muestra los campos con que se generó el servicio. No va en el menú. |
+| `pagina --datos --form` | `nuevo pagina ProductoEditar --datos producto --form` | El formulario para crear (`/producto-editar`) y editar (`/producto-editar/3`) con el hook `useFormulario`: carga el registro, guarda con `crear` o `actualizar` y muestra los errores de la API en cada campo. |
 | `hook` | `nuevo hook contador` | `src/hooks/useContador`. |
-| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http` y el hook `useConsulta`, si faltan). |
-| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, el hook `useConsulta`, el servicio y las 4 rutas con su enlace. |
+| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http` y los hooks `useConsulta` y `useFormulario`, si faltan). |
+| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, los hooks `useConsulta` y `useFormulario`, el servicio y las 4 rutas con su enlace. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |
@@ -363,9 +366,10 @@ npx expo start
 | `pantalla` | `nuevo pantalla detalle-producto --carpeta productos` | `app/productos/detalle-producto` (Expo Router: el archivo es la ruta). |
 | `pantalla --datos` | `nuevo pantalla productos --datos producto` | La pantalla con la lista del servicio `productoService`: `FlatList` con `useConsulta(productoService.listar)`, cargando y error. Necesita el servicio (crea `hooks/useConsulta` si falta). |
 | `pantalla --datos --uno` | `nuevo pantalla producto --datos producto --uno` | `app/producto/[id]`: toma el id de la ruta con `useLocalSearchParams` y usa `obtener(id)`. Se abre con `router.push('/producto/3')`. |
+| `pantalla --datos --form` | `nuevo pantalla editar-producto --datos producto --form` | El formulario (`TextInput`, `Switch`) con `useFormulario`: para crear, `router.push('/editar-producto')`; para editar, con `?id=3`. Al guardar vuelve atrás. |
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta` con su `StyleSheet`. |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
-| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar, y el hook `useConsulta`, si faltan). |
+| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar, y los hooks `useConsulta` y `useFormulario`, si faltan). |
 | `tema` | `nuevo tema violeta --modo auto` | `constants/tema`: los colores del modo claro y del oscuro y `useTema()`, que devuelve los del modo actual. |
 
 ---

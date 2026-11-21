@@ -149,10 +149,15 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
         )
         if datos:
             extras["datos"] = datos
-            extras["uno"] = consola.elegir(
-                "¿Qué muestra?",
-                [(False, "la lista (listar)"), (True, "uno solo, con el id en la ruta (obtener)")],
+            que = consola.elegir(
+                "¿Qué hace con esos datos?",
+                [
+                    ("lista", "muestra la lista (listar)"),
+                    ("uno", "muestra uno solo, con el id en la ruta (obtener)"),
+                    ("form", "el formulario para crear y editar (crear, actualizar)"),
+                ],
             )
+            extras["uno"], extras["form"] = que == "uno", que == "form"
     return extras
 
 

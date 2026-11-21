@@ -173,6 +173,10 @@ def test_react_js_pagina_con_datos(web_js):
     detalle = leer(web_js / "src/pages/ProductoDetallePage/ProductoDetallePage.jsx")
     assert "<dd>{datos.activo ? 'Sí' : 'No'}</dd>" in detalle
     assert '<Route path="/producto-detalle/:id" element={<ProductoDetallePage />} />' in leer(web_js / "src/App.jsx")
+    assert main(["nuevo", "pagina", "ProductoAlta", "--datos", "producto", "--form"]) == 0
+    formulario = leer(web_js / "src/pages/ProductoAltaPage/ProductoAltaPage.jsx")
+    assert "function aDatos(registro) {" in formulario and "type Producto" not in formulario
+    assert (web_js / "src/hooks/useFormulario.js").is_file()
 
 
 @pytest.mark.lento
@@ -181,6 +185,7 @@ def test_react_js_npm_install_y_build(web_js):
     for argumentos in (
         ["componente", "Tarjeta"], ["pagina", "Contacto"], ["hook", "contador"], ["servicio", "producto", "nombre"], ["crud", "producto", "nombre"],
         ["pagina", "Catalogo", "--datos", "producto"], ["pagina", "ProductoFicha", "--datos", "producto", "--uno"],
+        ["pagina", "ProductoAlta", "--datos", "producto", "--form"],
     ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (web_js / "src/pages/PruebaUso.jsx").write_text(APP_JS.replace("function App()", "export function PruebaUso()").replace("export default App;\n", "").replace("./", "../").replace("import { ProductosPage } from '../pages/ProductosPage';\n", "").replace("      <ProductosPage />\n", ""), encoding="utf-8")
@@ -222,6 +227,9 @@ def test_react_native_js_pantalla_con_datos(movil_js):
     assert (movil_js / "hooks/useConsulta.js").is_file()
     assert "useConsulta(productoService.listar)" in leer(movil_js / "app/productos.jsx")
     assert "<Text>{datos.activo ? 'Sí' : 'No'}</Text>" in leer(movil_js / "app/producto/[id].jsx")
+    assert main(["nuevo", "pantalla", "editar-producto", "--datos", "producto", "--form"]) == 0
+    formulario = leer(movil_js / "app/editar-producto.jsx")
+    assert " * @type {ProductoDatos}" in formulario and "type Producto" not in formulario
 
 
 @pytest.mark.lento
@@ -230,6 +238,7 @@ def test_react_native_js_npm_install_y_export(movil_js):
     for argumentos in (
         ["pantalla", "detalle", "--carpeta", "productos"], ["componente", "Tarjeta"], ["hook", "contador"], ["servicio", "producto", "nombre"],
         ["pantalla", "lista", "--carpeta", "productos", "--datos", "producto"], ["pantalla", "producto", "--datos", "producto", "--uno"],
+        ["pantalla", "editar-producto", "--datos", "producto", "--form"],
     ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (movil_js / "app/prueba-uso.jsx").write_text(PANTALLA_JS, encoding="utf-8")

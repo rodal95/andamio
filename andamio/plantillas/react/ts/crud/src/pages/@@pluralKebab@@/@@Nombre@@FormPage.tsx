@@ -1,8 +1,7 @@
-// guía: El formulario para crear y editar. Envía los datos con el servicio (src/services)
-// guía: y muestra los errores que devuelve la API debajo de cada campo.
-import { useEffect, useState } from 'react';
+// guía: El formulario para crear y editar. useFormulario (src/hooks) carga el registro al editar,
+// guía: lo guarda con el servicio (src/services) y deja los errores de la API por campo.
 import { useNavigate, useParams } from 'react-router';
-import { ErrorApi } from '../../services/http';
+import { useFormulario } from '../../hooks/useFormulario';
 import { @@nombreCamel@@Service, type @@Nombre@@, type @@Nombre@@Datos } from '../../services/@@nombreCamel@@Service';
 import styles from './@@pluralKebab@@.module.css';
 
@@ -21,38 +20,20 @@ function aDatos(registro: @@Nombre@@): @@Nombre@@Datos {
 /** Formulario para crear (ruta /@@pluralKebab@@/nuevo) o editar (ruta /@@pluralKebab@@/:id/editar). */
 export function @@Nombre@@FormPage() {
   const { id } = useParams();
-  const editando = id !== undefined;
   const navegar = useNavigate();
-  const [datos, setDatos] = useState<@@Nombre@@Datos>(VACIO);
-  // Errores de validación que devuelve la API, por campo: { nombre: ['Este campo...'] }
-  const [errores, setErrores] = useState<Record<string, string[]>>({});
+  const { datos, cambiar, errores, guardar, editando } = useFormulario(
+    @@nombreCamel@@Service,
+    id === undefined ? undefined : Number(id),
+    VACIO,
+    aDatos,
+  );
 
-  // Al editar, primero se cargan los datos actuales.
-  useEffect(() => {
-    if (editando) {
-      @@nombreCamel@@Service.obtener(Number(id)).then((registro) => setDatos(aDatos(registro)));
-    }
-  }, [editando, id]);
-
-  function cambiar<K extends keyof @@Nombre@@Datos>(campo: K, valor: @@Nombre@@Datos[K]) {
-    setDatos((actual) => ({ ...actual, [campo]: valor }));
-  }
-
-  async function guardar() {
+  async function enviar() {
     // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
-    // Ejemplo: if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
-    try {
-      const guardado = editando
-        ? await @@nombreCamel@@Service.actualizar(Number(id), datos)
-        : await @@nombreCamel@@Service.crear(datos);
-      navegar(`/@@pluralKebab@@/${guardado.id}`);
-    } catch (e) {
-      if (e instanceof ErrorApi && e.estado === 400) {
-        setErrores(e.detalle as Record<string, string[]>);
-      } else {
-        setErrores({ general: [e instanceof Error ? e.message : String(e)] });
-      }
-    }
+    // Ejemplo (sumá setErrores a lo que tomás de useFormulario):
+    // if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
+    const guardado = await guardar();
+    if (guardado) navegar(`/@@pluralKebab@@/${guardado.id}`);
   }
 
   return (
@@ -62,7 +43,7 @@ export function @@Nombre@@FormPage() {
         className={styles.formulario}
         onSubmit={(evento) => {
           evento.preventDefault();
-          void guardar();
+          void enviar();
         }}
       >
         @@campos_formulario@@

@@ -9,7 +9,7 @@ from typing import Callable
 from andamio.nucleo import consola, historial, identificadores
 from andamio.nucleo.deteccion import dependencias_npm
 from andamio.nucleo.errores import AndamioError
-from andamio.nucleo.nombres import Nombre, camel, kebab, parece_plural, separar_palabras, snake, titulo
+from andamio.nucleo.nombres import Nombre, camel, kebab, pascal, parece_plural, separar_palabras, snake, titulo
 from andamio.stacks.base import Solicitud
 from andamio.stacks.django import TIPOS as TIPOS_API
 
@@ -144,7 +144,12 @@ def normalizar_carpeta(texto: str) -> str:
     return "/".join(partes)
 
 
-# --- Datos de la API en una página o pantalla (--datos producto [--uno]) ---------------
+# --- Datos de la API en una página o pantalla (--datos producto [--uno | --form]) -------
+#
+# Tres formas de usar un servicio que ya existe, con los hooks de src/hooks (o hooks/):
+#   lista  useConsulta(servicio.listar)
+#   uno    useConsulta(() => servicio.obtener(id)), con el id en la ruta
+#   form   useFormulario(servicio, id, VACIO, aDatos): crear, o editar si hay id
 
 
 def normalizar_datos(texto: str) -> str:
@@ -158,31 +163,49 @@ def normalizar_datos(texto: str) -> str:
     return snake(palabras)
 
 
-def _sin_datos(sol: Solicitud) -> None:
-    """--uno sin --datos no tiene sentido: no se sabe qué mostrar."""
-    if sol.opciones.get("uno"):
+def modo_datos(sol: Solicitud) -> str:
+    """"" (sin --datos), "lista", "uno" (--uno) o "form" (--form)."""
+    uno, form = bool(sol.opciones.get("uno")), bool(sol.opciones.get("form"))
+    ejemplo = f"{consola.programa()} nuevo {sol.pieza.clave} {sol.nombre.kebab} --datos producto"
+    if not sol.opciones.get("datos"):
+        if uno or form:
+            opcion = "--uno" if uno else "--form"
+            raise AndamioError(
+                f"{opcion} va junto con --datos: dice qué hace la {sol.pieza.titulo.lower()} con esos datos.",
+                f"Ejemplo: {ejemplo} {opcion}",
+            )
+        return ""
+    if uno and form:
         raise AndamioError(
-            f"--uno va junto con --datos: dice que la {sol.pieza.titulo.lower()} muestra uno solo de esos datos.",
-            f"Ejemplo: {consola.programa()} nuevo {sol.pieza.clave} {sol.nombre.kebab} --datos producto --uno",
+            "Elegí --uno (muestra uno solo) o --form (el formulario para crear y editar), no los dos.",
+            f"Ejemplo: {ejemplo} --form",
         )
+    return "uno" if uno else "form" if form else "lista"
 
 
 def servicio_de_datos(sol: Solicitud, carpeta: str) -> tuple[str, str, list]:
     """Para --datos: el servicio que se usa (productoService), su archivo y sus campos.
 
     El servicio tiene que existir (no se crea: necesitaría los campos). Los campos salen del
-    historial (con qué campos se generó); si no está, la lista vacía.
+    historial (con qué campos se generó); si no está, la lista vacía (el formulario los necesita).
     """
     datos = sol.opciones["datos"]
     ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
     servicio = f"{camel(datos.split('_'))}Service"
     archivo = f"{carpeta}/{servicio}.{ext}"
+    sugerencia = f"{consola.programa()} nuevo servicio {datos} nombre:str precio:decimal"
     if not (sol.raiz / archivo).is_file():
         raise AndamioError(
             f"La {sol.pieza.titulo.lower()} usa {archivo}, que todavía no existe.",
-            f"Generá primero el servicio, con los campos de la API: {consola.programa()} nuevo servicio {datos} nombre:str precio:decimal",
+            f"Generá primero el servicio, con los campos de la API: {sugerencia}",
         )
     campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) or []
+    if not campos and sol.opciones.get("form"):
+        raise AndamioError(
+            f"Para armar el formulario hacen falta los campos de {servicio}, y no están en el historial de andamio "
+            f"({historial.ARCHIVO}).",
+            f"Si el servicio lo hiciste a mano, borralo y generalo con andamio: {sugerencia}",
+        )
     return servicio, archivo, campos
 
 
@@ -209,8 +232,94 @@ def _consulta(sol: Solicitud, servicio: str, parametros: str) -> list[str]:
     return ([explicacion] if sol.guia else []) + lineas
 
 
+def _formulario(sol: Solicitud, servicio: str, parametros: str, al_guardar: str) -> list[str]:
+    """La llamada a useFormulario y la función enviar() (con la marca para la lógica propia)."""
+    lineas = [
+        f"const {{ id }} = {parametros};",
+        "const { datos, cambiar, errores, guardar, editando, cargado } = useFormulario(",
+        f"  {servicio},",
+        "  id === undefined ? undefined : Number(id),",
+        "  VACIO,",
+        "  aDatos,",
+        ");",
+        "",
+        "async function enviar() {",
+        "  // TODO(logica): validaciones del formulario antes de enviar (la API también valida).",
+        "  // Ejemplo (sumá setErrores a lo que tomás de useFormulario):",
+        "  // if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }",
+        "  const guardado = await guardar();",
+        f"  if (guardado) {al_guardar};",
+        "}",
+    ]
+    if sol.guia:
+        lineas.insert(0, "// useFormulario carga el registro si hay un id (editar), y guarda con crear o actualizar.")
+    return lineas
+
+
+def _previo_formulario(sol: Solicitud, campos, nombre_tipo: str, ruta_servicio: str) -> str:
+    """VACIO (los valores al crear) y aDatos (de un registro de la API al formulario), antes del componente."""
+    vacios = [f"  {c.nombre}: {_VACIOS[c.tipo]}," for c in campos]
+    copiar = [f"    {c.nombre}: registro.{c.nombre}{'.slice(0, 16)' if c.tipo == 'datetime' else ''}," for c in campos]
+    datos_tipo = f"{nombre_tipo}Datos"
+    if sol.variante == "js":
+        cabecera = [
+            f"/** @typedef {{import('{ruta_servicio}').{datos_tipo}}} {datos_tipo} */",
+            "",
+            "/**",
+            " * Valores del formulario al crear uno nuevo.",
+            f" * @type {{{datos_tipo}}}",
+            " */",
+            "const VACIO = {",
+        ]
+        funcion = [
+            "/**",
+            " * Pasa un registro de la API a los datos del formulario.",
+            f" * @param {{import('{ruta_servicio}').{nombre_tipo}}} registro",
+            f" * @returns {{{datos_tipo}}}",
+            " */",
+            "function aDatos(registro) {",
+        ]
+    else:
+        cabecera = ["// Valores del formulario al crear uno nuevo.", f"const VACIO: {datos_tipo} = {{"]
+        funcion = ["/** Pasa un registro de la API a los datos del formulario. */", f"function aDatos(registro: {nombre_tipo}): {datos_tipo} {{"]
+    return "\n".join([*cabecera, *vacios, "};", "", *funcion, "  return {", *copiar, "  };", "}", ""])
+
+
+def _import_servicio(sol: Solicitud, servicio: str, ruta: str, nombre_tipo: str) -> str:
+    if sol.opciones.get("form") and sol.variante != "js":
+        return f"import {{ {servicio}, type {nombre_tipo}, type {nombre_tipo}Datos }} from '{ruta}';"
+    return f"import {{ {servicio} }} from '{ruta}';"
+
+
 def _valor(campo, variable: str = "datos") -> str:
     return f"{{{variable}.{campo.nombre} ? 'Sí' : 'No'}}" if campo.tipo == "bool" else f"{{{variable}.{campo.nombre}}}"
+
+
+_VACIOS_DATOS = ("datos_imports", "datos_previo", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
+
+
+def _archivo_hook(sol: Solicitud, carpeta: str, modo: str) -> str:
+    hook = "useFormulario" if modo == "form" else "useConsulta"
+    return f"{carpeta}/{hook}.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}"
+
+
+HOOK_CONSULTA = ("useConsulta.ts", "useConsulta.js")
+HOOK_FORMULARIO = ("useFormulario.ts", "useFormulario.js")
+
+
+def hooks_a_omitir(carpeta: str) -> Callable[[Solicitud], frozenset[str]]:
+    """Pieza.omitir: cada página o pantalla crea solo el hook que usa (y solo si falta)."""
+
+    def omitir(sol: Solicitud) -> frozenset[str]:
+        modo = sol.opciones.get("datos") and ("form" if sol.opciones.get("form") else "consulta")
+        sobran = {"consulta": HOOK_FORMULARIO, "form": HOOK_CONSULTA}.get(modo, HOOK_CONSULTA + HOOK_FORMULARIO)
+        return frozenset(f"{carpeta}/{archivo}" for archivo in sobran)
+
+    return omitir
+
+
+def hooks(carpeta: str) -> frozenset[str]:
+    return frozenset(f"{carpeta}/{archivo}" for archivo in HOOK_CONSULTA + HOOK_FORMULARIO)
 
 
 # React (pagina)
@@ -219,10 +328,12 @@ MARCADORES_PAGINA = {
     "ruta_pagina": "la ruta de la página: /contacto, o /producto-detalle/:id con --uno",
     "url_pagina": "la dirección para abrirla: /contacto, o /producto-detalle/1 con --uno",
     "datos_imports": "imports del hook y del servicio (vacío sin --datos)",
-    "datos_consulta": "la llamada a useConsulta (vacío sin --datos)",
-    "datos_contenido": "cargando, error y los datos: una lista, o uno solo con --uno (vacío sin --datos)",
+    "datos_previo": "con --form: VACIO y aDatos, antes del componente (vacío si no)",
+    "datos_consulta": "la llamada a useConsulta o useFormulario (vacío sin --datos)",
+    "datos_contenido": "cargando, error y los datos: una lista, uno solo (--uno) o el formulario (--form)",
+    "datos_css": "con --form: los estilos del formulario (vacío si no)",
     "datos_servicio": "el archivo del servicio que usa (vacío sin --datos)",
-    "datos_hook": "el archivo de useConsulta (vacío sin --datos)",
+    "datos_hook": "el archivo del hook que usa: useConsulta o useFormulario (vacío sin --datos)",
 }
 
 _CARGANDO_Y_ERROR = [
@@ -230,27 +341,66 @@ _CARGANDO_Y_ERROR = [
     "{error && <p role=\"alert\">No se pudo cargar: {error}</p>}",
 ]
 
+_CSS_FORMULARIO = """
+.formulario {
+  display: grid;
+  gap: 14px;
+  max-width: 480px;
+}
+
+.campo {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.campo input:not([type='checkbox']),
+.campo textarea {
+  font: inherit;
+  font-weight: normal;
+  padding: 6px 8px;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.error {
+  color: #b42318;
+  font-weight: normal;
+}"""
+
 
 def contexto_pagina(sol: Solicitud) -> dict[str, str]:
-    datos = sol.opciones.get("datos")
-    uno = bool(sol.opciones.get("uno"))
+    modo = modo_datos(sol)
     ruta = f"/{sol.nombre.kebab}"
-    if not datos:
-        _sin_datos(sol)
-        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_servicio", "datos_hook")
-        return {**dict.fromkeys(vacios, ""), "ruta_pagina": ruta, "url_pagina": ruta}
+    if not modo:
+        return {**dict.fromkeys(_VACIOS_DATOS, ""), "datos_css": "", "ruta_pagina": ruta, "url_pagina": ruta}
 
+    datos = sol.opciones["datos"]
     servicio, archivo_servicio, campos = servicio_de_datos(sol, "src/services")
-    imports = ["import { useParams } from 'react-router';"] if uno else []
-    imports += ["import { useConsulta } from '../../hooks/useConsulta';", f"import {{ {servicio} }} from '../../services/{servicio}';"]
+    tipo = pascal(datos.split("_"))
+    ruta_servicio = f"../../services/{servicio}"
+    if modo == "form":
+        imports = ["import { useNavigate, useParams } from 'react-router';", "import { useFormulario } from '../../hooks/useFormulario';"]
+        consulta = ["const navegar = useNavigate();", *_formulario(sol, servicio, "useParams()", "navegar(-1)")]
+        contenido = _contenido_formulario(campos)
+    else:
+        imports = (["import { useParams } from 'react-router';"] if modo == "uno" else []) + ["import { useConsulta } from '../../hooks/useConsulta';"]
+        consulta = _consulta(sol, servicio, "useParams()")
+        contenido = _contenido_uno(campos) if modo == "uno" else _contenido_lista(campos, datos)
+    imports.append(_import_servicio(sol, servicio, ruta_servicio, tipo))
     return {
-        "ruta_pagina": f"{ruta}/:id" if uno else ruta,
-        "url_pagina": f"{ruta}/1" if uno else ruta,
+        "ruta_pagina": f"{ruta}/:id" if modo == "uno" else ruta,
+        "url_pagina": f"{ruta}/1" if modo == "uno" else ruta,
         "datos_imports": "\n".join(imports),
-        "datos_consulta": "\n".join(_consulta(sol, servicio, "useParams()")) + "\n",
-        "datos_contenido": "\n".join(_contenido_uno(campos) if uno else _contenido_lista(campos, datos)),
+        "datos_previo": _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else "",
+        "datos_consulta": "\n".join(consulta) + "\n",
+        "datos_contenido": "\n".join(contenido),
+        "datos_css": _CSS_FORMULARIO if modo == "form" else "",
         "datos_servicio": archivo_servicio,
-        "datos_hook": f"src/hooks/useConsulta.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}",
+        "datos_hook": _archivo_hook(sol, "src/hooks", modo),
     }
 
 
@@ -276,14 +426,40 @@ def _contenido_uno(campos) -> list[str]:
     return [*_CARGANDO_Y_ERROR, "{datos && (", "  <dl>", *filas, "  </dl>", ")}"]
 
 
+def _contenido_formulario(campos) -> list[str]:
+    controles = [f"  {linea}" for c in campos for linea in _campo_formulario(c)]
+    return [
+        "{!cargado && <p>Cargando…</p>}",
+        "<form",
+        "  className={styles.formulario}",
+        "  onSubmit={(evento) => {",
+        "    evento.preventDefault();",
+        "    void enviar();",
+        "  }}",
+        ">",
+        *controles,
+        "  {errores.general && <p className={styles.error}>{errores.general.join(' ')}</p>}",
+        "  <div className={styles.acciones}>",
+        "    <button type=\"submit\">{editando ? 'Guardar cambios' : 'Agregar'}</button>",
+        "    <button type=\"button\" onClick={() => navegar(-1)}>",
+        "      Cancelar",
+        "    </button>",
+        "  </div>",
+        "</form>",
+    ]
+
+
 def pasos_pagina(sol: Solicitud) -> list[str]:
     pasos = ["npm run dev", "http://localhost:5173@@url_pagina@@"]
+    if sol.opciones.get("form"):
+        pasos.append("# Para editar uno, la misma página con su id: http://localhost:5173@@url_pagina@@/1")
     if sol.opciones.get("datos"):
         pasos.append("# Necesita la API andando (Django, FastAPI o Express), con el recurso que usa el servicio.")
     return pasos_router(pasos)(sol)
 
 
 # React Native (pantalla)
+
 
 def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
     carpeta = sol.opciones.get("carpeta", "")
@@ -305,27 +481,43 @@ def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
     }
 
 
-def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
-    """React Native: los bloques de una pantalla con --datos (lista con FlatList, o uno solo)."""
-    datos = sol.opciones.get("datos")
-    if not datos:
-        _sin_datos(sol)
-        vacios = ("datos_imports", "datos_consulta", "datos_contenido", "datos_estilos", "datos_servicio", "datos_hook")
-        return {**dict.fromkeys(vacios, ""), "expo_router": "Stack", "react_native": "StyleSheet, Text, View"}
+_ESTILO_ERROR = ["error: {", "  color: '#b91c1c',", "  marginVertical: 8,", "},"]
 
-    uno = bool(sol.opciones.get("uno"))
+
+def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
+    """React Native: los bloques de una pantalla con --datos (lista con FlatList, uno solo o formulario)."""
+    modo = modo_datos(sol)
+    if not modo:
+        return {**dict.fromkeys(_VACIOS_DATOS, ""), "datos_estilos": "", "expo_router": "Stack", "react_native": "StyleSheet, Text, View"}
+
+    datos = sol.opciones["datos"]
     servicio, archivo_servicio, campos = servicio_de_datos(sol, "services")
-    if uno:
-        contenido = [
-            "{cargando && <ActivityIndicator />}",
-            "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
-            *_contenido_uno_rn(campos),
-        ]
+    tipo = pascal(datos.split("_"))
+    ruta_servicio = f"@/services/{servicio}"
+    cargando_y_error = [
+        "{cargando && <ActivityIndicator />}",
+        "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
+    ]
+    if modo == "form":
+        hook = "import { useFormulario } from '@/hooks/useFormulario';"
+        consulta = _formulario(sol, servicio, "useLocalSearchParams()", "router.back()")
+        contenido = _contenido_formulario_rn(campos)
+        componentes = "ActivityIndicator, Button, ScrollView, StyleSheet, Switch, Text, TextInput, View"
+        router = "Stack, router, useLocalSearchParams"
+        estilos = [*_ESTILO_ERROR, "etiqueta: {", "  fontWeight: 'bold',", "  marginTop: 12,", "},", "entrada: {",
+                   "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 6,", "  padding: 8,", "  marginTop: 4,", "},"]  # fmt: skip
+    elif modo == "uno":
+        hook = "import { useConsulta } from '@/hooks/useConsulta';"
+        consulta = _consulta(sol, servicio, "useLocalSearchParams()")
+        contenido = [*cargando_y_error, *_contenido_uno_rn(campos)]
         componentes = "ActivityIndicator, StyleSheet, Text, View"
+        router = "Stack, useLocalSearchParams"
+        estilos = [*_ESTILO_ERROR, "etiqueta: {", "  fontWeight: 'bold',", "  marginTop: 8,", "},"]
     else:
+        hook = "import { useConsulta } from '@/hooks/useConsulta';"
+        consulta = _consulta(sol, servicio, "useLocalSearchParams()")
         contenido = [
-            "{cargando && <ActivityIndicator />}",
-            "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
+            *cargando_y_error,
             "<FlatList",
             "  data={datos ?? []}",
             "  keyExtractor={(item) => String(item.id)}",
@@ -334,26 +526,18 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
             "/>",
         ]
         componentes = "ActivityIndicator, FlatList, StyleSheet, Text, View"
-    estilos = [
-        "error: {",
-        "  color: '#b91c1c',",
-        "  marginVertical: 8,",
-        "},",
-        "item: {" if not uno else "etiqueta: {",
-        "  paddingVertical: 8," if not uno else "  fontWeight: 'bold',",
-        "  borderBottomWidth: StyleSheet.hairlineWidth," if not uno else "  marginTop: 8,",
-        "},",
-    ]
-    imports = ["", "import { useConsulta } from '@/hooks/useConsulta';", f"import {{ {servicio} }} from '@/services/{servicio}';"]
+        router = "Stack"
+        estilos = [*_ESTILO_ERROR, "item: {", "  paddingVertical: 8,", "  borderBottomWidth: StyleSheet.hairlineWidth,", "},"]
     return {
-        "expo_router": "Stack, useLocalSearchParams" if uno else "Stack",
+        "expo_router": router,
         "react_native": componentes,
-        "datos_imports": "\n".join(imports),
-        "datos_consulta": "\n".join(_consulta(sol, servicio, "useLocalSearchParams()")) + "\n",
+        "datos_imports": "\n".join(["", hook, _import_servicio(sol, servicio, ruta_servicio, tipo)]),
+        "datos_previo": _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else "",
+        "datos_consulta": "\n".join(consulta) + "\n",
         "datos_contenido": "\n".join(contenido),
         "datos_estilos": "\n".join(estilos),
         "datos_servicio": archivo_servicio,
-        "datos_hook": f"hooks/useConsulta.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}",
+        "datos_hook": _archivo_hook(sol, "hooks", modo),
     }
 
 
@@ -366,19 +550,77 @@ def _contenido_uno_rn(campos) -> list[str]:
     return ["{datos && (", "  <View>", *filas, "  </View>", ")}"]
 
 
+_TECLADOS_RN = {"int": "number-pad", "decimal": "decimal-pad", "float": "decimal-pad", "email": "email-address"}
+_EJEMPLOS_RN = {"date": "2025-03-15", "datetime": "2025-03-15T10:30"}
+
+
+def _campo_formulario_rn(campo) -> list[str]:
+    n = campo.nombre
+    if campo.tipo == "bool":
+        control = [f"<Switch value={{datos.{n}}} onValueChange={{(valor) => cambiar('{n}', valor)}} />"]
+    elif campo.tipo in ("int", "decimal", "float"):
+        # Sin value (no controlado): así se puede escribir "12." mientras se tipea un decimal.
+        control = [
+            "<TextInput",
+            "  style={styles.entrada}",
+            f"  keyboardType=\"{_TECLADOS_RN[campo.tipo]}\"",
+            f"  defaultValue={{editando ? String(datos.{n}) : ''}}",
+            f"  onChangeText={{(texto) => cambiar('{n}', Number(texto.replace(',', '.')))}}",
+            "/>",
+        ]
+    else:
+        extras = []
+        if campo.tipo in _TECLADOS_RN:
+            extras.append(f"  keyboardType=\"{_TECLADOS_RN[campo.tipo]}\"")
+            extras.append("  autoCapitalize=\"none\"")
+        if campo.tipo == "text":
+            extras.append("  multiline")
+        if campo.tipo in _EJEMPLOS_RN:
+            extras.append(f"  placeholder=\"{_EJEMPLOS_RN[campo.tipo]}\"")
+        control = [
+            "<TextInput",
+            "  style={styles.entrada}",
+            *extras,
+            f"  value={{datos.{n}}}",
+            f"  onChangeText={{(texto) => cambiar('{n}', texto)}}",
+            "/>",
+        ]
+    return [
+        f"<Text style={{styles.etiqueta}}>{campo.titulo}</Text>",
+        *control,
+        f"{{errores.{n} && <Text style={{styles.error}}>{{errores.{n}.join(' ')}}</Text>}}",
+    ]
+
+
+def _contenido_formulario_rn(campos) -> list[str]:
+    controles = [f"    {linea}" for c in campos for linea in _campo_formulario_rn(c)]
+    return [
+        "{!cargado ? (",
+        "  <ActivityIndicator />",
+        ") : (",
+        "  <ScrollView>",
+        *controles,
+        "    {errores.general && <Text style={styles.error}>{errores.general.join(' ')}</Text>}",
+        "    <Button title={editando ? 'Guardar cambios' : 'Agregar'} onPress={() => void enviar()} />",
+        "  </ScrollView>",
+        ")}",
+    ]
+
+
 MARCADORES_PANTALLA = {
     **MARCADORES_EXTENSION,
     "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto (con --uno: producto/[id])",
     "url_pantalla": "ruta para navegar: /productos/detalle-producto (con --uno: /producto/[id])",
     "url_abrir": "una dirección de ejemplo para abrirla: /producto/1 con --uno",
-    "expo_router": "lo que se importa de expo-router: Stack (y useLocalSearchParams con --uno)",
+    "expo_router": "lo que se importa de expo-router: Stack (y useLocalSearchParams, router con --uno o --form)",
     "react_native": "lo que se importa de react-native: StyleSheet, Text, View (y FlatList, ActivityIndicator con --datos)",
     "datos_imports": "imports del hook y del servicio (vacío sin --datos)",
-    "datos_consulta": "la llamada a useConsulta (vacío sin --datos)",
-    "datos_contenido": "cargando, error y los datos: FlatList, o uno solo con --uno (vacío sin --datos)",
-    "datos_estilos": "estilos de la lista o del detalle (vacío sin --datos)",
+    "datos_previo": "con --form: VACIO y aDatos, antes del componente (vacío si no)",
+    "datos_consulta": "la llamada a useConsulta o useFormulario (vacío sin --datos)",
+    "datos_contenido": "cargando, error y los datos: FlatList, uno solo (--uno) o el formulario (--form)",
+    "datos_estilos": "estilos de la lista, del detalle o del formulario (vacío sin --datos)",
     "datos_servicio": "el archivo del servicio que usa (vacío sin --datos)",
-    "datos_hook": "el archivo de useConsulta (vacío sin --datos)",
+    "datos_hook": "el archivo del hook que usa: useConsulta o useFormulario (vacío sin --datos)",
 }
 
 

@@ -32,7 +32,25 @@ def con_piezas(proyecto):
     assert main(["nuevo", "servicio", "cliente", "nombre", "email:email"]) == 0
     assert main(["nuevo", "pantalla", "productos", "--datos", "producto"]) == 0
     assert main(["nuevo", "pantalla", "cliente", "--carpeta", "clientes", "--datos", "cliente", "--uno"]) == 0
+    assert main(["nuevo", "pantalla", "editar-producto", "--datos", "producto", "--form"]) == 0
     return proyecto
+
+
+def test_pantalla_con_formulario(con_piezas):
+    pantalla = leer(con_piezas / "app/editar-producto.tsx")
+    for esperado in (
+        "import { Stack, router, useLocalSearchParams } from 'expo-router';",
+        "import { useFormulario } from '@/hooks/useFormulario';",
+        "const VACIO: ProductoDatos = {",
+        "const { id } = useLocalSearchParams();",
+        "if (guardado) router.back();",
+        'keyboardType="number-pad"',
+        "defaultValue={editando ? String(datos.stock) : ''}",
+        "<Button title={editando ? 'Guardar cambios' : 'Agregar'}",
+        "  entrada: {",
+    ):
+        assert esperado in pantalla, esperado
+    assert (con_piezas / "hooks/useFormulario.ts").is_file()
 
 
 def test_servicio_trae_el_hook_de_consulta(con_piezas):

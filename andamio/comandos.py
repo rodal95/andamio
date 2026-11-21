@@ -19,6 +19,7 @@ _OPCIONES_PIEZA = {
     "modo": "--modo auto|claro|oscuro",
     "datos": "--datos <servicio>",
     "uno": "--uno",
+    "form": "--form",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 

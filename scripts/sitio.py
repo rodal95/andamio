@@ -1443,6 +1443,10 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pantalla productos --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): FlatList con useConsulta(productoService.listar), cargando y error."})
         elif opcion == "uno" and clave == "pantalla":
             filas.append({"comando": "nuevo pantalla producto --datos producto --uno", "descripcion": "Muestra uno solo: crea app/producto/[id] (el id es parte de la ruta) y usa obtener(id)."})
+        elif opcion == "form" and clave == "pantalla":
+            filas.append({"comando": "nuevo pantalla editar-producto --datos producto --form", "descripcion": "El formulario para crear y editar, con useFormulario: se abre con router.push('/editar-producto') para crear, o con ?id=3 para editar."})
+        elif opcion == "form":
+            filas.append({"comando": "nuevo pagina ProductoEditar --datos producto --form", "descripcion": "El formulario para crear (/producto-editar) y editar (/producto-editar/3), con useFormulario: muestra los errores de la API en cada campo."})
         elif opcion == "datos":
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":

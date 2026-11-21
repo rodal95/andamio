@@ -121,7 +121,8 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
     nuevo.add_argument("--modo", "--mode", dest="modo", help="modo del tema: auto (sigue al sistema), claro u oscuro")
     nuevo.add_argument("--datos", "--data", dest="datos", help="la página muestra datos de la API con este servicio (React): --datos producto")
-    nuevo.add_argument("--uno", "--one", dest="uno", action="store_true", help="con --datos: la página muestra uno solo, con el id en la ruta")
+    nuevo.add_argument("--uno", "--one", dest="uno", action="store_true", help="con --datos: muestra uno solo, con el id en la ruta")
+    nuevo.add_argument("--form", dest="form", action="store_true", help="con --datos: el formulario para crear y editar")
     nuevo.add_argument("--simular", "--dry-run", **simular)
     nuevo.add_argument("--sin-guia", "--no-guide", **sin_guia)
 
@@ -167,7 +168,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         stack = acciones.stack_por_clave(args.stack)
         return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia is not False)
     if args.comando == "nuevo":
-        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno}
+        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno, "form": args.form}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular, args.guia)
     if args.comando == "info":
         return acciones.info(cwd)

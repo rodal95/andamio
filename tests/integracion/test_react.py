@@ -31,6 +31,7 @@ def con_piezas(proyecto):
     assert main(["nuevo", "crud", "producto", "nombre:str", "precio:decimal", "stock:int", "activo:bool", "vence:date"]) == 0
     assert main(["nuevo", "pagina", "ClienteLista", "--datos", "cliente"]) == 0
     assert main(["nuevo", "pagina", "ProductoFicha", "--datos", "producto", "--uno"]) == 0
+    assert main(["nuevo", "pagina", "ProductoEditar", "--datos", "producto", "--form"]) == 0
     return proyecto
 
 
@@ -195,6 +196,39 @@ def test_pagina_con_datos_de_uno(con_piezas):
     assert '"/producto-ficha"' not in app, "una página con :id no va en el menú"
 
 
+def test_pagina_con_formulario(con_piezas):
+    pagina = leer(con_piezas / "src/pages/ProductoEditarPage/ProductoEditarPage.tsx")
+    for esperado in (
+        "import { useFormulario } from '../../hooks/useFormulario';",
+        "import { productoService, type Producto, type ProductoDatos } from '../../services/productoService';",
+        "const VACIO: ProductoDatos = {",
+        "  vence: '',",
+        "    activo: registro.activo,",
+        "const { datos, cambiar, errores, guardar, editando, cargado } = useFormulario(",
+        "// TODO(logica): validaciones del formulario",
+        "<input type=\"date\" required value={datos.vence}",
+        "{editando ? 'Guardar cambios' : 'Agregar'}",
+    ):
+        assert esperado in pagina, esperado
+    assert ".formulario {" in leer(con_piezas / "src/pages/ProductoEditarPage/ProductoEditarPage.module.css")
+    assert ".formulario" not in leer(con_piezas / "src/pages/ContactoPage/ContactoPage.module.css")
+    app = leer(con_piezas / "src/App.tsx")
+    assert '<Route path="/producto-editar" element={<ProductoEditarPage />} />' in app
+    assert '<Route path="/producto-editar/:id" element={<ProductoEditarPage />} />' in app
+    assert '<Link to="/producto-editar">' in app
+
+
+def test_cada_pagina_crea_solo_el_hook_que_usa(proyecto):
+    (proyecto / "src/services").mkdir(exist_ok=True)
+    assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
+    for hook in ("useConsulta", "useFormulario"):
+        (proyecto / f"src/hooks/{hook}.ts").unlink()
+    assert main(["nuevo", "pagina", "Alta", "--datos", "producto", "--form"]) == 0
+    assert (proyecto / "src/hooks/useFormulario.ts").is_file() and not (proyecto / "src/hooks/useConsulta.ts").exists()
+    assert main(["nuevo", "pagina", "Lista", "--datos", "producto"]) == 0
+    assert (proyecto / "src/hooks/useConsulta.ts").is_file()
+
+
 def test_pagina_con_datos_sin_guia_y_sin_historial(proyecto):
     assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
     (proyecto / ".andamio/historial.jsonl").unlink()  # un servicio sin historial: no se saben los campos
@@ -222,6 +256,7 @@ def test_pagina_con_datos_reusa_el_hook(proyecto, capsys):
         (["pagina", "Productos", "--datos", "producto"], "src/services/productoService.ts, que todavía no existe"),
         (["pagina", "Productos", "--datos", "productos"], "parece plural"),
         (["pagina", "Contacto", "--uno"], "--uno va junto con --datos"),
+        (["pagina", "Contacto", "--form"], "--form va junto con --datos"),
         (["componente", "Tarjeta", "--datos", "producto"], "no acepta la opción --datos"),
     ],
 )
@@ -273,7 +308,8 @@ def test_crud(con_piezas):
     assert "<input type=\"checkbox\" checked={datos.activo}" in formulario
     assert "<input type=\"date\" required value={datos.vence}" in formulario
     assert 'step="0.01"' in formulario
-    assert "e.estado === 400" in formulario
+    assert "useFormulario(" in formulario and "productoService," in formulario
+    assert "e.estado === 400" in leer(raiz / "src/hooks/useFormulario.ts")
     detalle = leer(raiz / "src/components/ProductoDetalle/ProductoDetalle.tsx")
     assert "<dd>{producto.activo ? 'Sí' : 'No'}</dd>" in detalle
     assert "productoService." not in detalle, "el componente no tiene que llamar a la API (solo usa el tipo)"
@@ -353,3 +389,12 @@ def test_npm_install_y_build(con_piezas):
     npm_install(con_piezas)
     ejecutar([NPM, "run", "build"], con_piezas)
     assert (con_piezas / "dist/index.html").is_file()
+
+
+def test_formulario_necesita_los_campos(proyecto, capsys):
+    assert main(["nuevo", "servicio", "producto", "nombre"]) == 0
+    assert main(["nuevo", "pagina", "Alta", "--datos", "producto", "--uno", "--form"]) == 1
+    assert "no los dos" in capsys.readouterr().err
+    (proyecto / ".andamio/historial.jsonl").unlink()
+    assert main(["nuevo", "pagina", "Alta", "--datos", "producto", "--form"]) == 1
+    assert "hacen falta los campos de productoService" in capsys.readouterr().err

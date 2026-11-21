@@ -60,38 +60,46 @@ def _insercion_app(
     )
 
 
-_HOOK_CONSULTA = frozenset({"src/hooks/useConsulta.ts", "src/hooks/useConsulta.js"})
+_HOOKS = _js.hooks("src/hooks")  # useConsulta y useFormulario
 
 
 def _sin_uno(sol) -> bool:
     return not sol.opciones.get("uno")
 
 
+def _con_form(sol) -> bool:
+    return bool(sol.opciones.get("form"))
+
+
 PAGINA = Pieza(
     clave="pagina",
     lectura=(
         ("@@datos_servicio@@", "las funciones que piden los datos a la API"),
-        ("@@datos_hook@@", "useConsulta: el useEffect que pide los datos, con cargando y error"),
+        ("@@datos_hook@@", "el hook que usa el servicio: useConsulta (pide los datos) o useFormulario (crea y edita)"),
         ('src/pages/@@Nombre@@Page/@@Nombre@@Page.@@extx@@', 'la página'),
         ('src/App.@@extx@@', 'su ruta y su enlace en el menú'),
     ),
     titulo="Página",
-    descripcion="página con su ruta y su enlace en el menú; con --datos, muestra datos de la API",
+    descripcion="página con su ruta y su enlace en el menú; con --datos, usa un servicio (lista, --uno o --form)",
     ejemplo="Contacto",
     formas=("@@Nombre@@Page",),
-    opciones=frozenset({"datos", "uno"}),
+    opciones=frozenset({"datos", "uno", "form"}),
     normalizar_opcion={"datos": _js.normalizar_datos},
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_validar_pagina,
     contexto=_js.contexto_pagina,
     marcadores={**_js.MARCADORES_EXTENSION, **_js.MARCADORES_PAGINA},
     existe_si=("src/pages/@@Nombre@@Page",),
-    # El hook se crea solo con --datos, y si ya existe (lo generó un crud o un servicio) no se toca.
-    si_no_existe=_HOOK_CONSULTA,
-    omitir=lambda sol: frozenset() if sol.opciones.get("datos") else _HOOK_CONSULTA,
+    # Con --datos se crea el hook que usa, y si ya existe (lo generó un crud o un servicio) no se toca.
+    si_no_existe=_HOOKS,
+    omitir=_js.hooks_a_omitir("src/hooks"),
     inserciones=(
         _insercion_app("import { @@Nombre@@Page } from './pages/@@Nombre@@Page';", "imports", "import", "arriba, junto a los otros import", "//"),
         _insercion_app('<Route path="@@ruta_pagina@@" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@", "dentro de <Routes>", "{/*"),
+        # El formulario (--form) también edita: la misma página con el id en la ruta.
+        _insercion_app(
+            '<Route path="@@ruta_pagina@@/:id" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@/:id (editar)", "dentro de <Routes>", "{/*", _con_form
+        ),
         # Una página de uno solo (--uno) necesita un id en la ruta: no va en el menú.
         _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*", _sin_uno),
     ),
@@ -138,10 +146,9 @@ CRUD = Pieza(
             "src/services/http.js",
             "src/services/@@nombreCamel@@Service.ts",
             "src/services/@@nombreCamel@@Service.js",
-            "src/hooks/useConsulta.ts",
-            "src/hooks/useConsulta.js",
         }
-    ),
+    )
+    | _HOOKS,
     inserciones=(
         _insercion_app(
             "import { @@Nombre@@DetallePage, @@Nombre@@FormPage, @@Nombre@@ListaPage } from './pages/@@pluralKebab@@';",
@@ -184,6 +191,7 @@ SERVICIO = Pieza(
         ('src/services/@@nombreCamel@@Service.@@ext@@', 'las funciones para usar /api/@@plural@@/'),
         ('src/services/http.@@ext@@', 'lo común a todas las llamadas: dirección de la API y errores'),
         ('src/hooks/useConsulta.@@ext@@', 'el useEffect para pedir datos desde un componente, con cargando y error'),
+        ('src/hooks/useFormulario.@@ext@@', 'los datos de un formulario para crear o editar, con los errores de la API'),
     ),
     titulo="Servicio",
     descripcion="funciones para usar un recurso de la API (Django, FastAPI o Express)",
@@ -194,11 +202,12 @@ SERVICIO = Pieza(
     contexto=_js.contexto_servicio,
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("src/services/@@nombreCamel@@Service.@@ext@@",),
-    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}) | _HOOK_CONSULTA,
+    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}) | _HOOKS,
     siguiente_paso=[
         "# Una página que lo usa (lista, o uno solo con --uno):",
         "python -m andamio nuevo pagina @@Nombre@@Lista --datos @@nombre@@",
         "python -m andamio nuevo pagina @@Nombre@@Detalle --datos @@nombre@@ --uno",
+        "python -m andamio nuevo pagina @@Nombre@@Editar --datos @@nombre@@ --form",
         "# O a mano, en un componente:",
         "import { useConsulta } from './hooks/useConsulta';",
         "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",

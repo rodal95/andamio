@@ -5,6 +5,7 @@ import { @@react_native@@ } from 'react-native';
 // Opciones de la barra superior (título, colores, etc.).
 const opciones = { title: '@@nombreTitulo@@' };
 
+@@datos_previo@@
 /** Pantalla en la ruta @@url_pantalla@@ */
 export default function @@Nombre@@Pantalla() {
   @@datos_consulta@@
