@@ -1837,6 +1837,7 @@ def demo_variante(base: Path, stack, variante: str) -> dict:
         "camino": camino(stack.clave, variante, archivos),
         "combinaciones": combinaciones(stack.clave, variante),
         "recorrido": recorrido(base, stack, variante),
+        "armado": armado(base, stack, variante),
     }
 
 
@@ -1959,7 +1960,7 @@ def demo_menu(base: Path) -> list[dict]:
     os.chdir(base)
     _ejecutar(["crear", "django", "mi-api"])
     os.chdir(base / "mi-api")
-    respuestas = ["1", "producto", "", "n", "nombre", "1", "precio", "4", "stock", "3", "", "s", "n"]
+    respuestas = ["1", "producto", "", "n", "n", "nombre", "1", "precio", "4", "stock", "3", "", "s", "n"]
     eventos: list[dict] = []
     salida = io.StringIO()
 
@@ -1985,6 +1986,288 @@ def demo_menu(base: Path) -> list[dict]:
         builtins.input = original
     volcar()
     return eventos
+
+
+# --- Paso a paso: un sistema armado con piezas que se conectan ---------------------------
+#
+# Para React, React Native, Django y Python + SQLite: cada paso es un comando que se ejecuta
+# de verdad. Se guarda su consola, los archivos que crea o modifica (con las líneas nuevas
+# marcadas), cómo queda el proyecto y una vista de lo que se ve (la página arma la vista
+# con los datos de ejemplo de DEMO; en Python, es la sesión real de main.py).
+
+_CATEGORIAS = [{"id": 1, "nombre": "Infusiones"}, {"id": 2, "nombre": "Almacén"}]
+_PRODUCTOS = [
+    {"id": 1, "nombre": "Yerba mate", "precio": 1500.5, "stock": 10, "categoria": 1},
+    {"id": 2, "nombre": "Mate de calabaza", "precio": 4200, "stock": 3, "categoria": 1},
+    {"id": 3, "nombre": "Dulce de leche", "precio": 2100, "stock": 25, "categoria": 2},
+]
+_MODELOS = {
+    "categoria": {"campos": "nombre:str", "filas": _CATEGORIAS},
+    "producto": {"campos": "nombre:str precio:decimal stock:int categoria:fk", "filas": _PRODUCTOS},
+}
+
+
+def _demo() -> dict:
+    """Los datos de ejemplo de las vistas: los campos (como en el comando) y unas filas."""
+    from andamio.nucleo.campos import parsear_campo
+
+    tipos = stacks.por_clave("django").tipos
+    return {
+        clave: {"campos": [{"nombre": c.nombre, "titulo": c.titulo, "tipo": c.tipo} for c in (parsear_campo(t, tipos) for t in m["campos"].split())], "filas": m["filas"]}
+        for clave, m in _MODELOS.items()
+    }
+
+
+def _json(valor) -> str:
+    return json.dumps(valor, ensure_ascii=False, indent=2)
+
+
+def _producto_api(p: dict) -> dict:
+    texto = next(c["nombre"] for c in _CATEGORIAS if c["id"] == p["categoria"])
+    return {**p, "categoria_texto": texto, "creado": "2026-11-21T10:30:00-03:00", "actualizado": "2026-11-21T10:30:00-03:00"}
+
+
+# Cada paso: (comando, título, explicación, forma general, vista). Comandos sin "crear" ni
+# "nuevo" son del proyecto (instalar, arrancar): se muestran con su explicación.
+ARMADOS = {
+    "react": {
+        "titulo": "Una tienda con productos y categorías",
+        "intro": "De un proyecto vacío a la lista, el detalle y el formulario de productos, cada producto con su categoría. "
+        "Cada página se conecta a un servicio que ya existe: no hace falta escribir el useEffect ni el formulario a mano.",
+        "pasos": [
+            ("crear react mi-tienda", "Crear el proyecto", "React con Vite y el router, con el menú y la página de inicio.", "crear react <carpeta>", None),
+            ("nuevo servicio categoria nombre:str", "El servicio de categorías",
+             "Las funciones para usar /api/categorias/: listar, obtener, crear, actualizar y eliminar. Además deja listos los hooks que usan las páginas: useConsulta (pedir datos) y useFormulario (crear y editar).",
+             "nuevo servicio <nombre> <campo:tipo>...", None),
+            ("nuevo servicio producto nombre:str precio:decimal stock:int categoria:fk", "El servicio de productos, con su categoría",
+             "categoria:fk relaciona cada producto con una categoría: el servicio guarda su id (number | null) y recibe también categoria_texto, el nombre que manda la API.",
+             "nuevo servicio <nombre> <campo:tipo>... <relación>:fk", None),
+            ("nuevo pagina Productos --datos producto", "La lista",
+             "Una página que usa el servicio de productos: useConsulta(productoService.listar) pide la lista y avisa si está cargando o si falló. Queda en /productos y en el menú.",
+             "nuevo pagina <Nombre> --datos <servicio>", {"tipo": "web", "pantalla": "lista", "url": "/productos", "titulo": "Productos", "recurso": "producto"}),
+            ("nuevo pagina Producto --datos producto --uno", "El detalle",
+             "--uno: la página muestra un solo producto. El id viene en la ruta (/producto/1) y la consulta es obtener(id). Muestra el nombre de la categoría, no su id.",
+             "nuevo pagina <Nombre> --datos <servicio> --uno", {"tipo": "web", "pantalla": "detalle", "url": "/producto/1", "titulo": "Producto", "recurso": "producto"}),
+            ("nuevo pagina ProductoEditar --datos producto --form", "El formulario para crear y editar",
+             "--form: useFormulario carga el producto si hay un id, lo guarda con crear o actualizar y deja los errores de la API debajo de cada campo. La categoría se elige de una lista que trae categoriaService.",
+             "nuevo pagina <Nombre> --datos <servicio> --form", {"tipo": "web", "pantalla": "form", "url": "/producto-editar", "titulo": "Producto editar", "recurso": "producto"}),
+            ("nuevo crud categoria nombre:str", "O todo junto: el crud",
+             "Lista, detalle y formulario de una sola vez, con sus 4 rutas. Usa el servicio de categorías que ya existe (no lo toca) y los mismos hooks.",
+             "nuevo crud <nombre> <campo:tipo>...", {"tipo": "web", "pantalla": "lista", "url": "/categorias", "titulo": "Categorias", "recurso": "categoria"}),
+            ("npm install", "Instalar", "Las dependencias del proyecto (una vez).", None, None),
+            ("npm run dev", "Arrancar", "La aplicación en http://localhost:5173. Los datos llegan de la API (por ejemplo, la de Django de su guía).", None, None),
+        ],
+    },
+    "react-native": {
+        "titulo": "Una app con productos y categorías",
+        "intro": "La lista, el detalle y el formulario de productos en el celular, con su categoría. Las pantallas usan los servicios: Expo Router toma cada archivo de app/ como una ruta.",
+        "pasos": [
+            ("crear react-native mi-app", "Crear el proyecto", "Expo con Expo Router y la pantalla de inicio.", "crear react-native <carpeta>", None),
+            ("nuevo servicio categoria nombre:str", "El servicio de categorías",
+             "Las funciones para usar /api/categorias/. También crea los hooks useConsulta y useFormulario en hooks/.",
+             "nuevo servicio <nombre> <campo:tipo>...", None),
+            ("nuevo servicio producto nombre:str precio:decimal stock:int categoria:fk", "El servicio de productos, con su categoría",
+             "categoria:fk: cada producto guarda el id de su categoría y recibe su nombre en categoria_texto.",
+             "nuevo servicio <nombre> <campo:tipo>... <relación>:fk", None),
+            ("nuevo pantalla productos --datos producto", "La lista",
+             "app/productos: una FlatList con useConsulta(productoService.listar), con el indicador de carga y el error.",
+             "nuevo pantalla <nombre> --datos <servicio>", {"tipo": "movil", "pantalla": "lista", "url": "/productos", "titulo": "Productos", "recurso": "producto"}),
+            ("nuevo pantalla producto --datos producto --uno", "El detalle",
+             "--uno: crea app/producto/[id]. El id es parte de la ruta (se abre con router.push('/producto/1')) y se lee con useLocalSearchParams.",
+             "nuevo pantalla <nombre> --datos <servicio> --uno", {"tipo": "movil", "pantalla": "detalle", "url": "/producto/1", "titulo": "Producto", "recurso": "producto"}),
+            ("nuevo pantalla editar-producto --datos producto --form", "El formulario",
+             "--form: TextInput, Switch y la categoría para tocar, con useFormulario. Para editar, se abre con ?id=1; al guardar vuelve atrás.",
+             "nuevo pantalla <nombre> --datos <servicio> --form", {"tipo": "movil", "pantalla": "form", "url": "/editar-producto", "titulo": "Editar producto", "recurso": "producto"}),
+            ("npm install", "Instalar", "Las dependencias del proyecto (una vez).", None, None),
+            ("npx expo start", "Arrancar", "Apretá w para el navegador, a para el emulador de Android, o escaneá el QR con Expo Go.", None, None),
+        ],
+    },
+    "django": {
+        "titulo": "La API de una tienda",
+        "intro": "Categorías que se cargan desde el panel de administración, productos relacionados con su categoría y una acción propia. Cada recurso es una app con su modelo, su API, su admin y sus tests.",
+        "pasos": [
+            ("crear django mi-tienda", "Crear el proyecto", "Django con Django REST Framework, la documentación (Swagger) y el panel /admin/.", "crear django <carpeta>", None),
+            *[(c, t, d, None, None) for (c, d), t in zip(_VENV, ["El entorno virtual", "Activarlo", "Instalar las librerías"])],
+            ("nuevo recurso categoria nombre:str --solo-lectura", "Las categorías, de solo lectura",
+             "--solo-lectura: la API lista y muestra (un ReadOnlyModelViewSet); crear, modificar y eliminar responden 405. Las categorías se cargan desde /admin/.",
+             "nuevo recurso <nombre> <campo:tipo>... --solo-lectura",
+             {"tipo": "api", "pedidos": [
+                 {"metodo": "GET", "url": "/api/categorias/", "estado": 200, "respuesta": _json(_CATEGORIAS)},
+                 {"metodo": "POST", "url": "/api/categorias/", "cuerpo": _json({"nombre": "Bebidas"}), "estado": 405, "respuesta": _json({"detail": "Método \"POST\" no permitido."})},
+             ]}),
+            ("nuevo recurso producto nombre:str precio:decimal stock:int categoria:fk", "Los productos, cada uno con su categoría",
+             "categoria:fk es una ForeignKey a categorias.Categoria. La API recibe y devuelve el id, devuelve también categoria_texto y filtra con ?categoria=1. Si se borra la categoría, el producto queda sin categoría.",
+             "nuevo recurso <nombre> <campo:tipo>... <relación>:fk",
+             {"tipo": "api", "pedidos": [
+                 {"metodo": "GET", "url": "/api/productos/?categoria=1", "estado": 200, "respuesta": _json([_producto_api(p) for p in _PRODUCTOS if p["categoria"] == 1])},
+                 {"metodo": "POST", "url": "/api/productos/", "cuerpo": _json({"nombre": "Bombilla", "precio": 1800, "stock": 7, "categoria": 1}), "estado": 201,
+                  "respuesta": _json(_producto_api({"id": 4, "nombre": "Bombilla", "precio": 1800, "stock": 7, "categoria": 1}))},
+                 {"metodo": "POST", "url": "/api/productos/", "cuerpo": _json({"nombre": "Termo", "precio": 9000, "stock": 2, "categoria": 99}), "estado": 400,
+                  "respuesta": _json({"categoria": ["Clave primaria \"99\" inválida - objeto no existe."]})},
+             ]}),
+            ("nuevo accion producto destacar", "Una acción propia",
+             "Un @action en el ViewSet de productos: POST /api/productos/1/destacar/. Trae la marca TODO(logica) donde va lo que hace, su test y su petición en http/productos.http.",
+             "nuevo accion <recurso> <acción>...",
+             {"tipo": "api", "pedidos": [
+                 {"metodo": "POST", "url": "/api/productos/1/destacar/", "estado": 200, "respuesta": _json(_producto_api(_PRODUCTOS[0]))},
+             ]}),
+            ("python manage.py makemigrations", "Las migraciones", "Prepara las tablas de las apps nuevas.", None, None),
+            ("python manage.py migrate", "Las tablas", "Crea las tablas en la base.", None, None),
+            ("python manage.py test", "Los tests", "Los tests que generó andamio: los de cada recurso, el de solo lectura y el de la acción.", None, None),
+            ("python manage.py runserver", "Arrancar", "La API en http://127.0.0.1:8000/api/ y la documentación en /api/docs/.", None, None),
+        ],
+    },
+    "python": {
+        "titulo": "Un kiosco con productos, categorías y clientes",
+        "intro": "Un programa de consola con su base SQLite: productos relacionados con su categoría, una búsqueda por nombre y clientes cuya entidad se genera primero sin menú.",
+        "pasos": [
+            ("crear python mi-kiosco", "Crear el proyecto", "main.py (el menú principal), db.py (la conexión) y sql/schema.sql.", "crear python <carpeta>", None),
+            ("nuevo entidad categoria nombre:str", "Las categorías", "La tabla, sus funciones (crear, listar, obtener, actualizar, eliminar) y su menú.", "nuevo entidad <nombre> <campo:tipo>...", None),
+            ("nuevo entidad producto nombre:str precio:float stock:int categoria:fk", "Los productos, cada uno con su categoría",
+             "categoria:fk guarda categoria_id con su REFERENCES. listar() hace un LEFT JOIN para mostrar el nombre de la categoría, y el menú muestra las categorías y pide un id que exista.",
+             "nuevo entidad <nombre> <campo:tipo>... <relación>:fk",
+             {"tipo": "consola", "teclas": ["1", "2", "Infusiones", "0", "2", "2", "Yerba mate", "1500,50", "10", "9", "1", "1", "0", "0"]}),
+            ("nuevo busqueda producto nombre", "Buscar productos por nombre",
+             "buscar_por_nombre() al final de entidades/producto.py (con LIKE: busca lo que contiene) y la opción 5 en el menú de productos.",
+             "nuevo busqueda <entidad> <campo>...",
+             {"tipo": "consola", "teclas": ["2", "5", "yerba", "0", "0"]}),
+            ("nuevo entidad cliente nombre:str telefono:str --sin-menu", "Los clientes, primero sin menú",
+             "--sin-menu: solo la tabla y las funciones, para usarlas desde tu código. El menú se puede agregar después.",
+             "nuevo entidad <nombre> <campo:tipo>... --sin-menu", None),
+            ("nuevo menu cliente", "Y después, su menú",
+             "El menú de consola de la entidad que ya existe, con los campos con que se generó, y su opción en el menú principal.",
+             "nuevo menu <entidad>",
+             {"tipo": "consola", "teclas": ["3", "2", "Ana", "11 5555 0101", "1", "0", "0"]}),
+            ("python main.py", "Usarlo", "El menú principal con sus tres opciones.", None, None),
+        ],
+    },
+}
+
+
+def _lineas_agregadas(antes: str, despues: str) -> list[int]:
+    """Los números de línea (desde 1) que son nuevos en `despues`."""
+    import difflib
+
+    viejas, nuevas = antes.splitlines(), despues.splitlines()
+    agregadas: list[int] = []
+    for op, _i1, _i2, j1, j2 in difflib.SequenceMatcher(None, viejas, nuevas, autojunk=False).get_opcodes():
+        if op in ("insert", "replace"):
+            agregadas += range(j1 + 1, j2 + 1)
+    return agregadas
+
+
+def _sesion_consola(proyecto: Path, teclas: list[str]) -> str:
+    """Ejecuta main.py del proyecto con esas teclas, como si las escribiera el alumno."""
+    codigo = (
+        "import builtins, runpy\n"
+        f"respuestas = {teclas!r}\n"
+        "def falso_input(pregunta=''):\n"
+        "    r = respuestas.pop(0)\n"
+        "    print(pregunta + '\\x1b[33;1m' + r + '\\x1b[0m')\n"
+        "    return r\n"
+        "builtins.input = falso_input\n"
+        "runpy.run_path('main.py', run_name='__main__')\n"
+    )
+    resultado = subprocess.run(
+        [sys.executable, "-c", codigo], cwd=proyecto, capture_output=True, text=True, encoding="utf-8",
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"}, timeout=60,
+    )  # fmt: skip
+    if resultado.returncode != 0:
+        raise SystemExit(f"La app de consola del paso a paso falló:\n{resultado.stderr}")
+    return resultado.stdout.rstrip()
+
+
+def _ignorado(ruta: str) -> bool:
+    return ruta.endswith(".gitkeep") or ruta.startswith(".andamio/")
+
+
+def armado(base: Path, stack, variante: str) -> dict | None:
+    """Ejecuta el paso a paso de ARMADOS y devuelve cada paso con su consola, sus archivos y su vista."""
+    guia = ARMADOS.get(stack.clave)
+    if guia is None:
+        return None
+    carpeta_base = base / f"armado-{variante or 'unica'}"
+    carpeta_base.mkdir()
+    os.chdir(carpeta_base)
+    proyecto: Path | None = None
+    pasos = []
+    for comando, titulo, texto, forma, vista in guia["pasos"]:
+        comando = comando.replace("{activar}", ".venv\\Scripts\\activate")
+        paso = {"comando": comando, "titulo": titulo, "texto": texto, "forma": forma and f"{PROGRAMA} {forma}", "andamio": False, "vista": vista}
+        if comando.startswith(("crear ", "nuevo ")):
+            argumentos = shlex.split(comando)
+            if argumentos[0] == "crear" and variante:
+                argumentos += ["--variante", variante]
+            antes = _instantanea(proyecto) if proyecto else {}
+            salida = _ejecutar(argumentos)
+            if "Error" in salida:
+                raise SystemExit(f"Paso a paso de {stack.clave}: falló '{comando}':\n{salida}")
+            if argumentos[0] == "crear":
+                proyecto = carpeta_base / argumentos[2]
+                os.chdir(proyecto)
+            despues = _instantanea(proyecto)
+            archivos = []
+            for ruta, datos in despues.items():
+                if _ignorado(ruta) or (ruta in antes and antes[ruta] == datos) or ruta.endswith(".png"):
+                    continue
+                contenido = datos.decode("utf-8")
+                nuevo = ruta not in antes
+                archivos.append({
+                    "ruta": ruta,
+                    "estado": "nuevo" if nuevo else "modificado",
+                    "lenguaje": LENGUAJES.get(Path(ruta).suffix, "texto"),
+                    "contenido": contenido,
+                    "descripcion": descripcion(stack.clave, ruta),
+                    "agregadas": [] if nuevo else _lineas_agregadas(antes[ruta].decode("utf-8"), contenido),
+                })  # fmt: skip
+            # Primero lo nuevo de este paso; en la creación del proyecto, solo los archivos principales.
+            # Lo principal primero: el código (página, pantalla, modelo...) antes que estilos, index y configuración.
+            def orden(a: dict) -> tuple:
+                nombre = a["ruta"].rsplit("/", 1)[-1]
+                secundario = nombre.startswith(("index.", "__init__", "apps.", "admin.")) or "/hooks/" in "/" + a["ruta"] or a["lenguaje"] in ("css", "json", "md", "texto")
+                return (a["estado"] != "nuevo", secundario, a["ruta"])
+
+            archivos.sort(key=orden)
+            if argumentos[0] == "crear":
+                archivos = [a for a in archivos if a["lenguaje"] not in ("json", "md", "texto")][:8]
+            paso.update(comando=f"{PROGRAMA} {comando}", andamio=True, salida=salida, archivos=archivos,
+                        proyecto=[r for r in despues if not _ignorado(r)])  # fmt: skip
+            if vista and vista["tipo"] == "consola":
+                paso["vista"] = {"tipo": "consola", "comando": "python main.py", "salida": _sesion_consola(proyecto, vista["teclas"])}
+        pasos.append(paso)
+    return {"titulo": guia["titulo"], "intro": guia["intro"], "demo": _demo(), "pasos": pasos, "formas": _formas(stack)}
+
+
+def _formas(stack) -> list[dict]:
+    """Todos los comandos de la tecnología: la forma general y un ejemplo, pieza por pieza."""
+    from andamio.comandos import forma_general
+
+    filas = [
+        {"forma": f"{PROGRAMA} crear {stack.clave} <carpeta>", "ejemplo": f"{PROGRAMA} crear {stack.clave} {TECNOLOGIAS[stack.clave]['carpeta']}", "que": "Crea el proyecto en una carpeta nueva."},
+        {"forma": f"{PROGRAMA} crear {stack.clave} .", "ejemplo": f"{PROGRAMA} crear {stack.clave} .", "que": "Crea el proyecto en la carpeta en la que estás (vacía): no hace falta entrar después."},
+    ]
+    for clave, pieza in stack.piezas.items():
+        if clave in ("tema", "ui", "estilo"):
+            continue
+        general = f"{PROGRAMA} {forma_general(clave, pieza)}"
+        filas.append({"forma": general, "ejemplo": f"{PROGRAMA} nuevo {clave} {pieza.ejemplo}".rstrip(), "que": pieza.descripcion[:1].upper() + pieza.descripcion[1:] + "."})
+        for opcion in sorted(pieza.opciones):
+            extra = _FORMAS_OPCION.get(opcion)
+            if extra:
+                filas.append({"forma": f"{general} {extra[0]}", "ejemplo": extra[1].format(p=PROGRAMA), "que": extra[2]})
+    return filas
+
+
+_FORMAS_OPCION = {
+    "datos": ("--datos <servicio>", "{p} nuevo pagina Productos --datos producto", "Usa un servicio que ya existe: la lista (useConsulta)."),
+    "uno": ("--datos <servicio> --uno", "{p} nuevo pagina Producto --datos producto --uno", "Uno solo, con el id en la ruta (obtener)."),
+    "form": ("--datos <servicio> --form", "{p} nuevo pagina ProductoEditar --datos producto --form", "El formulario para crear y editar (useFormulario)."),
+    "protegido": ("--protegido", "{p} nuevo recurso pedido total:decimal --protegido", "Crear, modificar y eliminar piden login (con nuevo login)."),
+    "solo_lectura": ("--solo-lectura", "{p} nuevo recurso categoria nombre:str --solo-lectura", "La API solo lista y muestra; los datos se cargan desde /admin/."),
+    "migrar": ("--migrar", "{p} nuevo recurso producto nombre:str --migrar", "Además crea y aplica la migración."),
+    "sin_menu": ("--sin-menu", "{p} nuevo entidad cliente nombre:str --sin-menu", "Solo la tabla y las funciones, sin el menú de consola."),
+    "carpeta": ("--carpeta <carpeta>", "{p} nuevo pantalla detalle --carpeta productos", "Dentro de una carpeta de app/ (es parte de la ruta)."),
+}
 
 
 def generar() -> dict:

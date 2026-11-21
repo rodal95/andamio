@@ -192,10 +192,9 @@
           : { id: l.clave, titulo: NOMBRES[l.clave] || pieza(l.clave).titulo, pieza: pieza(l.clave) },
       );
     const estilos = variante.piezas.filter((p) => ESTILOS.has(p.clave)).map((p) => ({ id: p.clave, titulo: NOMBRES[p.clave] || p.titulo, pieza: p }));
-    const lista = [
-      { id: "empezar", titulo: "Empezar" },
-      { id: "comandos", titulo: "Comandos", sub: comandos },
-    ];
+    const lista = [{ id: "empezar", titulo: "Empezar" }];
+    if (variante.armado && window.AndamioArmado) lista.push({ id: "paso-a-paso", titulo: "Paso a paso" });
+    lista.push({ id: "comandos", titulo: "Comandos", sub: comandos });
     if (tecnologia.estilos) {
       lista.push({ id: "estilos", titulo: "Estilos", sub: [{ id: "css", titulo: "El CSS del proyecto", css: true }, ...estilos] });
     }
@@ -324,7 +323,7 @@
         ${terminal(variante.crear.comando, variante.crear.salida)}
         <h4>Qué crea y para qué sirve cada archivo</h4>
         ${listaArchivos(variante.archivos_crear.map((a) => a.ruta), variante.archivos_crear)}`,
-        "En la carpeta donde guardás tus trabajos: andamio crea la carpeta del proyecto con todo lo necesario.",
+        `En la carpeta donde guardás tus trabajos: andamio crea la carpeta del proyecto con todo lo necesario. ¿Ya estás en una carpeta vacía para el proyecto? Usá un punto en lugar del nombre: <code>${e(variante.crear.comando.split(" ").slice(0, 5).join(" "))} .</code> (lo crea ahí mismo, sin tener que entrar después).`,
       )}
       ${bloque("3. Ponelo en marcha", `<ol class="pasos-marcha">${pasos}</ol>`, "Son los mismos pasos que muestra andamio al terminar de crear el proyecto.")}
       ${vista}
@@ -332,6 +331,8 @@
         "4. Y después",
         `<p>Cada cosa que agregues al proyecto es una <b>pieza</b>: <code>python -m andamio nuevo &lt;pieza&gt; &lt;nombre&gt;</code>. En la pestaña
         <a href="#comandos" data-ir="comandos">Comandos</a> está cada una con su consola, su código y sus variantes${
+          variante.armado ? '; en <a href="#paso-a-paso" data-ir="paso-a-paso">Paso a paso</a>, un proyecto armado comando por comando, con el código y cómo se ve' : ""
+        }${
           tecnologia.estilos ? '; en <a href="#estilos" data-ir="estilos">Estilos</a>, cómo darle diseño' : ""
         }; y en <a href="#proyecto" data-ir="proyecto">Proyecto completo</a>, un proyecto entero armado de punta a punta.</p>`,
       )}`;
@@ -495,7 +496,13 @@
     return "";
   }
 
-  const PANELES = { empezar: panelEmpezar, proyecto: panelProyecto, referencia: panelReferencia, problemas: panelProblemas };
+  const PANELES = {
+    empezar: panelEmpezar,
+    "paso-a-paso": () => window.AndamioArmado.panel(variante.armado),
+    proyecto: panelProyecto,
+    referencia: panelReferencia,
+    problemas: panelProblemas,
+  };
 
   function panel(p) {
     if (!p.sub) return `<section class="panel" id="panel-${p.id}" role="tabpanel" aria-labelledby="pestana-${p.id}" data-panel="${p.id}" hidden>${PANELES[p.id]()}</section>`;
@@ -558,6 +565,7 @@
       destino = pestana.id;
     }
     history.replaceState(null, "", `#${destino}`);
+    if (pestana.id === "paso-a-paso") window.AndamioArmado.alMostrar();
     const sub = pestana.sub && pestana.sub.find((s) => `${pestana.id}/${s.id}` === destino);
     const base = `andamio con ${tecnologia.titulo}${variante.nombre ? ` (${variante.nombre})` : ""}`;
     document.title = pestana.id === "empezar" ? base : `${sub ? sub.titulo : pestana.titulo} · ${base}`;
@@ -602,6 +610,8 @@
     </div>`;
     const inicial = variante.piezas.find((p) => p.creados.length);
     mostrarEnExplorador(inicial ? inicial.creados[0] : variante.archivos[0].ruta);
+    const panelArmado = main.querySelector('[data-panel="paso-a-paso"]');
+    if (panelArmado) window.AndamioArmado.iniciar(panelArmado, variante.armado);
     mostrar(destino);
   }
 
