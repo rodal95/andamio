@@ -10,7 +10,7 @@ from andamio import stacks
 from andamio.cli import main
 from andamio.nucleo.deteccion import buscar_proyecto
 
-from .node import NPM, NPX, ejecutar, npm_install, requiere_node
+from .node import NPM, NPX, ejecutar, npm_install, requiere_node, resultado_de_node_test
 
 TODOS_LOS_TIPOS = [
     "nombre:str",
@@ -305,6 +305,6 @@ def test_el_proyecto_generado_instala_migra_y_pasa_sus_tests(con_recursos, varia
     assert list((raiz / "prisma/migrations").glob("*/migration.sql"))
     resultado = ejecutar([NPM, "test"], raiz)
     total = (25 if variante == "js" else 20) + 7 + 6  # + el login + el recurso protegido (con el 401)
-    assert f"# pass {total}" in resultado.stdout and "# fail 0" in resultado.stdout, resultado.stdout[-3000:]
+    assert resultado_de_node_test(resultado.stdout) == (total, 0), resultado.stdout[-3000:]
     if variante == "ts":
         ejecutar([NPM, "run", "tipos"], raiz)

@@ -16,7 +16,7 @@ import pytest
 from andamio.cli import main
 
 from .apis import NODE, api_en_marcha, puerto_libre
-from .node import NPM, NPX, ejecutar, npm_install, requiere_node
+from .node import NPM, NPX, ejecutar, npm_install, requiere_node, resultado_de_node_test
 from .test_crud_navegador import _SPA, requiere_playwright
 
 SCRIPT = Path(__file__).with_name("login_navegador.js")
@@ -189,7 +189,7 @@ def test_login_de_next_fullstack_en_el_navegador(variante, en_carpeta, monkeypat
     assert main(["nuevo", "recurso", "pedido", *campos, "--migrar"]) == 0
     assert main(["nuevo", "crud", "pedido", *campos]) == 0
     pruebas = ejecutar([NPM, "test"], app)
-    assert "# pass 14" in pruebas.stdout and "# fail 0" in pruebas.stdout, pruebas.stdout[-3000:]
+    assert resultado_de_node_test(pruebas.stdout) == (14, 0), pruebas.stdout[-3000:]
     puerto = puerto_libre()
     with _next_en_marcha(app, puerto):
         resultado = ejecutar(["node", str(Path(__file__).with_name("login_fullstack_navegador.js")), f"http://127.0.0.1:{puerto}"], app, env={"NO_PROXY": "127.0.0.1,localhost"})

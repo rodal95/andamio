@@ -491,7 +491,7 @@ reflex run                                       http://localhost:3000
 | `python -m andamio` | Menú interactivo: te pregunta todo, paso a paso. |
 | `python -m andamio info` | Qué proyecto detectó, qué piezas y qué tipos de campo hay. |
 | `python -m andamio init [tipo]` | Prepara un proyecto que ya existe, aunque no lo haya creado andamio: muestra qué puntos de conexión (`andamio:rutas`, `andamio:imports`...) tiene y cuáles faltan, con la línea a pegar y dónde, y crea `andamio.json`. No modifica tu código. |
-| `python -m andamio base` | Conecta la API (Django, Django con plantillas, FastAPI o Reflex) a una base de datos. Sin opciones, pregunta: el motor (PostgreSQL, MySQL o volver a SQLite) y si la base se crea con Docker, si pegás la URL de conexión (la que dan Railway, Render, Supabase...) o si escribís los datos (servidor, puerto, usuario, contraseña). Escribe la conexión en el `.env` (nunca en un archivo que se sube a git) y agrega el driver a `requirements.txt`. Ver [Base de datos](#base-de-datos-andamio-base). En inglés: `db`. |
+| `python -m andamio base` | Conecta la API (Django, Django con plantillas, FastAPI, Express, Next.js full stack o Reflex) a una base de datos. Sin opciones, pregunta: el motor (PostgreSQL, MySQL o volver a SQLite) y si la base se crea con Docker, si pegás la URL de conexión (la que dan Railway, Render, Supabase...) o si escribís los datos (servidor, puerto, usuario, contraseña). Escribe la conexión en el `.env` (nunca en un archivo que se sube a git) y agrega el driver (o, con Prisma, el adaptador). Ver [Base de datos](#base-de-datos-andamio-base). En inglés: `db`. |
 | `python -m andamio mapa` | Las piezas que se generaron en el proyecto (según `.andamio/historial.jsonl`), si sus archivos y sus conexiones siguen en su lugar, y si una API y su interfaz tienen campos distintos. En inglés: `map`. |
 | `python -m andamio pendientes` | Lista las marcas `TODO(logica)` del proyecto: archivo, línea y qué falta. Son los lugares donde va tu lógica (validaciones, reglas, cálculos). En inglés: `todo`. |
 | `python -m andamio comandos` | El árbol de todos los comandos, opciones y piezas (en inglés: `commands`). |
@@ -522,6 +522,7 @@ Qué cambia en cada proyecto:
 | `django`, `django-web` | `DATABASE_URL` (la lee dj-database-url) | `psycopg[binary]` / `mysqlclient` | `python manage.py migrate` |
 | `fastapi` | `DATABASE_URL` (`postgresql+psycopg://`, `mysql+pymysql://`) | `psycopg[binary]` / `PyMySQL` | al arrancar crea las tablas |
 | `reflex` | `REFLEX_DB_URL` (Reflex la usa en lugar del `db_url` de `rxconfig.py`) | `psycopg[binary]` / `PyMySQL` | `reflex db migrate` |
+| `express`, `next-fullstack` | `DATABASE_URL` y `TEST_DATABASE_URL` | adaptador de Prisma: `@prisma/adapter-pg` / `@prisma/adapter-mariadb` | `npx prisma migrate dev --name inicial` |
 
 Con `--docker` también crea `docker-compose.yml` con la base (PostgreSQL 17 o MySQL 8.4),
 con un volumen para que los datos no se pierdan. Los datos salen del `.env` (`DB_NOMBRE`,
@@ -531,8 +532,14 @@ puede usar desde tu PC (127.0.0.1). Se levanta con `docker compose up -d`.
 - La contraseña puede tener cualquier carácter: andamio la codifica en la URL.
 - En `.env.example` (que se sube a git) solo queda un ejemplo, sin tus datos.
 - Al terminar, prueba si algo responde en el servidor y el puerto, y te avisa si no.
-- Express y Next.js full stack (Prisma) todavía no: cambiar de base pide cambiar el
-  `provider` de `schema.prisma`, el adaptador y las migraciones.
+- Con Prisma (Express y Next.js full stack) cambia además el `provider` de
+  `prisma/schema.prisma`, el adaptador en `src/db` o `lib/db` y la dependencia en
+  `package.json`. Los tests usan otra base del mismo servidor (`TEST_DATABASE_URL`, con
+  `_test` al final del nombre): `npm test` le crea las tablas antes de empezar
+  (`scripts/base-de-tests.js`), porque los tests vacían las tablas que usan. Con MySQL en Docker, esa
+  base se crea con root (`DB_CLAVE_ROOT`).
+- Las migraciones de `prisma/migrations` son SQL del motor anterior: si cambiás de motor,
+  andamio te avisa que las crees de nuevo (`npx prisma migrate dev --name inicial`).
 - MySQL con Django usa `mysqlclient`: en Linux necesita antes
   `sudo apt install pkg-config libmysqlclient-dev`.
 

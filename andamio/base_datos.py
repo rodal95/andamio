@@ -63,6 +63,7 @@ class Backend:
     drivers: dict[str, tuple[str, str]]  # motor -> (línea de requirements.txt, para qué)
     pasos: tuple[str, ...]  # después de instalar el driver y levantar la base
     defecto: str  # qué se usa sin la variable
+    prisma: str = ""  # "express" o "next-fullstack": se configura Prisma (ver base_prisma.py)
 
 
 _DRIVERS_SQLALCHEMY = {
@@ -97,7 +98,16 @@ BACKENDS = {
 }
 BACKENDS["django-web"] = BACKENDS["django"]
 
-_CON_PRISMA = {"express", "next-fullstack"}
+# Express y Next.js full stack: Prisma. Las URL son las que entiende Prisma (postgresql://, mysql://).
+for _clave in ("express", "next-fullstack"):
+    BACKENDS[_clave] = Backend(
+        variable="DATABASE_URL",
+        esquemas={"postgres": "postgresql", "mysql": "mysql"},
+        drivers={},
+        pasos=(),
+        defecto="SQLite (datos.db)",
+        prisma=_clave,
+    )
 
 
 @dataclass
@@ -323,12 +333,6 @@ volumes:
 def _backend(stack: Stack) -> Backend:
     if stack.clave in BACKENDS:
         return BACKENDS[stack.clave]
-    if stack.clave in _CON_PRISMA:
-        raise AndamioError(
-            f"Todavía no puedo cambiar la base de un proyecto {stack.titulo}: usa Prisma, y cambiar de SQLite "
-            "a otra base pide cambiar el provider de prisma/schema.prisma, el adaptador de src/db y las migraciones.",
-            "Por ahora se hace a mano: https://www.prisma.io/docs/orm/overview/databases",
-        )
     if stack.clave == "python":
         raise AndamioError(
             "El proyecto de Python con consola usa SQLite (sqlite3, que viene con Python): no se conecta a otra base.",
@@ -336,7 +340,7 @@ def _backend(stack: Stack) -> Backend:
         )
     raise AndamioError(
         f"Un proyecto {stack.titulo} no se conecta directo a una base de datos: lo hace la API (el backend).",
-        "Entrá a la carpeta de tu API (Django, FastAPI o Reflex) y ejecutá ahí: andamio base",
+        "Entrá a la carpeta de tu API (Django, FastAPI, Express, Next.js full stack o Reflex) y ejecutá ahí: andamio base",
     )
 
 
@@ -441,6 +445,29 @@ def _desde_opciones(raiz: Path, opciones: dict) -> tuple[Conexion, bool]:
     ), False
 
 
+def _leer_env(raiz: Path, nombre: str) -> str | None:
+    try:
+        texto = (raiz / ".env").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return None
+    encontrado = re.search(rf"^[ \t]*{re.escape(nombre)}[ \t]*=[ \t]*'?([^'\n]*)'?[ \t]*$", texto, re.MULTILINE)
+    return encontrado.group(1) if encontrado else None
+
+
+def conexion_de_tests(raiz: Path, conexion: Conexion, docker: bool) -> tuple[Conexion, str]:
+    """La base para los tests: otra en el mismo servidor (los tests borran los datos).
+
+    Devuelve también la contraseña de root de MySQL en Docker (vacía si no se usa): el usuario
+    de la base de Docker solo puede usar su base, y para crear la de los tests hace falta root.
+    """
+    clave_root = ""
+    test = Conexion(conexion.motor, conexion.host, conexion.puerto, f"{conexion.nombre}_test", conexion.usuario, conexion.clave, conexion.opciones)
+    if docker and conexion.motor.clave == "mysql":
+        clave_root = _leer_env(raiz, "DB_CLAVE_ROOT") or secrets.token_urlsafe(18)
+        test.usuario, test.clave = "root", clave_root
+    return test, clave_root
+
+
 def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -> tuple[Plan, list[str]]:
     plan = Plan(raiz)
     pasos: list[str] = []
@@ -448,39 +475,73 @@ def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -
     if not (raiz / ".env").exists() and (raiz / ".env.example").exists():
         raise AndamioError("Falta el archivo .env.", "Copiá .env.example con el nombre .env y volvé a ejecutar el comando.")
     if motor.clave == "sqlite":
+        if backend.prisma:
+            from andamio import base_prisma
+
+            return plan, base_prisma.planificar(plan, raiz, backend.prisma, conexion, None, docker)
         plan.modificar(".env", lambda t: comentar_variable(t, backend.variable), f"sin {backend.variable}: vuelve a {backend.defecto}")
         return plan, pasos
 
     url = conexion.url(backend.esquemas[motor.clave])
     comentario = f"Base de datos {motor.titulo} (andamio base). Es privada: no la compartas."
+    valores = {backend.variable: url}
+    test, clave_root = conexion_de_tests(raiz, conexion, docker) if backend.prisma else (None, "")
+    if test is not None:
+        valores["TEST_DATABASE_URL"] = test.url(backend.esquemas[motor.clave])
 
     def cambiar_env(texto: str) -> str:
         if docker:
-            valores = {"DB_NOMBRE": conexion.nombre, "DB_USUARIO": conexion.usuario, "DB_CLAVE": conexion.clave, "DB_PUERTO": str(conexion.puerto)}
-            if motor.clave == "mysql" and not re.search(r"^DB_CLAVE_ROOT=", texto, re.MULTILINE):
-                valores["DB_CLAVE_ROOT"] = secrets.token_urlsafe(18)  # la de root de MySQL
-            texto = fijar_variables(texto, valores, "La base de Docker (docker-compose.yml) se crea con estos datos.")
-        return fijar_variable(texto, backend.variable, url, comentario)
+            docker_env = {"DB_NOMBRE": conexion.nombre, "DB_USUARIO": conexion.usuario, "DB_CLAVE": conexion.clave, "DB_PUERTO": str(conexion.puerto)}
+            if motor.clave == "mysql":
+                docker_env["DB_CLAVE_ROOT"] = clave_root or _leer_env(raiz, "DB_CLAVE_ROOT") or secrets.token_urlsafe(18)
+            texto = fijar_variables(texto, docker_env, "La base de Docker (docker-compose.yml) se crea con estos datos.")
+        texto = fijar_variables(texto, valores, comentario)
+        return texto
 
-    if not plan.modificar(".env", cambiar_env, backend.variable):
+    if not plan.modificar(".env", cambiar_env, ", ".join(valores)):
         plan.crear(".env", cambiar_env(""))
 
     def cambiar_ejemplo(texto: str) -> str:
         # En .env.example va un ejemplo sin datos reales: se sube a git.
-        ejemplo = Conexion(motor, "localhost", motor.puerto, "mi_base", "usuario", "clave").url(backend.esquemas[motor.clave])
         if docker:
-            valores = {"DB_NOMBRE": conexion.nombre, "DB_USUARIO": conexion.usuario, "DB_CLAVE": "cambiar-por-una-clave", "DB_PUERTO": str(conexion.puerto)}
+            # Los mismos datos que el compose (con la contraseña de ejemplo): copiando
+            # .env.example a .env y cambiando la contraseña, todo coincide.
+            ejemplo = Conexion(motor, "localhost", conexion.puerto, conexion.nombre, conexion.usuario, "cambiar-por-una-clave").url(backend.esquemas[motor.clave])
+        else:
+            ejemplo = Conexion(motor, "localhost", motor.puerto, "mi_base", "usuario", "clave").url(backend.esquemas[motor.clave])
+        if docker:
+            docker_env = {"DB_NOMBRE": conexion.nombre, "DB_USUARIO": conexion.usuario, "DB_CLAVE": "cambiar-por-una-clave", "DB_PUERTO": str(conexion.puerto)}
             if motor.clave == "mysql":
-                valores["DB_CLAVE_ROOT"] = "cambiar-por-otra-clave"
-            texto = fijar_variables(texto, valores, "La base de Docker (docker-compose.yml) se crea con estos datos.")
-        linea = f"# {backend.variable}={ejemplo}"
-        patron = re.compile(rf"^#?[ \t]*{backend.variable}[ \t]*=.*$", re.MULTILINE)
-        if patron.search(texto):
-            return patron.sub(lambda _: linea, texto, count=1)
-        separador = "" if not texto or texto.endswith("\n") else "\n"
-        return f"{texto}{separador}\n# Base de datos {motor.titulo} (andamio base). El valor real va en el .env.\n{linea}\n"
+                docker_env["DB_CLAVE_ROOT"] = "cambiar-por-otra-clave"
+            texto = fijar_variables(texto, docker_env, "La base de Docker (docker-compose.yml) se crea con estos datos.")
+        lineas = {backend.variable: ejemplo}
+        if test is not None:
+            base_ejemplo = ejemplo.rsplit("/", 1)
+            lineas["TEST_DATABASE_URL"] = f"{base_ejemplo[0]}/{base_ejemplo[1].split('?')[0]}_test"
+            if docker and motor.clave == "mysql":
+                lineas["TEST_DATABASE_URL"] = lineas["TEST_DATABASE_URL"].replace(f"//{conexion.usuario}:cambiar-por-una-clave@", "//root:cambiar-por-otra-clave@")
+        for variable, valor in lineas.items():
+            # Con Prisma no hay un valor por defecto que sirva: la variable queda activa.
+            linea = f"{variable}={valor}" if backend.prisma else f"# {variable}={valor}"
+            patron = re.compile(rf"^#?[ \t]*{variable}[ \t]*=.*$", re.MULTILINE)
+            if patron.search(texto):
+                texto = patron.sub(lambda _, linea=linea: linea, texto, count=1)
+            else:
+                separador = "" if not texto or texto.endswith("\n") else "\n"
+                texto = f"{texto}{separador}\n# Base de datos {motor.titulo} (andamio base). El valor real va en el .env.\n{linea}\n"
+        return texto
 
     plan.modificar(".env.example", cambiar_ejemplo, f"ejemplo de {backend.variable}")
+    if docker:
+        plan.crear(COMPOSE, compose(motor))
+
+    if backend.prisma:
+        from andamio import base_prisma
+
+        pasos_prisma = base_prisma.planificar(plan, raiz, backend.prisma, conexion, test, docker)
+        if docker:
+            pasos_prisma[1:1] = ["docker compose up -d", "# la primera vez descarga la imagen; esperá a que docker compose ps diga (healthy)"]
+        return plan, pasos_prisma
 
     driver, para = backend.drivers[motor.clave]
     paquete = re.split(r"[~=<>\[]", driver, maxsplit=1)[0].lower()
@@ -488,8 +549,6 @@ def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -
         actual = (raiz / "requirements.txt").read_text(encoding="utf-8-sig").lower()
         if not re.search(rf"^{re.escape(paquete)}\b", actual, re.MULTILINE):
             plan.insertar("requirements.txt", f"\n# Driver de {para} (andamio base).\n{driver}", descripcion=f"driver de {para}")
-    if docker:
-        plan.crear(COMPOSE, compose(motor))
 
     pasos.append("pip install -r requirements.txt")
     if motor.clave == "mysql" and paquete == "mysqlclient":

@@ -6,12 +6,16 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
-- `andamio base` (en inglés: `db`): conecta la API (Django, Django con plantillas, FastAPI
-  o Reflex) a PostgreSQL, MySQL o de vuelta a SQLite. Pregunta los datos según el motor, o
+- `andamio base` (en inglés: `db`): conecta la API (Django, Django con plantillas, FastAPI,
+  Express, Next.js full stack o Reflex) a PostgreSQL, MySQL o de vuelta a SQLite. Pregunta los datos según el motor, o
   toma la URL de conexión (aunque la contraseña tenga #, @ o espacios sin codificar).
   Escribe la conexión en el `.env`, deja un ejemplo sin datos en `.env.example` y agrega el
   driver. Con `--docker` crea `docker-compose.yml` con la base (contraseña al azar, solo
   accesible desde la PC). Al terminar, avisa si no responde nada en el servidor y el puerto.
+  Con Prisma (Express y Next.js full stack) cambia el `provider`, el adaptador
+  (`@prisma/adapter-pg`, `@prisma/adapter-mariadb` o el de SQLite) y prepara una base aparte
+  para los tests (`TEST_DATABASE_URL`), y avisa si las migraciones son de otro motor.
+- Express y Next.js full stack: los tests usan `TEST_DATABASE_URL` si está (si no, `test.db`).
 - FastAPI: `nuevo login`, con las mismas rutas y respuestas que la API de Django
   (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`): el login de React
   funciona igual con las dos. Usuarios con la contraseña con hash (PBKDF2, como Django),
@@ -115,6 +119,18 @@ Todos los cambios importantes de andamio. El proyecto usa
   explica en los siguientes pasos.
 
 ### Corregido
+- Login: `?desde=` con un tab o un salto de línea (`/\t/sitio.com`) llevaba a otro sitio
+  después de ingresar (Next.js, Vue, React Native). Ahora se rechaza.
+- Next.js full stack: con la cookie, crear, modificar y eliminar exigen que el pedido venga de
+  la misma app (encabezado `Origin`): otra página no puede usar la sesión (CSRF).
+- FastAPI, Express y Next.js full stack: sin `SECRET_KEY` no arrancan (antes firmaban con una
+  clave conocida). Los tests usan la del `.env` o una solo para ellos.
+- Al abrir la app, el token solo se borra si la API responde 401 (no si está caída), y un
+  401 de un pedido viejo no borra el token de un ingreso más nuevo.
+- Express: `nuevo login` y `--protegido` funcionan aunque `app.js` use comillas dobles.
+- Registro simultáneo con el mismo usuario: 400 en vez de 500 (FastAPI, Express, Next.js).
+- Next.js full stack: una ruta como `/productos/1.x` ya no se saltea el login.
+- `crear <tipo> .` avisa si el proyecto queda dentro de otro.
 - Login de FastAPI, Express y Next.js full stack: `/api/token/` respondía más rápido si el
   usuario no existía (no calculaba el hash) o estaba desactivado, y midiendo el tiempo se
   podía averiguar qué usuarios existen. Ahora `puedeIngresar` / `puede_ingresar` siempre

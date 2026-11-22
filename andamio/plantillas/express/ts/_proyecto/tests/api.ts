@@ -1,15 +1,22 @@
 /**
  * Ayuda para los tests: arranca la API en un puerto libre, con otra base de datos
- * (test.db, que npm test crea vacía antes de empezar). Así no toca tus datos.
+ * (TEST_DATABASE_URL del .env, o test.db, que npm test prepara antes de empezar).
+ * Así no toca tus datos.
  */
 import type { AddressInfo } from 'node:net';
 import { after } from 'node:test';
 
-process.env.DATABASE_URL = 'file:./test.db'; // antes de cargar la app
+try {
+  process.loadEnvFile(); // TEST_DATABASE_URL: la base de los tests
+} catch {
+  // sin .env
+}
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db'; // antes de cargar la app
+process.env.SECRET_KEY ||= 'clave-solo-para-los-tests'; // los tests no necesitan la del .env
 const { DATABASE_URL } = await import('../src/config.ts');
-if (DATABASE_URL !== 'file:./test.db') {
+if (DATABASE_URL !== (process.env.TEST_DATABASE_URL || 'file:./test.db')) {
   // Por seguridad: los tests borran los datos de las tablas.
-  throw new Error(`Los tests tienen que usar test.db, no ${DATABASE_URL}`);
+  throw new Error(`Los tests tienen que usar su propia base (TEST_DATABASE_URL o test.db), no ${DATABASE_URL}`);
 }
 const { app } = await import('../src/app.ts');
 export const { prisma } = await import('../src/db.ts');
