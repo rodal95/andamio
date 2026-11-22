@@ -78,6 +78,18 @@ Todos los cambios importantes de andamio. El proyecto usa
   tests y el sitio), `define_campos` (`mapa` no compara los campos de una búsqueda o de una
   acción) y `usa_existente` (la pieza agrega a una que ya existe: no se controla que el
   nombre esté libre). En el menú, `busqueda` y `accion` piden solo nombres, sin tipo.
+- `nuevo servicio ... --solo crear` (`--only`): el servicio solo con algunas funciones
+  (`listar`, `obtener`, `crear`, `actualizar`, `eliminar`, separadas por coma; también en
+  inglés o con el método HTTP: `--solo post`). Ej.: un formulario de contacto solo envía.
+  En React, Next.js, Vue, React Native y la web. Los hooks que no puede usar no se crean, y
+  los siguientes pasos sugieren solo las páginas o pantallas que sirven con esas funciones.
+- React y React Native: `--datos x --form` con un servicio que solo tiene `crear` genera un
+  formulario que solo envía: su propio estado (`useState`), el botón Enviar deshabilitado
+  mientras envía, los errores de la API en cada campo y «¡Listo! Se envió.»; sin
+  `useFormulario` ni ruta para editar. Las páginas y pantallas controlan que el servicio
+  tenga la función que usan (lista: `listar`, `--uno`: `obtener`, `--form`: `crear`).
+- Piezas: `transformar` (un último retoque al contenido de un archivo ya renderizado).
+- El mapa de lectura no muestra los archivos que no están (ej.: los hooks que no se crearon).
 
 ### Cambiado
 - React: el formulario del `crud` usa `useFormulario` (la lógica de cargar, guardar y

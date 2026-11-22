@@ -1411,7 +1411,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one"}
+_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one", "--solo": "--only"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1466,12 +1466,19 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pantalla producto --datos producto --uno", "descripcion": "Muestra uno solo: crea app/producto/[id] (el id es parte de la ruta) y usa obtener(id)."})
         elif opcion == "form" and clave == "pantalla":
             filas.append({"comando": "nuevo pantalla editar-producto --datos producto --form", "descripcion": "El formulario para crear y editar, con useFormulario: se abre con router.push('/editar-producto') para crear, o con ?id=3 para editar."})
+            filas.append({"comando": "nuevo pantalla contacto --datos contacto --form", "descripcion": "Con un servicio que solo tiene crear (nuevo servicio contacto ... --solo crear): el formulario solo envía, y muestra «¡Listo! Se envió.»."})
         elif opcion == "form":
             filas.append({"comando": "nuevo pagina ProductoEditar --datos producto --form", "descripcion": "El formulario para crear (/producto-editar) y editar (/producto-editar/3), con useFormulario: muestra los errores de la API en cada campo."})
+            filas.append({"comando": "nuevo pagina Contacto --datos contacto --form", "descripcion": "Con un servicio que solo tiene crear (nuevo servicio contacto ... --solo crear): el formulario solo envía (sin /contacto/:id) y muestra «¡Listo! Se envió.»."})
         elif opcion == "datos":
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
+        elif opcion == "solo":
+            filas += [
+                {"comando": "nuevo servicio contacto nombre:str email:email mensaje:text --solo crear", "descripcion": "Solo con crear (POST): para un formulario que solo envía, como el de contacto. Sin --solo, trae las cinco funciones."},
+                {"comando": "nuevo servicio producto nombre:str precio:decimal --solo listar,obtener", "descripcion": "Solo para ver: listar y obtener (GET). Las funciones: listar, obtener, crear, actualizar y eliminar."},
+            ]
         elif opcion == "solo_lectura":
             filas.append({"comando": f"{base} --solo-lectura", "descripcion": "La API solo lista y muestra (ReadOnlyModelViewSet); los datos se cargan desde /admin/."})
         elif opcion == "sin_menu":
@@ -2267,6 +2274,7 @@ _FORMAS_OPCION = {
     "form": ("--datos <servicio> --form", "{p} nuevo pagina ProductoEditar --datos producto --form", "El formulario para crear y editar (useFormulario)."),
     "protegido": ("--protegido", "{p} nuevo recurso pedido total:decimal --protegido", "Crear, modificar y eliminar piden login (con nuevo login)."),
     "solo_lectura": ("--solo-lectura", "{p} nuevo recurso categoria nombre:str --solo-lectura", "La API solo lista y muestra; los datos se cargan desde /admin/."),
+    "solo": ("--solo <funciones>", "{p} nuevo servicio contacto nombre:str email:email --solo crear", "El servicio solo con esas funciones (ej.: solo crear, para un formulario de contacto)."),
     "migrar": ("--migrar", "{p} nuevo recurso producto nombre:str --migrar", "Además crea y aplica la migración."),
     "sin_menu": ("--sin-menu", "{p} nuevo entidad cliente nombre:str --sin-menu", "Solo la tabla y las funciones, sin el menú de consola."),
     "carpeta": ("--carpeta <carpeta>", "{p} nuevo pantalla detalle --carpeta productos", "Dentro de una carpeta de app/ (es parte de la ruta)."),

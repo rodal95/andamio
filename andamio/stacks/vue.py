@@ -151,6 +151,7 @@ SERVICIO = Pieza(
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("src/services/@@nombreCamel@@Service.js",),
     si_no_existe=frozenset({"src/services/http.js"}),
+    **_js.OPCION_SOLO,
     siguiente_paso=[
         "# Usalo en un componente:",
         "import { @@nombreCamel@@Service } from '@/services/@@nombreCamel@@Service';",

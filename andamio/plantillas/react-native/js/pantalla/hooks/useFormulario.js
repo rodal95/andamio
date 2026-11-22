@@ -10,9 +10,9 @@ import { ErrorApi } from '@/services/http';
  * Lo que el formulario necesita de un servicio: obtener, crear y actualizar.
  * @template T, D
  * @typedef {Object} ServicioEditable
- * @property {function(number): Promise<T>} obtener
- * @property {function(D): Promise<T>} crear
- * @property {function(number, Partial<D>): Promise<T>} actualizar
+ * @property {(id: number) => Promise<T>} obtener
+ * @property {(datos: D) => Promise<T>} crear
+ * @property {(id: number, datos: Partial<D>) => Promise<T>} actualizar
  */
 
 /**
@@ -32,7 +32,7 @@ import { ErrorApi } from '@/services/http';
  * @param {ServicioEditable<T, D>} servicio
  * @param {number | undefined} id
  * @param {D} vacio
- * @param {function(T): D} aDatos
+ * @param {(registro: T) => D} aDatos
  */
 export function useFormulario(servicio, id, vacio, aDatos) {
   const [datos, setDatos] = useState(vacio);

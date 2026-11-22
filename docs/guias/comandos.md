@@ -31,6 +31,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --datos <servicio>   (--data)                 la página o pantalla muestra datos de la API (React, React Native)
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --form                                        con --datos: el formulario para crear y editar
+│     --solo <funciones>   (--only)                 el servicio solo con esas funciones: --solo crear
 │     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
 │     --solo-lectura       (--read-only)            la API solo lista y muestra (Django)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
@@ -56,6 +57,7 @@ Qué opciones acepta cada pieza:
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
+| `--solo` | `servicio` (React, Next.js, Vue, React Native, web) |
 | `--sin-menu` | `entidad` (Python + SQLite) |
 | `--solo-lectura` | `recurso` (Django) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
@@ -103,7 +105,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda`, `accion` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search`, `action` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--no-menu`, `--read-only`, `--no-guide` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--solo`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--only`, `--no-menu`, `--read-only`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `menu`, `info` y `--form` son iguales en los dos idiomas.
@@ -132,7 +134,8 @@ Opciones que sirven en todas las piezas:
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
 | `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
 | `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
-| `--form` | Con `--datos`: el formulario para crear y editar, con el hook `useFormulario` (React, React Native). |
+| `--form` | Con `--datos`: el formulario para crear y editar, con el hook `useFormulario` (React, React Native). Si el servicio solo tiene `crear` (`--solo crear`), el formulario solo envía: sin `useFormulario` y sin ruta para editar. |
+| `--solo crear` | El servicio solo con esas funciones (`listar`, `obtener`, `crear`, `actualizar`, `eliminar`; separadas por coma). También en inglés o con el método HTTP: `--solo post`, `--only create`. Las páginas y pantallas controlan que el servicio tenga lo que usan. |
 | `--js` | Al crear: el proyecto en JavaScript en lugar de TypeScript (Express, React, React Native, Next.js). |
 
 ---
@@ -319,6 +322,8 @@ npm run dev                                      http://localhost:5173
 | `pagina --datos` | `nuevo pagina ProductoLista --datos producto` | La página con la lista del servicio `productoService`: `useConsulta(productoService.listar)`, con cargando, error y lista vacía. Necesita el servicio (crea `useConsulta` si falta). |
 | `pagina --datos --uno` | `nuevo pagina ProductoDetalle --datos producto --uno` | La página de uno solo: toma el id de la ruta (`/producto-detalle/:id`) y usa `obtener(id)`. Muestra los campos con que se generó el servicio. No va en el menú. |
 | `pagina --datos --form` | `nuevo pagina ProductoEditar --datos producto --form` | El formulario para crear (`/producto-editar`) y editar (`/producto-editar/3`) con el hook `useFormulario`: carga el registro, guarda con `crear` o `actualizar` y muestra los errores de la API en cada campo. |
+| `servicio --solo` | `nuevo servicio contacto nombre:str email:email mensaje:text --solo crear` | El servicio solo con `crear` (POST): para un formulario que solo envía, como el de contacto. No crea los hooks (no los usa). |
+| `pagina --datos --form` (solo envía) | `nuevo pagina Contacto --datos contacto --form` | Con un servicio que solo tiene `crear`: el formulario con su propio estado (`useState`), el botón Enviar (deshabilitado mientras envía), los errores de la API en cada campo y «¡Listo! Se envió.». Sin ruta para editar. |
 | `hook` | `nuevo hook contador` | `src/hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http` y los hooks `useConsulta` y `useFormulario`, si faltan). |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, los hooks `useConsulta` y `useFormulario`, el servicio y las 4 rutas con su enlace. |
@@ -378,7 +383,7 @@ npx expo start
 | `pantalla` | `nuevo pantalla detalle-producto --carpeta productos` | `app/productos/detalle-producto` (Expo Router: el archivo es la ruta). |
 | `pantalla --datos` | `nuevo pantalla productos --datos producto` | La pantalla con la lista del servicio `productoService`: `FlatList` con `useConsulta(productoService.listar)`, cargando y error. Necesita el servicio (crea `hooks/useConsulta` si falta). |
 | `pantalla --datos --uno` | `nuevo pantalla producto --datos producto --uno` | `app/producto/[id]`: toma el id de la ruta con `useLocalSearchParams` y usa `obtener(id)`. Se abre con `router.push('/producto/3')`. |
-| `pantalla --datos --form` | `nuevo pantalla editar-producto --datos producto --form` | El formulario (`TextInput`, `Switch`) con `useFormulario`: para crear, `router.push('/editar-producto')`; para editar, con `?id=3`. Al guardar vuelve atrás. |
+| `pantalla --datos --form` | `nuevo pantalla editar-producto --datos producto --form` | El formulario (`TextInput`, `Switch`) con `useFormulario`: para crear, `router.push('/editar-producto')`; para editar, con `?id=3`. Al guardar vuelve atrás. Con un servicio `--solo crear`, solo envía: se queda en la pantalla y muestra «¡Listo! Se envió.». |
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta` con su `StyleSheet`. |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar, y los hooks `useConsulta` y `useFormulario`, si faltan). |

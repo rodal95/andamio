@@ -138,6 +138,7 @@ SERVICIO = Pieza(
     contexto=_js.contexto_servicio,
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("js/servicios/@@nombreCamel@@Servicio.js",),
+    **_js.OPCION_SOLO,
     siguiente_paso=[
         "# Usalo en el .js de una página:",
         "import { @@nombreCamel@@Servicio } from '../servicios/@@nombreCamel@@Servicio.js';",

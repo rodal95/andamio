@@ -118,6 +118,173 @@ def contexto_servicio(sol: Solicitud) -> dict[str, str]:
     }
 
 
+# --- Servicio con algunas funciones (--solo crear, --solo listar,obtener) ---------------
+
+OPERACIONES = ("listar", "obtener", "crear", "actualizar", "eliminar")
+# En inglés, y los métodos HTTP que no dejan dudas (GET puede ser listar u obtener).
+_ALIAS_OPERACIONES = {
+    "list": "listar",
+    "get": "obtener",
+    "create": "crear",
+    "post": "crear",
+    "update": "actualizar",
+    "patch": "actualizar",
+    "put": "actualizar",
+    "delete": "eliminar",
+}
+_EJEMPLO_SOLO = "Ejemplo: --solo crear (solo enviar, POST), o --solo listar,obtener (solo ver)"
+
+
+def normalizar_solo(texto: str) -> str:
+    """--solo "Crear" / --solo listar,obtener / --solo post -> "crear" / "listar,obtener" (en el orden del servicio)."""
+    elegidas = set()
+    for parte in re.split(r"[\s,]+", texto.strip().lower()):
+        if not parte:
+            continue
+        operacion = _ALIAS_OPERACIONES.get(parte, parte)
+        if operacion not in OPERACIONES:
+            raise AndamioError(
+                f"--solo: '{parte}' no es una de las funciones del servicio ({', '.join(OPERACIONES)}).", _EJEMPLO_SOLO
+            )
+        elegidas.add(operacion)
+    if not elegidas:
+        raise AndamioError("--solo va con las funciones que querés en el servicio.", _EJEMPLO_SOLO)
+    return ",".join(op for op in OPERACIONES if op in elegidas)
+
+
+def operaciones_pedidas(sol: Solicitud) -> tuple[str, ...]:
+    """Las funciones que tiene que tener el servicio: las de --solo, o todas."""
+    solo = sol.opciones.get("solo")
+    return tuple(solo.split(",")) if solo else OPERACIONES
+
+
+_INICIO_SERVICIO = re.compile(r"^export const \w+ = \{$")
+_FUNCION_SERVICIO = re.compile(r"^  (\w+): ")
+
+
+def filtrar_operaciones(texto: str, operaciones: tuple[str, ...], guia: bool = True) -> str:
+    """Deja en el objeto del servicio solo estas funciones (con sus comentarios).
+
+    El objeto es `export const productoService = {` ... `};`, con una función por línea, y
+    arriba de cada una, sus comentarios. Las funciones que no son de OPERACIONES (las que
+    agregaste en una plantilla propia) quedan.
+    """
+    lineas = texto.split("\n")
+    inicio = next((i for i, linea in enumerate(lineas) if _INICIO_SERVICIO.match(linea)), None)
+    fin = next((i for i in range(inicio + 1, len(lineas)) if lineas[i] == "};"), None) if inicio is not None else None
+    if inicio is None or fin is None:
+        raise AndamioError(
+            "--solo: no encontré el objeto del servicio (export const ...Service = { ... };) en la plantilla.",
+            "Si usás plantillas propias, dejá el objeto con una función por línea, como en la original.",
+        )
+    cuerpo, bloque, encontradas = [], [], []
+    for linea in lineas[inicio + 1 : fin]:
+        bloque.append(linea)
+        funcion = _FUNCION_SERVICIO.match(linea)
+        if funcion:
+            nombre = funcion.group(1)
+            encontradas.append(nombre)
+            if nombre in operaciones or nombre not in OPERACIONES:
+                cuerpo += bloque
+            bloque = []
+    cuerpo += bloque  # lo que queda después de la última función (comentarios)
+    faltan = [op for op in operaciones if op not in encontradas]
+    if faltan:
+        raise AndamioError(f"--solo: la plantilla del servicio no tiene {', '.join(faltan)}.")
+    descartadas = [op for op in OPERACIONES if op in encontradas and op not in operaciones]
+    aviso = []
+    if guia and descartadas:
+        elegidas = ", ".join(operaciones)
+        aviso = [f"// Solo {elegidas} (--solo {','.join(operaciones)}): {', '.join(descartadas)} no se generaron."]
+    return "\n".join([*lineas[:inicio], *aviso, lineas[inicio], *cuerpo, *lineas[fin:]])
+
+
+def transformar_servicio(sol: Solicitud, ruta: str, texto: str) -> str:
+    """Pieza.transformar del servicio: con --solo, el objeto solo con esas funciones."""
+    # Sin --solo, o no es el archivo del servicio (http.ts también exporta un objeto: http).
+    if not sol.opciones.get("solo") or not Path(ruta).stem.endswith(("Service", "Servicio")):
+        return texto
+    return filtrar_operaciones(texto, operaciones_pedidas(sol), sol.guia)
+
+
+def hooks_del_servicio(carpeta: str) -> Callable[[Solicitud], frozenset[str]]:
+    """Pieza.omitir del servicio: con --solo, solo los hooks que pueden usar sus funciones.
+
+    useConsulta pide datos (listar u obtener); useFormulario carga, crea y actualiza.
+    """
+
+    def omitir(sol: Solicitud) -> frozenset[str]:
+        ops = set(operaciones_pedidas(sol))
+        sobran = () if ops & {"listar", "obtener"} else HOOK_CONSULTA
+        if not {"obtener", "crear", "actualizar"} <= ops:
+            sobran += HOOK_FORMULARIO
+        return frozenset(f"{carpeta}/{archivo}" for archivo in sobran)
+
+    return omitir
+
+
+def pasos_servicio(
+    pieza: str, nombres: tuple[str, str, str, str], a_mano: list[str], con_listar: list[str] = ()
+) -> Callable[[Solicitud], list[str]]:
+    """Los siguientes pasos de un servicio (React y React Native): las páginas o pantallas que
+    lo pueden usar, según sus funciones (--solo).
+
+    nombres: el de la lista, el de uno solo, el del formulario y el del formulario que solo envía.
+    a_mano: cómo usarlo a mano; con_listar: lo que se suma si tiene listar (el ejemplo con useConsulta).
+    """
+    lista, uno, form, envio = nombres
+
+    def pasos(sol: Solicitud) -> list[str]:
+        ops = set(operaciones_pedidas(sol))
+        comando = f"python -m andamio nuevo {pieza}"
+        resultado = [f"# Una {'página' if pieza == 'pagina' else pieza} que lo usa:"]
+        if "listar" in ops:
+            resultado.append(f"{comando} {lista} --datos @@nombre@@")
+        if "obtener" in ops:
+            resultado.append(f"{comando} {uno} --datos @@nombre@@ --uno")
+        if {"obtener", "crear", "actualizar"} <= ops:
+            resultado.append(f"{comando} {form} --datos @@nombre@@ --form")
+        elif "crear" in ops:
+            explicacion = "con un formulario que solo envía (el servicio no tiene obtener ni actualizar)"
+            if len(resultado) == 1:
+                resultado = [f"# Una {'página' if pieza == 'pagina' else pieza} {explicacion}:"]
+            else:
+                resultado.append(f"# Y {explicacion[4:]}:")
+            resultado.append(f"{comando} {envio} --datos @@nombre@@ --form")
+        if len(resultado) == 1:
+            resultado = []  # ej.: --solo eliminar: ninguna página generada lo usa
+        return resultado + a_mano[:2] + (list(con_listar) if "listar" in ops else []) + a_mano[2:]
+
+    return pasos
+
+
+# Lo que suma --solo a la pieza servicio de cada stack: Pieza(..., **_js.OPCION_SOLO).
+OPCION_SOLO = {
+    "opciones": frozenset({"solo"}),
+    "normalizar_opcion": {"solo": normalizar_solo},
+    "transformar": transformar_servicio,
+}
+
+
+def operaciones_del_archivo(archivo: Path) -> set[str]:
+    """Las funciones que tiene un servicio ya generado (las de OPERACIONES que encuentra)."""
+    try:
+        lineas = archivo.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return set(OPERACIONES)  # si no se puede leer, no se controla
+    inicio = next((i for i, linea in enumerate(lineas) if _INICIO_SERVICIO.match(linea)), None)
+    if inicio is None:
+        return set(OPERACIONES)  # escrito a mano, de otra forma: no se controla
+    encontradas = set()
+    for linea in lineas[inicio + 1 :]:
+        if linea.startswith("}"):
+            break
+        funcion = _FUNCION_SERVICIO.match(linea)
+        if funcion and funcion.group(1) in OPERACIONES:
+            encontradas.add(funcion.group(1))
+    return encontradas
+
+
 def detectar_dependencias(*paquetes: str) -> Callable[[Path], bool]:
     def detectar(raiz: Path) -> bool:
         if not (raiz / "package.json").is_file():
@@ -221,6 +388,23 @@ def modo_datos(sol: Solicitud) -> str:
     return "uno" if uno else "form" if form else "lista"
 
 
+def _archivo_servicio(sol: Solicitud, carpeta: str) -> tuple[str, str]:
+    """El servicio que usa --datos (productoService) y su archivo."""
+    servicio = f"{camel(sol.opciones['datos'].split('_'))}Service"
+    return servicio, f"{carpeta}/{servicio}.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}"
+
+
+def solo_envia(sol: Solicitud, carpeta: str) -> bool:
+    """--form con un servicio que no tiene obtener o actualizar (ej.: --solo crear).
+
+    El formulario entonces solo envía: no carga ni edita registros (sin useFormulario ni /:id).
+    """
+    if not (sol.opciones.get("datos") and sol.opciones.get("form")):
+        return False
+    _, archivo = _archivo_servicio(sol, carpeta)
+    return not {"obtener", "actualizar"} <= operaciones_del_archivo(sol.raiz / archivo)
+
+
 def servicio_de_datos(sol: Solicitud, carpeta: str) -> tuple[str, str, list]:
     """Para --datos: el servicio que se usa (productoService), su archivo y sus campos.
 
@@ -228,14 +412,21 @@ def servicio_de_datos(sol: Solicitud, carpeta: str) -> tuple[str, str, list]:
     historial (con qué campos se generó); si no está, la lista vacía (el formulario los necesita).
     """
     datos = sol.opciones["datos"]
-    ext = MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
-    servicio = f"{camel(datos.split('_'))}Service"
-    archivo = f"{carpeta}/{servicio}.{ext}"
+    servicio, archivo = _archivo_servicio(sol, carpeta)
     sugerencia = f"{consola.programa()} nuevo servicio {datos} nombre:str precio:decimal"
+    pieza = sol.pieza.titulo.lower()
     if not (sol.raiz / archivo).is_file():
         raise AndamioError(
-            f"La {sol.pieza.titulo.lower()} usa {archivo}, que todavía no existe.",
+            f"La {pieza} usa {archivo}, que todavía no existe.",
             f"Generá primero el servicio, con los campos de la API: {sugerencia}",
+        )
+    # Un servicio generado con --solo puede no tener la función que usa la página.
+    necesita = {"uno": "obtener", "form": "crear"}.get(modo_datos(sol), "listar")
+    if necesita not in operaciones_del_archivo(sol.raiz / archivo):
+        raise AndamioError(
+            f"La {pieza} usa {servicio}.{necesita}, y {archivo} no la tiene (se generó con --solo).",
+            f"Agregala en el servicio (un servicio completo la trae), o elegí lo que la {pieza} hace con "
+            "el servicio: lista (listar), --uno (obtener) o --form (crear).",
         )
     campos = historial.campos_de(sol.raiz, datos, ("servicio", "crud")) or []
     if not campos and sol.opciones.get("form"):
@@ -323,9 +514,95 @@ def _previo_formulario(sol: Solicitud, campos, nombre_tipo: str, ruta_servicio: 
     return "\n".join([*cabecera, *vacios, "};", "", *funcion, "  return {", *copiar, "  };", "}", ""])
 
 
-def _import_servicio(sol: Solicitud, servicio: str, ruta: str, nombre_tipo: str) -> str:
+# El formulario que solo envía (--form con un servicio --solo crear): sin useFormulario,
+# con su propio estado. Es lo que se escribiría a mano para un formulario de contacto.
+
+
+def _envio(sol: Solicitud, servicio: str, tipo: str, campos, rn: bool = False) -> list[str]:
+    """El estado del formulario, cambiar() y enviar() (con la marca para la lógica propia).
+
+    rn: en React Native, después de enviar se cuentan los envíos (enviados) en lugar de un
+    sí/no: el número es la key de los campos, que así se vuelven a crear vacíos.
+    """
+    js = sol.variante == "js"
+    datos_tipo = f"{tipo}Datos"
+    ejemplo = campos[0].nombre if campos else "nombre"
+    guia = (lambda *lineas: list(lineas)) if sol.guia else (lambda *lineas: [])
+    lineas = guia("// El servicio solo tiene crear: el formulario solo envía (no carga ni edita registros).")
+    if js:
+        lineas += [
+            "const [datos, setDatos] = useState(VACIO);",
+            *guia(f"// Los errores de cada campo, como los devuelve la API: {{ {ejemplo}: ['...'] }}"),
+            "const [errores, setErrores] = useState(/** @type {Record<string, string[]>} */ ({}));",
+        ]
+    else:
+        lineas += [
+            f"const [datos, setDatos] = useState<{datos_tipo}>(VACIO);",
+            *guia(f"// Los errores de cada campo, como los devuelve la API: {{ {ejemplo}: ['...'] }}"),
+            "const [errores, setErrores] = useState<Record<string, string[]>>({});",
+        ]
+    lineas.append("const [enviando, setEnviando] = useState(false);")
+    lineas.append("const [enviados, setEnviados] = useState(0);" if rn else "const [enviado, setEnviado] = useState(false);")
+    lineas.append("")
+    if js:
+        lineas += ["/**", f" * @param {{keyof {datos_tipo}}} campo", " * @param {unknown} valor", " */", "function cambiar(campo, valor) {"]
+    else:
+        lineas.append(f"function cambiar<K extends keyof {datos_tipo}>(campo: K, valor: {datos_tipo}[K]) {{")
+    exito = ["    setEnviados((n) => n + 1);"] if rn else ["    setEnviado(true);"]
+    detalle = "/** @type {Record<string, string[]>} */ (e.detalle)" if js else "e.detalle as Record<string, string[]>"
+    lineas += [
+        "  setDatos((actual) => ({ ...actual, [campo]: valor }));",
+        "}",
+        "",
+        "async function enviar() {",
+        "  // TODO(logica): validaciones del formulario antes de enviar (la API también valida).",
+        "  // Ejemplo:",
+        f"  // {ejemplo_validacion(campos)}",
+        "  setErrores({});",
+        "  setEnviando(true);",
+        "  try {",
+        f"    await {servicio}.crear(datos);",
+        *exito,
+        "    setDatos(VACIO);" + (" // vacío otra vez, listo para otro" if sol.guia else ""),
+        "  } catch (e) {",
+        *guia("    // 400: la API dice qué está mal en cada campo. Otro error (ej.: sin conexión), en general."),
+        "    if (e instanceof ErrorApi && e.estado === 400) {",
+        f"      setErrores({detalle});",
+        "    } else {",
+        "      setErrores({ general: [e instanceof Error ? e.message : String(e)] });",
+        "    }",
+        "  } finally {",
+        "    setEnviando(false);",
+        "  }",
+        "}",
+    ]
+    return lineas
+
+
+def _previo_envio(sol: Solicitud, campos, tipo: str, ruta_servicio: str) -> str:
+    """VACIO: los valores del formulario al empezar (y después de enviar)."""
+    vacios = [f"  {c.nombre}: {_VACIOS[c.tipo]}," for c in campos]
+    datos_tipo = f"{tipo}Datos"
+    if sol.variante == "js":
+        cabecera = [
+            f"/** @typedef {{import('{ruta_servicio}').{datos_tipo}}} {datos_tipo} */",
+            "",
+            "/**",
+            " * Valores del formulario al empezar (y después de enviar).",
+            f" * @type {{{datos_tipo}}}",
+            " */",
+            "const VACIO = {",
+        ]
+    else:
+        cabecera = ["// Valores del formulario al empezar (y después de enviar).", f"const VACIO: {datos_tipo} = {{"]
+    return "\n".join([*cabecera, *vacios, "};", ""])
+
+
+def _import_servicio(sol: Solicitud, servicio: str, ruta: str, nombre_tipo: str, envio: bool = False) -> str:
     if sol.opciones.get("form") and sol.variante != "js":
-        return f"import {{ {servicio}, type {nombre_tipo}, type {nombre_tipo}Datos }} from '{ruta}';"
+        # El formulario que solo envía no pasa registros de la API al formulario (aDatos).
+        tipos = f"type {nombre_tipo}Datos" if envio else f"type {nombre_tipo}, type {nombre_tipo}Datos"
+        return f"import {{ {servicio}, {tipos} }} from '{ruta}';"
     return f"import {{ {servicio} }} from '{ruta}';"
 
 
@@ -342,6 +619,9 @@ _VACIOS_DATOS = ("datos_imports", "datos_previo", "datos_consulta", "datos_conte
 
 
 def _archivo_hook(sol: Solicitud, carpeta: str, modo: str) -> str:
+    """El hook que usa la página ("" si ninguno: el formulario que solo envía, sin relaciones)."""
+    if modo == "envio" and not usa_relaciones(sol):
+        return ""
     hook = "useFormulario" if modo == "form" else "useConsulta"
     return f"{carpeta}/{hook}.{MARCADORES_VARIANTE[sol.variante or 'ts']['ext']}"
 
@@ -350,12 +630,17 @@ HOOK_CONSULTA = ("useConsulta.ts", "useConsulta.js")
 HOOK_FORMULARIO = ("useFormulario.ts", "useFormulario.js")
 
 
-def hooks_a_omitir(carpeta: str) -> Callable[[Solicitud], frozenset[str]]:
-    """Pieza.omitir: cada página o pantalla crea solo el hook que usa (y solo si falta)."""
+def hooks_a_omitir(carpeta: str, servicios: str) -> Callable[[Solicitud], frozenset[str]]:
+    """Pieza.omitir: cada página o pantalla crea solo el hook que usa (y solo si falta).
+
+    carpeta: la de los hooks; servicios: la de los servicios (para ver qué funciones tiene).
+    """
 
     def omitir(sol: Solicitud) -> frozenset[str]:
         modo = sol.opciones.get("datos") and ("form" if sol.opciones.get("form") else "consulta")
-        if modo == "form" and usa_relaciones(sol):
+        if modo == "form" and solo_envia(sol, servicios):
+            modo = "consulta" if usa_relaciones(sol) else ""  # sin useFormulario
+        elif modo == "form" and usa_relaciones(sol):
             modo = "ambos"  # el formulario carga con useConsulta la lista de cada relación
         sobran = {"consulta": HOOK_FORMULARIO, "form": HOOK_CONSULTA, "ambos": ()}.get(modo, HOOK_CONSULTA + HOOK_FORMULARIO)
         return frozenset(f"{carpeta}/{archivo}" for archivo in sobran)
@@ -457,6 +742,13 @@ _CSS_FORMULARIO = """
   font-weight: normal;
 }"""
 
+_CSS_ENVIO = """
+
+.exito {
+  color: #067647;
+  font-weight: 600;
+}"""
+
 
 def contexto_pagina(sol: Solicitud) -> dict[str, str]:
     modo = modo_datos(sol)
@@ -468,7 +760,15 @@ def contexto_pagina(sol: Solicitud) -> dict[str, str]:
     servicio, archivo_servicio, campos = servicio_de_datos(sol, "src/services")
     tipo = pascal(datos.split("_"))
     ruta_servicio = f"../../services/{servicio}"
-    if modo == "form":
+    envio = modo == "form" and solo_envia(sol, "src/services")
+    if envio:
+        rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "src/services")
+        imports = ["import { useState } from 'react';"]
+        imports += ["import { useConsulta } from '../../hooks/useConsulta';"] if rels else []
+        imports += ["import { ErrorApi } from '../../services/http';", *_imports_relaciones(rels, "../../services")]
+        consulta = [*_envio(sol, servicio, tipo, campos), *_consultas_relaciones(rels)]
+        contenido = _contenido_envio(campos, rels)
+    elif modo == "form":
         rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "src/services")
         imports = ["import { useNavigate, useParams } from 'react-router';"]
         imports += ["import { useConsulta } from '../../hooks/useConsulta';"] if rels else []
@@ -479,17 +779,21 @@ def contexto_pagina(sol: Solicitud) -> dict[str, str]:
         imports = (["import { useParams } from 'react-router';"] if modo == "uno" else []) + ["import { useConsulta } from '../../hooks/useConsulta';"]
         consulta = _consulta(sol, servicio, "useParams()")
         contenido = _contenido_uno(campos) if modo == "uno" else _contenido_lista(campos, datos)
-    imports.append(_import_servicio(sol, servicio, ruta_servicio, tipo))
+    imports.append(_import_servicio(sol, servicio, ruta_servicio, tipo, envio))
+    if envio:
+        previo = _previo_envio(sol, campos, tipo, ruta_servicio)
+    else:
+        previo = _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else ""
     return {
         "ruta_pagina": f"{ruta}/:id" if modo == "uno" else ruta,
         "url_pagina": f"{ruta}/1" if modo == "uno" else ruta,
         "datos_imports": "\n".join(imports),
-        "datos_previo": _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else "",
+        "datos_previo": previo,
         "datos_consulta": "\n".join(consulta) + "\n",
         "datos_contenido": "\n".join(contenido),
-        "datos_css": _CSS_FORMULARIO if modo == "form" else "",
+        "datos_css": (_CSS_FORMULARIO + _CSS_ENVIO if envio else _CSS_FORMULARIO) if modo == "form" else "",
         "datos_servicio": archivo_servicio,
-        "datos_hook": _archivo_hook(sol, "src/hooks", modo),
+        "datos_hook": _archivo_hook(sol, "src/hooks", "envio" if envio else modo),
     }
 
 
@@ -538,9 +842,40 @@ def _contenido_formulario(campos, rels) -> list[str]:
     ]
 
 
+def _contenido_envio(campos, rels) -> list[str]:
+    controles = [f"  {linea}" for c in campos for linea in _campo_formulario(c, rels)]
+    return [
+        "{enviado && (",
+        "  <p role=\"status\" className={styles.exito}>",
+        "    ¡Listo! Se envió.",
+        "  </p>",
+        ")}",
+        "<form",
+        "  className={styles.formulario}",
+        "  onSubmit={(evento) => {",
+        "    evento.preventDefault();",
+        "    void enviar();",
+        "  }}",
+        ">",
+        *controles,
+        "  {errores.general && <p className={styles.error}>{errores.general.join(' ')}</p>}",
+        "  <div className={styles.acciones}>",
+        "    <button type=\"submit\" disabled={enviando}>",
+        "      {enviando ? 'Enviando…' : 'Enviar'}",
+        "    </button>",
+        "  </div>",
+        "</form>",
+    ]
+
+
+def form_edita(sol: Solicitud) -> bool:
+    """Inserción.condicion (React): la ruta /x/:id para editar, solo con un --form que edita."""
+    return bool(sol.opciones.get("form")) and not solo_envia(sol, "src/services")
+
+
 def pasos_pagina(sol: Solicitud) -> list[str]:
     pasos = ["npm run dev", "http://localhost:5173@@url_pagina@@"]
-    if sol.opciones.get("form"):
+    if form_edita(sol):
         pasos.append("# Para editar uno, la misma página con su id: http://localhost:5173@@url_pagina@@/1")
     if sol.opciones.get("datos"):
         pasos.append("# Necesita la API andando (Django, FastAPI o Express), con el recurso que usa el servicio.")
@@ -571,6 +906,11 @@ def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
 
 
 _ESTILO_ERROR = ["error: {", "  color: '#b91c1c',", "  marginVertical: 8,", "},"]
+_ESTILOS_CAMPOS_RN = ["etiqueta: {", "  fontWeight: 'bold',", "  marginTop: 12,", "},", "entrada: {",
+                      "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 6,", "  padding: 8,", "  marginTop: 4,", "},"]  # fmt: skip
+_ESTILOS_OPCIONES_RN = ["opciones: {", "  flexDirection: 'row',", "  flexWrap: 'wrap',", "  gap: 8,", "  marginTop: 4,", "},",
+                        "opcion: {", "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 16,", "  paddingHorizontal: 12,", "  paddingVertical: 6,", "},",
+                        "elegida: {", "  borderColor: '#2563eb',", "  backgroundColor: '#dbeafe',", "},"]  # fmt: skip
 
 
 def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
@@ -587,7 +927,28 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
         "{cargando && <ActivityIndicator />}",
         "{error && <Text style={styles.error}>No se pudo cargar: {error}</Text>}",
     ]
-    if modo == "form":
+    envio = modo == "form" and solo_envia(sol, "services")
+    if envio:
+        rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "services")
+        hook = "\n".join(
+            ["import { useState } from 'react';"]
+            + (["import { useConsulta } from '@/hooks/useConsulta';"] if rels else [])
+            + ["import { ErrorApi } from '@/services/http';", *_imports_relaciones(rels, "@/services")]
+        )
+        consulta = [*_envio(sol, servicio, tipo, campos, rn=True), *_consultas_relaciones(rels)]
+        contenido = _contenido_envio_rn(campos, rels, sol.guia)
+        # Solo los componentes que usan los campos (Switch para sí/no, Pressable para las relaciones).
+        tipos = {"rel" if c.nombre in rels else "bool" if c.tipo == "bool" else "texto" for c in campos}
+        componentes = ", ".join(
+            ["Button"] + (["Pressable"] if "rel" in tipos else []) + ["ScrollView", "StyleSheet"]
+            + (["Switch"] if "bool" in tipos else []) + ["Text"] + (["TextInput"] if "texto" in tipos else []) + ["View"]
+        )
+        router = "Stack"
+        estilos = [*_ESTILO_ERROR, "exito: {", "  color: '#067647',", "  fontWeight: 'bold',", "  marginVertical: 8,", "},",
+                   *_ESTILOS_CAMPOS_RN]  # fmt: skip
+        if rels:
+            estilos += _ESTILOS_OPCIONES_RN
+    elif modo == "form":
         rels = relaciones_formulario(sol, campos, Nombre.desde_palabras(datos.split("_")), "services")
         hook = "\n".join(
             (["import { useConsulta } from '@/hooks/useConsulta';"] if rels else [])
@@ -597,12 +958,9 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
         contenido = _contenido_formulario_rn(campos, rels)
         componentes = "ActivityIndicator, Button, " + ("Pressable, " if rels else "") + "ScrollView, StyleSheet, Switch, Text, TextInput, View"
         router = "Stack, router, useLocalSearchParams"
-        estilos = [*_ESTILO_ERROR, "etiqueta: {", "  fontWeight: 'bold',", "  marginTop: 12,", "},", "entrada: {",
-                   "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 6,", "  padding: 8,", "  marginTop: 4,", "},"]  # fmt: skip
+        estilos = [*_ESTILO_ERROR, *_ESTILOS_CAMPOS_RN]
         if rels:
-            estilos += ["opciones: {", "  flexDirection: 'row',", "  flexWrap: 'wrap',", "  gap: 8,", "  marginTop: 4,", "},",
-                        "opcion: {", "  borderWidth: 1,", "  borderColor: '#d0d5dd',", "  borderRadius: 16,", "  paddingHorizontal: 12,", "  paddingVertical: 6,", "},",
-                        "elegida: {", "  borderColor: '#2563eb',", "  backgroundColor: '#dbeafe',", "},"]  # fmt: skip
+            estilos += _ESTILOS_OPCIONES_RN
     elif modo == "uno":
         hook = "import { useConsulta } from '@/hooks/useConsulta';"
         consulta = _consulta(sol, servicio, "useLocalSearchParams()")
@@ -628,13 +986,16 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
     return {
         "expo_router": router,
         "react_native": componentes,
-        "datos_imports": "\n".join(["", hook, _import_servicio(sol, servicio, ruta_servicio, tipo)]),
-        "datos_previo": _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else "",
+        "datos_imports": "\n".join(["", hook, _import_servicio(sol, servicio, ruta_servicio, tipo, envio)]),
+        "datos_previo": (
+            _previo_envio(sol, campos, tipo, ruta_servicio) if envio
+            else _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else ""
+        ),
         "datos_consulta": "\n".join(consulta) + "\n",
         "datos_contenido": "\n".join(contenido),
         "datos_estilos": "\n".join(estilos),
         "datos_servicio": archivo_servicio,
-        "datos_hook": _archivo_hook(sol, "hooks", modo),
+        "datos_hook": _archivo_hook(sol, "hooks", "envio" if envio else modo),
     }
 
 
@@ -651,7 +1012,7 @@ _TECLADOS_RN = {"int": "number-pad", "decimal": "decimal-pad", "float": "decimal
 _EJEMPLOS_RN = {"date": "2025-03-15", "datetime": "2025-03-15T10:30"}
 
 
-def _campo_formulario_rn(campo, rels=None) -> list[str]:
+def _campo_formulario_rn(campo, rels=None, edita: bool = True) -> list[str]:
     n = campo.nombre
     if rels and n in rels:
         rel = rels[n]
@@ -677,7 +1038,7 @@ def _campo_formulario_rn(campo, rels=None) -> list[str]:
             "<TextInput",
             "  style={styles.entrada}",
             f"  keyboardType=\"{_TECLADOS_RN[campo.tipo]}\"",
-            f"  defaultValue={{editando ? String(datos.{n}) : ''}}",
+            *([f"  defaultValue={{editando ? String(datos.{n}) : ''}}"] if edita else []),
             f"  onChangeText={{(texto) => cambiar('{n}', Number(texto.replace(',', '.')))}}",
             "/>",
         ]
@@ -717,6 +1078,22 @@ def _contenido_formulario_rn(campos, rels) -> list[str]:
         "    <Button title={editando ? 'Guardar cambios' : 'Agregar'} onPress={() => void enviar()} />",
         "  </ScrollView>",
         ")}",
+    ]
+
+
+def _contenido_envio_rn(campos, rels, guia: bool) -> list[str]:
+    controles = [f"    {linea}" for c in campos for linea in _campo_formulario_rn(c, rels, edita=False)]
+    explicacion = ["  {/* key: con cada envío, los campos se vuelven a crear (vacíos). */}"] if guia else []
+    return [
+        "<ScrollView>",
+        "  {enviados > 0 && <Text style={styles.exito}>¡Listo! Se envió.</Text>}",
+        *explicacion,
+        "  <View key={enviados}>",
+        *controles,
+        "  </View>",
+        "  {errores.general && <Text style={styles.error}>{errores.general.join(' ')}</Text>}",
+        "  <Button title={enviando ? 'Enviando…' : 'Enviar'} disabled={enviando} onPress={() => void enviar()} />",
+        "</ScrollView>",
     ]
 
 

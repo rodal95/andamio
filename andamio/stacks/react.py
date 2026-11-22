@@ -67,10 +67,6 @@ def _sin_uno(sol) -> bool:
     return not sol.opciones.get("uno")
 
 
-def _con_form(sol) -> bool:
-    return bool(sol.opciones.get("form"))
-
-
 PAGINA = Pieza(
     clave="pagina",
     lectura=(
@@ -92,13 +88,19 @@ PAGINA = Pieza(
     existe_si=("src/pages/@@Nombre@@Page",),
     # Con --datos se crea el hook que usa, y si ya existe (lo generó un crud o un servicio) no se toca.
     si_no_existe=_HOOKS,
-    omitir=_js.hooks_a_omitir("src/hooks"),
+    omitir=_js.hooks_a_omitir("src/hooks", "src/services"),
     inserciones=(
         _insercion_app("import { @@Nombre@@Page } from './pages/@@Nombre@@Page';", "imports", "import", "arriba, junto a los otros import", "//"),
         _insercion_app('<Route path="@@ruta_pagina@@" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@", "dentro de <Routes>", "{/*"),
-        # El formulario (--form) también edita: la misma página con el id en la ruta.
+        # El formulario (--form) también edita: la misma página con el id en la ruta. Salvo
+        # que el servicio no tenga obtener o actualizar (--solo crear): entonces solo envía.
         _insercion_app(
-            '<Route path="@@ruta_pagina@@/:id" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@/:id (editar)", "dentro de <Routes>", "{/*", _con_form
+            '<Route path="@@ruta_pagina@@/:id" element={<@@Nombre@@Page />} />',
+            "rutas",
+            "ruta @@ruta_pagina@@/:id (editar)",
+            "dentro de <Routes>",
+            "{/*",
+            _js.form_edita,
         ),
         # Una página de uno solo (--uno) necesita un id en la ruta: no va en el menú.
         _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*", _sin_uno),
@@ -203,17 +205,22 @@ SERVICIO = Pieza(
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("src/services/@@nombreCamel@@Service.@@ext@@",),
     si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}) | _HOOKS,
-    siguiente_paso=[
-        "# Una página que lo usa (lista, o uno solo con --uno):",
-        "python -m andamio nuevo pagina @@Nombre@@Lista --datos @@nombre@@",
-        "python -m andamio nuevo pagina @@Nombre@@Detalle --datos @@nombre@@ --uno",
-        "python -m andamio nuevo pagina @@Nombre@@Editar --datos @@nombre@@ --form",
-        "# O a mano, en un componente:",
-        "import { useConsulta } from './hooks/useConsulta';",
-        "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",
-        "const { datos, cargando, error } = useConsulta(@@nombreCamel@@Service.listar);",
-        "# Necesita la API andando (Django, FastAPI o Express) con el recurso /api/@@plural@@/",
-    ],
+    # Con --solo crear (ej.: un formulario de contacto) no hacen falta los hooks.
+    omitir=_js.hooks_del_servicio("src/hooks"),
+    **_js.OPCION_SOLO,
+    siguiente_paso=_js.pasos_servicio(
+        "pagina",
+        ("@@Nombre@@Lista", "@@Nombre@@Detalle", "@@Nombre@@Editar", "@@Nombre@@"),
+        [
+            "# O a mano, en un componente:",
+            "import { @@nombreCamel@@Service } from './services/@@nombreCamel@@Service';",
+            "# Necesita la API andando (Django, FastAPI o Express) con el recurso /api/@@plural@@/",
+        ],
+        con_listar=[
+            "import { useConsulta } from './hooks/useConsulta';",
+            "const { datos, cargando, error } = useConsulta(@@nombreCamel@@Service.listar);",
+        ],
+    ),
 )
 
 ESTILOS = piezas_de_estilos(

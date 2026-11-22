@@ -33,7 +33,8 @@ _OPCIONES = {
     "modo": ("--modo auto|claro|oscuro", "el modo del tema"),
     "datos": ("--datos <servicio>", "usa un servicio que ya existe: muestra su lista"),
     "uno": ("--datos <servicio> --uno", "muestra uno solo, con el id en la ruta"),
-    "form": ("--datos <servicio> --form", "el formulario para crear y editar"),
+    "form": ("--datos <servicio> --form", "el formulario para crear y editar (o solo enviar, si el servicio solo tiene crear)"),
+    "solo": ("--solo <funciones>", "el servicio solo con esas funciones: --solo crear, --solo listar,obtener"),
     "sin_menu": ("--sin-menu", "solo la tabla y las funciones, sin el menú de consola"),
 }
 

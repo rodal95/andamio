@@ -59,10 +59,24 @@ def marcas_del_plan(plan: Plan) -> list[Pendiente]:
     return pendientes
 
 
-def orden_de_lectura(lectura: tuple[tuple[str, str], ...], contexto: dict[str, str]) -> list[tuple[str, str]]:
-    # Una ruta que queda vacía es un archivo que esta vez no se generó (depende de una opción).
+def orden_de_lectura(
+    lectura: tuple[tuple[str, str], ...],
+    contexto: dict[str, str],
+    raiz: Path | None = None,
+    omitidos: frozenset[str] = frozenset(),
+) -> list[tuple[str, str]]:
+    """Los archivos para leer, con qué hace cada uno.
+
+    No se muestran: una ruta que queda vacía (un archivo que depende de una opción), las que
+    la pieza omitió esta vez (Pieza.omitir: ej., los hooks de un servicio --solo crear, aunque
+    existan por otra pieza) y, con raiz, las que no están en el proyecto.
+    """
     rutas = [(renderizar(ruta, contexto), rol) for ruta, rol in lectura]
-    return [(ruta, renderizar(rol, contexto)) for ruta, rol in rutas if ruta]
+    return [
+        (ruta, renderizar(rol, contexto))
+        for ruta, rol in rutas
+        if ruta and ruta not in omitidos and (raiz is None or (raiz / ruta).exists())
+    ]
 
 
 def mostrar(lectura: list[tuple[str, str]], pendientes: list[Pendiente]) -> None:

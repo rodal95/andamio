@@ -96,6 +96,9 @@ class Pieza:
     # Archivos de la plantilla que no se crean en esta solicitud (ej.: el hook useConsulta de
     # una página sin --datos). Rutas como en si_no_existe. None = se crean todos.
     omitir: Callable[[Solicitud], frozenset[str]] | None = None
+    # Último retoque al contenido de un archivo ya renderizado: (solicitud, ruta, texto) -> texto.
+    # Ej.: el servicio con --solo crear deja solo esa función del objeto.
+    transformar: Callable[[Solicitud, str, str], str] | None = None
     inserciones: tuple[Insercion, ...] = ()
     # Orden recomendado para leer lo que se generó: (ruta con marcadores, qué hace).
     # Se muestra después de generar, para que el código no sea una caja negra.

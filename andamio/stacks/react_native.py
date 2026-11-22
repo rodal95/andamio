@@ -27,7 +27,7 @@ PANTALLA = Pieza(
     existe_si=("app/@@ruta_pantalla@@.@@extx@@",),
     # Con --datos se crea el hook que usa, y si ya existe (lo generó un servicio) no se toca.
     si_no_existe=_HOOKS,
-    omitir=_js.hooks_a_omitir("hooks"),
+    omitir=_js.hooks_a_omitir("hooks", "services"),
     siguiente_paso=[
         "npx expo start",
         "# Para abrirla desde otra pantalla:",
@@ -88,15 +88,17 @@ SERVICIO = Pieza(
     marcadores=_js.MARCADORES_SERVICIO,
     existe_si=("services/@@nombreCamel@@Service.@@ext@@",),
     si_no_existe=frozenset({"services/http.ts", "services/http.js"}) | _HOOKS,
-    siguiente_paso=[
-        "# Una pantalla que lo usa (lista, o uno solo con --uno):",
-        "python -m andamio nuevo pantalla @@pluralKebab@@ --datos @@nombre@@",
-        "python -m andamio nuevo pantalla @@nombreKebab@@ --datos @@nombre@@ --uno",
-        "python -m andamio nuevo pantalla editar-@@nombreKebab@@ --datos @@nombre@@ --form",
-        "# O a mano, en una pantalla:",
-        "import { @@nombreCamel@@Service } from '@/services/@@nombreCamel@@Service';",
-        "# La dirección de la API está en EXPO_PUBLIC_API_URL (archivo .env); leé services/http.ts",
-    ],
+    omitir=_js.hooks_del_servicio("hooks"),
+    **_js.OPCION_SOLO,
+    siguiente_paso=_js.pasos_servicio(
+        "pantalla",
+        ("@@pluralKebab@@", "@@nombreKebab@@", "editar-@@nombreKebab@@", "@@nombreKebab@@"),
+        [
+            "# O a mano, en una pantalla:",
+            "import { @@nombreCamel@@Service } from '@/services/@@nombreCamel@@Service';",
+            "# La dirección de la API está en EXPO_PUBLIC_API_URL (archivo .env); leé services/http.ts",
+        ],
+    ),
 )
 
 TEMA = pieza_tema(

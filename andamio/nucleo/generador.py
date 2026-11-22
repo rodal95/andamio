@@ -213,6 +213,8 @@ def planificar_pieza(sol: Solicitud) -> Plan:
         destino = renderizar_ruta(archivo.partes, contexto, origen)
         texto = archivo.texto
         contenido = renderizar(texto, contexto, origen, sol.guia) if texto is not None else archivo.contenido
+        if pieza.transformar and isinstance(contenido, str):
+            contenido = pieza.transformar(sol, destino.as_posix(), contenido)
         plan.crear(destino, contenido, si_no_existe=archivo.ruta in pieza.si_no_existe)
 
     conexiones = ajustes.de_proyecto(sol.raiz).conexiones

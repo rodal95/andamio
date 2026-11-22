@@ -166,10 +166,19 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
                 [
                     ("lista", "muestra la lista (listar)"),
                     ("uno", "muestra uno solo, con el id en la ruta (obtener)"),
-                    ("form", "el formulario para crear y editar (crear, actualizar)"),
+                    ("form", "el formulario para crear y editar (crear, actualizar); si el servicio solo tiene crear, solo envía"),
                 ],
             )
             extras["uno"], extras["form"] = que == "uno", que == "form"
+    if "solo" in pieza.opciones:
+        solo = consola.preguntar(
+            "¿Solo algunas funciones? (Enter para todas: listar, obtener, crear, actualizar, eliminar)",
+            validar=pieza.normalizar_opcion.get("solo"),
+            permitir_vacio=True,
+            ejemplo="crear, o listar,obtener",
+        )
+        if solo:
+            extras["solo"] = solo
     return extras
 
 

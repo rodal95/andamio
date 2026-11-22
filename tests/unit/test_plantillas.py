@@ -95,4 +95,7 @@ def test_las_plantillas_js_no_tienen_sintaxis_de_typescript(stack):
             if archivo.texto is None or not archivo.ruta.endswith((".js", ".jsx")):
                 continue
             for numero, linea in enumerate(archivo.texto.splitlines(), 1):
+                # En los comentarios JSDoc los tipos sí van (los lee el editor): {(id: number) => ...}
+                if linea.lstrip().startswith(("*", "/**", "//")):
+                    continue
                 assert not tipos.search(linea), f"{carpeta.name}/{archivo.ruta}:{numero}: {linea}"

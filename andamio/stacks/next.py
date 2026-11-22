@@ -125,6 +125,7 @@ SERVICIO = Pieza(
     marcadores={**_js.MARCADORES_SERVICIO, **_MARCADORES},
     existe_si=("services/@@nombreCamel@@Service.@@ext@@",),
     si_no_existe=frozenset({"services/http.ts", "services/http.js"}),
+    **_js.OPCION_SOLO,
     siguiente_paso=[
         "# Usalo en un componente que empiece con 'use client':",
         "import { @@nombreCamel@@Service } from '@/services/@@nombreCamel@@Service';",

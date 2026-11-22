@@ -219,7 +219,8 @@ def generar_pieza(sol: Solicitud, simular: bool = False, confirmar: bool = False
     if sol.pieza.despues:
         sol.pieza.despues(sol)
     guia_html.actualizar(sol.stack, sol.raiz, sol.variante)
-    lectura.mostrar(lectura.orden_de_lectura(sol.pieza.lectura, sol.contexto), lectura.marcas_del_plan(plan))
+    omitidos = sol.pieza.omitir(sol) if sol.pieza.omitir else frozenset()
+    lectura.mostrar(lectura.orden_de_lectura(sol.pieza.lectura, sol.contexto, sol.raiz, omitidos), lectura.marcas_del_plan(plan))
     mostrar_pasos(pasos_pieza(sol))
     return 0
 
