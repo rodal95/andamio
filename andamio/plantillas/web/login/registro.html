@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crear una cuenta</title>
+    <link rel="stylesheet" href="css/estilos.css" />
+    <script type="module" src="js/paginas/registro.js"></script>
+  </head>
+  <body>
+    <header class="barra" data-menu></header>
+
+    <main class="contenido">
+      <h1>Crear una cuenta</h1>
+      <form id="formulario" class="formulario" novalidate>
+        <div class="campo">
+          <label for="username">Usuario</label>
+          <input id="username" name="username" autocomplete="username" required />
+          <small class="error" id="error-username"></small>
+        </div>
+        <div class="campo">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" />
+          <small class="error" id="error-email"></small>
+        </div>
+        <div class="campo">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required />
+          <small class="error" id="error-password"></small>
+        </div>
+        <div class="campo">
+          <label for="repetir">Repetí la contraseña</label>
+          <input id="repetir" name="repetir" type="password" autocomplete="new-password" required />
+          <small class="error" id="error-repetir"></small>
+        </div>
+        <p class="error" id="error-general"></p>
+        <div>
+          <button type="submit" class="boton">Crear la cuenta</button>
+        </div>
+      </form>
+      <p>¿Ya tenés cuenta? <a href="ingresar.html" id="ingresa">Ingresá</a></p>
+    </main>
+    <footer class="pie" data-pie></footer>
+  </body>
+</html>

@@ -55,9 +55,9 @@ Qué opciones acepta cada pieza:
 | Opción | Piezas |
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
-| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React, Vue), `pagina` (Django con plantillas, React, Vue) |
-| `--sin-registro` | `login` (React, Vue) |
-| `--obligatorio` | `login` (Django, Django con plantillas, React, Vue) |
+| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React, Vue), `pagina` (Django con plantillas, React, Vue, web) |
+| `--sin-registro` | `login` (React, Vue, web) |
+| `--obligatorio` | `login` (Django, Django con plantillas, React, Vue, web) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -298,7 +298,9 @@ JavaScript necesitan un servidor.
 
 | Pieza | Comando | Qué genera |
 |---|---|---|
-| `pagina` | `nuevo pagina Contacto` | `contacto.html` y `js/paginas/contacto.js`, con el enlace en el menú (`js/menu.js`). |
+| `pagina` | `nuevo pagina Contacto` | `contacto.html` y `js/paginas/contacto.js`, con el enlace en el menú (`js/menu.js`, que también dibuja el pie). |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | Lo mismo; el `.js` empieza con `await pedirIngreso()` (sin sesión, lleva a `ingresar.html` y después vuelve) y el enlace solo se ve con sesión. Necesita `nuevo login`. |
+| `login` | `nuevo login` | Contra la API con `nuevo login` (Django, FastAPI o Express): `js/sesion.js` (quién ingresó, `ingresar`, `registrarse`, `salir`, `pedirIngreso`), `ingresar.html` y `registro.html`, e Ingresar o Salir en el menú. Con `--obligatorio`, todas las páginas piden ingresar (lo hace el menú); con `--sin-registro`, sin `registro.html`. |
 | `componente` | `nuevo componente Tarjeta` | `js/componentes/tarjeta.js` (la función `crearTarjeta`) y `css/componentes/tarjeta.css`, importado en `css/estilos.css`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `js/servicios/productoServicio.js`: `listar`, `obtener`, `crear`, `actualizar`, `eliminar`, usando `pedir()` de `js/http.js`. |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `productos.html` y `js/paginas/productos.js`: tabla, formulario para agregar y editar (con los errores de la API por campo) y eliminar. Usa el servicio (lo crea si falta). |

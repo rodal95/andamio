@@ -74,15 +74,43 @@ def _validar_pagina(ruta: str):
     return validar
 
 
-def _enlace(href: str, texto: str) -> Insercion:
+def _enlace(href: str, texto: str, condicion=None, extra: str = "") -> Insercion:
     return Insercion(
         "js/menu.js",
-        f"{{ href: '{href}', texto: '{texto}' }},",
+        f"{{ href: '{href}', texto: '{texto}'{extra} }},",
         marcador="enlaces",
-        descripcion="enlace en el menú",
+        descripcion="enlace en el menú" + (", solo con sesión" if extra else ""),
         ubicacion="dentro de la lista ENLACES",
         comentario="//",
+        condicion=condicion,
     )
+
+
+# --- Login (nuevo login) y páginas que piden ingresar (--protegido) -----------------------
+
+
+def _con_login(raiz: Path) -> bool:
+    return (raiz / "js" / "sesion.js").is_file()
+
+
+def _protegida(sol: Solicitud) -> bool:
+    return bool(sol.opciones.get("protegido"))
+
+
+def _publica(sol: Solicitud) -> bool:
+    return not _protegida(sol)
+
+
+def _contexto_pagina(sol: Solicitud) -> dict[str, str]:
+    if not _protegida(sol):
+        return {"proteger": ""}
+    if not _con_login(sol.raiz):
+        raise AndamioError(
+            "--protegido usa la sesión (js/sesion.js), que genera el login, y todavía no está.",
+            "Generá primero el login: python -m andamio nuevo login",
+        )
+    explicacion = ["// Esta página pide ingresar (--protegido): sin sesión, lleva a ingresar.html."] if sol.guia else []
+    return {"proteger": "\n".join(["import { pedirIngreso } from '../sesion.js';", "", *explicacion, "await pedirIngreso();"])}
 
 
 _SERVIR = ["python -m http.server 5173"]
@@ -99,8 +127,15 @@ PAGINA = Pieza(
     formas=("@@nombreKebab@@.html",),
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_validar_pagina("@@nombreKebab@@.html"),
+    opciones=frozenset({"protegido"}),
+    contexto=_contexto_pagina,
+    marcadores={"proteger": "con --protegido: pedirIngreso() al principio del .js de la página (vacío si no)"},
     existe_si=("@@nombreKebab@@.html",),
-    inserciones=(_enlace("@@nombreKebab@@.html", "@@nombreTitulo@@"),),
+    inserciones=(
+        _enlace("@@nombreKebab@@.html", "@@nombreTitulo@@", _publica),
+        # Una página protegida: su enlace se ve solo si alguien ingresó (lo dibuja el menú de la sesión).
+        _enlace("@@nombreKebab@@.html", "@@nombreTitulo@@", _protegida, ", soloConSesion: true"),
+    ),
     siguiente_paso=[*_SERVIR, "http://localhost:5173/@@nombreKebab@@.html"],
 )
 
@@ -195,6 +230,78 @@ CRUD = Pieza(
     ],
 )
 
+def _con_registro(sol: Solicitud) -> bool:
+    return not sol.opciones.get("sin_registro")
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    registro = _con_registro(sol)
+    return {
+        "enlace_registro": "zona.append(enlace('registro.html', 'Registrarse'));" if registro else "",
+        "y_registrarse": " y Registrarse" if registro else "",
+        "pie_ingresar": '<p>¿No tenés cuenta? <a href="registro.html" id="registrate">Registrate</a></p>' if registro else "",
+        "importar_sesion": "dibujarSesion, pedirIngreso" if sol.opciones.get("obligatorio") else "dibujarSesion",
+    }
+
+
+def _registro_a_omitir(sol: Solicitud) -> frozenset[str]:
+    return frozenset() if _con_registro(sol) else frozenset({"registro.html", "js/paginas/registro.js"})
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    if _con_login(raiz):
+        raise AndamioError("El proyecto ya tiene el login (js/sesion.js).", "Para que una página pida ingresar: python -m andamio nuevo pagina Perfil --protegido")
+    for archivo in ("ingresar.html", "registro.html"):
+        if (raiz / archivo).exists():
+            raise AndamioError(f"Ya hay una página {archivo}: el login usa ese nombre.", "Cambiale el nombre a la tuya y generá el login de nuevo.")
+
+
+LOGIN = Pieza(
+    clave="login",
+    lectura=(
+        ("js/sesion.js", "la sesión: quién ingresó, ingresar, registrarse, salir y pedirIngreso()"),
+        ("ingresar.html", "la página para ingresar (con js/paginas/ingresar.js)"),
+        ("registro.html", "la página para crear una cuenta (con js/paginas/registro.js)"),
+        ("js/menu.js", "el menú: Ingresar, o quién ingresó y Salir (dibujarSesion)"),
+    ),
+    titulo="Login",
+    descripcion="ingresar y crear una cuenta con la API (token JWT), y páginas que piden ingresar (--protegido)",
+    ejemplo="",
+    nombre_defecto="sesion",
+    formas=("js/sesion.js, ingresar.html y registro.html",),
+    opciones=frozenset({"sin_registro", "obligatorio"}),
+    validar_nombre=_validar_login,
+    contexto=_contexto_login,
+    marcadores={
+        "enlace_registro": "Registrarse en el menú (vacío con --sin-registro)",
+        "y_registrarse": "' y Registrarse', para el comentario del menú (vacío con --sin-registro)",
+        "pie_ingresar": "el enlace a registro.html debajo del formulario (vacío con --sin-registro)",
+        "importar_sesion": "lo que js/menu.js toma de la sesión (pedirIngreso, solo con --obligatorio)",
+    },
+    existe_si=("js/sesion.js",),
+    omitir=_registro_a_omitir,
+    inserciones=(
+        Insercion("js/menu.js", "import { @@importar_sesion@@ } from './sesion.js';", marcador="imports", descripcion="import de la sesión", ubicacion="arriba de todo", comentario="//"),
+        Insercion("js/menu.js", "dibujarSesion(nav, ENLACES);", marcador="menu_sesion", descripcion="la sesión en el menú", ubicacion="en dibujarMenu, antes de barra.replaceChildren(nav)", comentario="//"),
+        Insercion(
+            "js/menu.js",
+            "// Todas las páginas piden ingresar (nuevo login --obligatorio), salvo ingresar y registro.\npedirIngreso();",
+            marcador="menu",
+            descripcion="todas las páginas piden ingresar",
+            ubicacion="al principio de dibujarMenu",
+            comentario="//",
+            condicion=lambda sol: bool(sol.opciones.get("obligatorio")),
+        ),
+    ),
+    siguiente_paso=[
+        "# La API con el login (Django, FastAPI o Express): python -m andamio nuevo login",
+        *_SERVIR,
+        "http://localhost:5173/ingresar.html",
+        "# Para que una página pida ingresar:",
+        "python -m andamio nuevo pagina Perfil --protegido",
+    ],
+)
+
 ESTILOS = piezas_de_estilos(
     "css",
     lambda ruta: Insercion(
@@ -214,7 +321,7 @@ STACK = Stack(
     senal="index.html y js/menu.js",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"pagina": PAGINA, "componente": COMPONENTE, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
+    piezas={"pagina": PAGINA, "componente": COMPONENTE, "servicio": SERVICIO, "crud": CRUD, "login": LOGIN, **ESTILOS},
     ejemplo_proyecto="mi-pagina",
     siguiente_paso_proyecto=["cd @@carpeta@@", *_SERVIR, "http://localhost:5173"],
 )

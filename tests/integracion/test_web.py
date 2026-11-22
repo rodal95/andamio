@@ -76,3 +76,40 @@ def test_el_javascript_es_valido(con_piezas):
         # --input-type=module: los archivos usan import/export.
         resultado = subprocess.run([NODE, "--input-type=module", "--check"], input=leer(archivo), capture_output=True, text=True)
         assert resultado.returncode == 0, f"{archivo}\n{resultado.stderr}"
+
+
+# --- Pie, login y páginas protegidas --------------------------------------------------------
+
+
+def test_menu_y_pie(en_carpeta, monkeypatch):
+    assert main(["crear", "web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    assert '<footer class="pie" data-pie></footer>' in (raiz / "index.html").read_text(encoding="utf-8")
+    assert "function dibujarPie()" in (raiz / "js/menu.js").read_text(encoding="utf-8")
+
+
+def test_login_y_pagina_protegida(en_carpeta, monkeypatch, capsys):
+    assert main(["crear", "web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert main(["nuevo", "login"]) == 0
+    for archivo in ("js/sesion.js", "ingresar.html", "registro.html", "js/paginas/ingresar.js", "js/paginas/registro.js"):
+        assert (raiz / archivo).is_file(), archivo
+    menu = (raiz / "js/menu.js").read_text(encoding="utf-8")
+    assert "import { dibujarSesion } from './sesion.js';" in menu and "dibujarSesion(nav, ENLACES);" in menu
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert "await pedirIngreso();" in (raiz / "js/paginas/perfil.js").read_text(encoding="utf-8")
+    assert "{ href: 'perfil.html', texto: 'Perfil', soloConSesion: true }," in (raiz / "js/menu.js").read_text(encoding="utf-8")
+
+
+def test_login_obligatorio(en_carpeta, monkeypatch):
+    assert main(["crear", "web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "login", "--obligatorio", "--sin-registro"]) == 0
+    menu = (raiz / "js/menu.js").read_text(encoding="utf-8")
+    assert "import { dibujarSesion, pedirIngreso } from './sesion.js';" in menu and "\n  pedirIngreso();" in menu
+    assert not (raiz / "registro.html").exists()
+    assert "Registrate" not in (raiz / "ingresar.html").read_text(encoding="utf-8")

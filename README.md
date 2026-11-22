@@ -52,7 +52,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `login`, `tema`, `ui`, `estilo` |
 | FastAPI + SQLModel | `fastapi` | `recurso`, `login` |
 | Express + Prisma (TS o JS) | `express` | `recurso`, `login` |
-| HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `tema` |

@@ -33,6 +33,12 @@ Todos los cambios importantes de andamio. El proyecto usa
   El enlace de una página protegida va en el menú de la sesión. `http.js` avisa cuando la API
   responde 401 con token (`alVencerLaSesion`). En los proyectos anteriores (el menú dentro de
   `App.vue`) los enlaces siguen yendo ahí.
+- Web (HTML y JS): `js/menu.js` también dibuja el pie (`<footer data-pie>`), y el pie
+  queda abajo. `nuevo login`: `js/sesion.js` (quién ingresó, `ingresar`, `registrarse`,
+  `salir`, `pedirIngreso`), `ingresar.html`, `registro.html` y la sesión en el menú.
+  `pagina --protegido`: el `.js` empieza con `await pedirIngreso()` y el enlace solo se ve
+  con sesión. `--obligatorio`: el menú pide el ingreso en todas las páginas. `--sin-registro`
+  también. `http.js` borra el token cuando la API responde 401.
 - Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
   la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
   el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo

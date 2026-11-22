@@ -31,6 +31,8 @@ export async function pedir(ruta, opciones = {}) {
   } catch {
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está andando?` });
   }
+  // El token venció (dura 60 minutos) o no es válido: se borra (la próxima página pide ingresar).
+  if (respuesta.status === 401 && token) localStorage.removeItem('token');
   if (respuesta.status === 204) return null;
   const datos = await respuesta.json().catch(() => null);
   if (!respuesta.ok) throw new ErrorApi(respuesta.status, datos);

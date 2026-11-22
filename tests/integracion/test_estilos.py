@@ -124,8 +124,8 @@ def test_compila_con_tema_y_todas_las_partes(clave, crear):
 
 def test_tema_desde_el_menu(crear, respuestas):
     raiz = crear("web")
-    # 5: tema (después de pagina, componente, servicio y crud), el color, el modo (3: oscuro) y confirmar.
-    preguntas = respuestas(["5", "rosa", "3", "s"])
+    # 6: tema (después de pagina, componente, servicio, crud y login), el color, el modo (3: oscuro) y confirmar.
+    preguntas = respuestas(["6", "rosa", "3", "s"])
     assert main([]) == 0
     assert any(p.startswith("Color (azul") for p in preguntas)
     tema = leer(raiz / "css/tema.css")
@@ -134,6 +134,6 @@ def test_tema_desde_el_menu(crear, respuestas):
 
 def test_tema_desde_el_menu_con_enter_es_azul(crear, respuestas):
     raiz = crear("web")
-    respuestas(["5", "", "1", "s"])
+    respuestas(["6", "", "1", "s"])
     assert main([]) == 0
     assert f"--acento: {PALETA['azul'][0]};" in leer(raiz / "css/tema.css")
