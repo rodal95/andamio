@@ -9,15 +9,17 @@ La lista acepta estos parámetros (igual que la API de Django):
 """
 
 @@imports_router@@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter@@import_depends@@, HTTPException, Response
 @@import_sqlmodel@@
 
+@@import_login@@
 from app.db import Sesion as SesionBD  # la sesión de la base de datos (app/db.py)
 @@import_tipos_router@@
 
 from .modelo import @@Nombre@@, @@Nombre@@Actualizar, @@Nombre@@Crear, @@Nombre@@Leer
 
 router = APIRouter(prefix="/api/@@plural@@", tags=["@@titulo@@"])
+@@bloque_login@@
 
 # Campos por los que se puede ordenar con ?ordering=
 ORDEN = {
@@ -50,7 +52,7 @@ def listar(
     return bd.exec(consulta).all()
 
 
-@router.post("/", response_model=@@Nombre@@Leer, status_code=201)
+@router.post("/", response_model=@@Nombre@@Leer, status_code=201@@pide_login@@)
 def crear(datos: @@Nombre@@Crear, bd: SesionBD):
     # TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).
     @@nombre@@ = @@Nombre@@.model_validate(datos)
@@ -65,13 +67,13 @@ def obtener(id_@@nombre@@: int, bd: SesionBD):
     return buscar_o_404(bd, id_@@nombre@@)
 
 
-@router.put("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer)
+@router.put("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer@@pide_login@@)
 def reemplazar(id_@@nombre@@: int, datos: @@Nombre@@Crear, bd: SesionBD):
     """Modifica todos los campos."""
     return guardar_cambios(bd, buscar_o_404(bd, id_@@nombre@@), datos.model_dump())
 
 
-@router.patch("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer)
+@router.patch("/{id_@@nombre@@}/", response_model=@@Nombre@@Leer@@pide_login@@)
 def actualizar(id_@@nombre@@: int, datos: @@Nombre@@Actualizar, bd: SesionBD):
     """Modifica solo los campos que se envían."""
     # exclude_none: un campo enviado como null se ignora (los campos no pueden quedar vacíos).
@@ -79,7 +81,7 @@ def actualizar(id_@@nombre@@: int, datos: @@Nombre@@Actualizar, bd: SesionBD):
     return guardar_cambios(bd, buscar_o_404(bd, id_@@nombre@@), cambios)
 
 
-@router.delete("/{id_@@nombre@@}/", status_code=204)
+@router.delete("/{id_@@nombre@@}/", status_code=204@@pide_login@@)
 def eliminar(id_@@nombre@@: int, bd: SesionBD):
     bd.delete(buscar_o_404(bd, id_@@nombre@@))
     bd.commit()

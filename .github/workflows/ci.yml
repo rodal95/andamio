@@ -34,6 +34,8 @@ jobs:
           # La versión de SimpleJWT que agrega 'nuevo login' (VERSION_SIMPLEJWT en andamio/stacks/django.py).
           python -m pip install "djangorestframework-simplejwt~=$(python -c 'from andamio.stacks.django import VERSION_SIMPLEJWT; print(VERSION_SIMPLEJWT)')"
           python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
+          # La versión de PyJWT que agrega 'nuevo login' en FastAPI (VERSION_PYJWT en andamio/stacks/fastapi.py).
+          python -m pip install "PyJWT~=$(python -c 'from andamio.stacks.fastapi import VERSION_PYJWT; print(VERSION_PYJWT)')"
       - name: Tests
         run: python -m pytest
 
@@ -59,6 +61,7 @@ jobs:
           # La versión de SimpleJWT que agrega 'nuevo login' (VERSION_SIMPLEJWT en andamio/stacks/django.py).
           python -m pip install "djangorestframework-simplejwt~=$(python -c 'from andamio.stacks.django import VERSION_SIMPLEJWT; print(VERSION_SIMPLEJWT)')"
           python -m pip install -r andamio/plantillas/fastapi/_proyecto/requirements.txt
+          python -m pip install "PyJWT~=$(python -c 'from andamio.stacks.fastapi import VERSION_PYJWT; print(VERSION_PYJWT)')"
           python -m pip install -r andamio/plantillas/reflex/_proyecto/requirements.txt
       - name: Playwright (prueba en el navegador del CRUD generado) y TypeScript (barrido de nombres)
         run: |

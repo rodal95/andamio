@@ -6,6 +6,12 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
+- FastAPI: `nuevo login`, con las mismas rutas y respuestas que la API de Django
+  (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`): el login de React
+  funciona igual con las dos. Usuarios con la contraseña con hash (PBKDF2, como Django),
+  tokens JWT (PyJWT) firmados con la `SECRET_KEY` del `.env`, 6 tests y `http/login.http`.
+- FastAPI: `nuevo recurso ... --protegido`: crear, reemplazar, modificar y eliminar piden el
+  token (ver es libre). Los tests entran como un usuario de prueba, y uno controla el 401.
 - React: los proyectos nuevos traen el menú (`Navbar`), el pie (`Footer`) y el `Layout`
   que los muestra en todas las páginas (con `<Outlet />`): en `App`, las rutas van dentro de
   `<Route element={<Layout />}>`. `pagina` y `crud` agregan su enlace en el `Navbar`. En los

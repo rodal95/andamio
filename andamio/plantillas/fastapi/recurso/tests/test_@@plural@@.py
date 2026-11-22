@@ -1,6 +1,7 @@
 """Tests de la API de @@titulo@@. Ejecutalos con: python -m pytest"""
 
 @@imports_test@@
+@@imports_login_test@@
 URL = "/api/@@plural@@/"
 
 DATOS = {
@@ -49,3 +50,4 @@ def test_eliminar(cliente):
     creado = crear(cliente)
     assert cliente.delete(f"{URL}{creado['id']}/").status_code == 204
     assert cliente.get(f"{URL}{creado['id']}/").status_code == 404
+@@tests_login@@

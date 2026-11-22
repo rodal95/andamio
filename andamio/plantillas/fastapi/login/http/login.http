@@ -1,0 +1,49 @@
+# Pruebas del login con JWT, sin programas aparte.
+#
+# Cómo se usa: en VS Code, instalá la extensión "REST Client" (de Huachao Mao),
+# abrí este archivo y hacé clic en "Send Request", arriba de cada petición, en orden.
+# Antes, poné en marcha la API: python -m uvicorn app.main:app --reload
+#
+# Cambiá el usuario y la clave si querés. La clave tiene que ser larga y no parecerse
+# al usuario (la API la controla: app/@@plural@@/router.py).
+
+@base = http://127.0.0.1:8000/api
+@usuario = alumno.prueba
+@clave = una-clave-bien-larga-2025
+
+### Registrarse (crea el usuario; si ya existe, responde 400)
+POST {{base}}/registro/
+Content-Type: application/json
+
+{
+  "username": "{{usuario}}",
+  "password": "{{clave}}",
+  "email": "alumno@ejemplo.com"
+}
+
+### Pedir el token (devuelve "access", para usar la API, y "refresh", para renovarlo)
+# @name login
+POST {{base}}/token/
+Content-Type: application/json
+
+{
+  "username": "{{usuario}}",
+  "password": "{{clave}}"
+}
+
+###
+# REST Client toma los tokens de la respuesta de arriba: no hace falta copiarlos.
+@token = {{login.response.body.access}}
+@refresh = {{login.response.body.refresh}}
+
+### Quién soy (pide el token: sin él, responde 401)
+GET {{base}}/yo/
+Authorization: Bearer {{token}}
+
+### Renovar el token de acceso (dura 60 minutos; el de refresco, 7 días)
+POST {{base}}/token/refresh/
+Content-Type: application/json
+
+{
+  "refresh": "{{refresh}}"
+}

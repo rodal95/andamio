@@ -216,7 +216,7 @@ def test_crear_desde_el_menu(en_carpeta, respuestas, capsys):
 
 
 def test_menu_interactivo(proyecto, respuestas, capsys):
-    respuestas(["1", "producto", "", "nombre", "1", "precio", "4", "", "s"])
+    respuestas(["1", "producto", "", "nombre", "1", "precio", "4", "", "n", "s"])  # n: sin --protegido
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out
@@ -305,3 +305,72 @@ def test_contrato_de_la_api(con_recursos, tmp_path):
     resultado = python(con_recursos, "contrato.py", entorno={"DATABASE_URL": f"sqlite:///{base}", "ZONA_HORARIA": ""})
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     assert "contrato ok" in resultado.stdout
+
+
+# --- Login con JWT (nuevo login) y recurso --protegido ------------------------------
+
+
+def test_login_genera_el_paquete_y_lo_registra(proyecto):
+    assert main(["nuevo", "login"]) == 0
+    for archivo in ("modelo.py", "seguridad.py", "router.py"):
+        assert (proyecto / "app/cuentas" / archivo).is_file(), archivo
+    main_py = leer(proyecto / "app/main.py")
+    assert "from app.cuentas.router import router as cuentas_router" in main_py
+    assert "app.include_router(cuentas_router)" in main_py
+    assert 'SECRET_KEY = os.getenv("SECRET_KEY")' in leer(proyecto / "app/config.py")
+    # La clave de verdad va al .env (al azar); la de ejemplo, al .env.example.
+    env = leer(proyecto / ".env")
+    clave = next(linea for linea in env.splitlines() if linea.startswith("SECRET_KEY=")).split("=", 1)[1]
+    assert len(clave) >= 40 and "cambiar" not in clave
+    assert "SECRET_KEY=cambiar-por-una-clave-larga-y-secreta" in leer(proyecto / ".env.example")
+    assert "PyJWT~=" in leer(proyecto / "requirements.txt")
+    # Las rutas del mismo contrato que la API de Django.
+    router = leer(proyecto / "app/cuentas/router.py")
+    for ruta in ('"/registro/"', '"/token/"', '"/token/refresh/"', '"/yo/"'):
+        assert ruta in router
+    # La contraseña se guarda con hash (PBKDF2, como Django), nunca tal cual.
+    assert "pbkdf2_hmac" in leer(proyecto / "app/cuentas/seguridad.py")
+
+
+def test_login_una_sola_vez(proyecto, capsys):
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "login", "acceso"]) == 1
+    assert "ya tiene el login" in capsys.readouterr().err
+
+
+def test_recurso_protegido_necesita_el_login(proyecto, capsys):
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert not (proyecto / "app/pedidos").exists()
+
+
+def test_recurso_protegido(proyecto):
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 0
+    router = leer(proyecto / "app/pedidos/router.py")
+    assert "from app.cuentas.seguridad import usuario_actual" in router
+    assert "PIDE_LOGIN = [Depends(usuario_actual)]" in router
+    assert router.count("dependencies=PIDE_LOGIN") == 4  # crear, reemplazar, modificar y eliminar
+    assert '@router.get("/", response_model=list[PedidoLeer])' in router  # ver es libre
+    assert "def test_sin_login_no_se_puede_crear" in leer(proyecto / "tests/test_pedidos.py")
+    assert "Authorization: Bearer {{token}}" in leer(proyecto / "http/pedidos.http")
+
+
+def test_recurso_sin_protegido_no_cambia(proyecto):
+    assert main(["nuevo", "recurso", "nota", "texto"]) == 0
+    router = leer(proyecto / "app/notas/router.py")
+    assert "PIDE_LOGIN" not in router and "Depends" not in router
+    assert "con_login" not in leer(proyecto / "tests/test_notas.py")
+
+
+@pytest.mark.fastapi
+@requiere_fastapi
+@pytest.mark.skipif(shutil.which("python") is None and not sys.executable, reason="sin Python")
+def test_tests_generados_con_login(proyecto):
+    pytest.importorskip("jwt")
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "cliente", "total:decimal", "--protegido"]) == 0
+    assert main(["nuevo", "recurso", "nota", "texto"]) == 0
+    resultado = python(proyecto, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-W", "error")
+    assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+    assert "17 passed" in resultado.stdout

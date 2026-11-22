@@ -50,7 +50,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | Python + SQLite (consola) | `python` | `entidad`, `menu`, `busqueda` |
 | Django REST (API) | `django` | `recurso`, `accion`, `login` |
 | Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `tema`, `ui`, `estilo` |
-| FastAPI + SQLModel | `fastapi` | `recurso` |
+| FastAPI + SQLModel | `fastapi` | `recurso`, `login` |
 | Express + Prisma (TS o JS) | `express` | `recurso` |
 | HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
@@ -77,7 +77,8 @@ los tokens JWT (SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/registro/
 Un recurso generado con `--protegido` deja leer a cualquiera, pero crear, modificar y eliminar
 piden el token (`Authorization: Bearer <token>`). Del lado de React, `nuevo login` arma
 ingresar, crear una cuenta y la sesión (`useSesion()`), y `nuevo pagina Perfil --protegido`
-hace que una página pida ingresar.
+hace que una página pida ingresar. FastAPI también tiene `nuevo login`, con las mismas rutas:
+el login de React funciona igual con las dos.
 
 **Django con plantillas (`django-web`):** la otra forma de usar Django, sin frontend aparte:
 el servidor arma las páginas HTML. Trae login, registro y admin. `crud` genera la app con modelo,

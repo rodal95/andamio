@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 from pathlib import Path
 
 from andamio.nucleo import ejemplos
@@ -197,8 +198,53 @@ def _campos_reservados(nombre: Nombre) -> dict[str, str]:
 
 def _contexto_recurso_api(sol: Solicitud) -> dict[str, str]:
     """El del recurso, más el archivo http/<plural>.http para probar la API a mano."""
-    http = ejemplos.contexto_http(sol.campos, "http://127.0.0.1:8000/api", "python -m uvicorn app.main:app --reload")
-    return {**_contexto_recurso(sol), **http}
+    protegido = bool(sol.opciones.get("protegido"))
+    http = ejemplos.contexto_http(
+        sol.campos, "http://127.0.0.1:8000/api", "python -m uvicorn app.main:app --reload", protegido, "registrate con http/login.http"
+    )
+    return {**_contexto_recurso(sol), **http, **_contexto_protegido(sol)}
+
+
+def _contexto_protegido(sol: Solicitud) -> dict[str, str]:
+    """--protegido: crear, modificar y eliminar piden el token (ver es libre, como en Django)."""
+    if not sol.opciones.get("protegido"):
+        return dict.fromkeys(("bloque_login", "pide_login", "tests_login", "import_depends", "import_login", "imports_login_test"), "")
+    paquete = _login_generado(sol.raiz)
+    if paquete is None:
+        raise AndamioError(
+            "--protegido pide el login, y este proyecto todavía no lo tiene.",
+            "Generá primero el login: python -m andamio nuevo login",
+        )
+    explicacion = ["# Crear, modificar y eliminar piden login (--protegido): sin token, 401. Ver es libre."] if sol.guia else []
+    bloque = ["", *explicacion, "PIDE_LOGIN = [Depends(usuario_actual)]"]
+    tests = [
+        "",
+        "",
+        "# --- Login (--protegido) ----------------------------------------------------------",
+        "",
+        "",
+        "@pytest.fixture(autouse=True)",
+        "def con_login():",
+        '    """Los tests entran como un usuario de prueba (crear, modificar y eliminar piden login)."""',
+        '    app.dependency_overrides[usuario_actual] = lambda: Usuario(id=1, username="prueba", password_hash="")',
+        "    yield",
+        "    app.dependency_overrides.pop(usuario_actual, None)",
+        "",
+        "",
+        "def test_sin_login_no_se_puede_crear(cliente):",
+        "    app.dependency_overrides.pop(usuario_actual)",
+        "    assert cliente.post(URL, json=DATOS).status_code == 401",
+        "    assert cliente.get(URL).status_code == 200  # ver es libre",
+    ]
+    imports_tests = ["import pytest", "", f"from app.{paquete}.modelo import Usuario", f"from app.{paquete}.seguridad import usuario_actual", "from app.main import app", ""]
+    return {
+        "bloque_login": "\n".join(bloque),
+        "pide_login": ", dependencies=PIDE_LOGIN",
+        "tests_login": "\n".join(tests),
+        "import_depends": ", Depends",
+        "import_login": f"from app.{paquete}.seguridad import usuario_actual",
+        "imports_login_test": "\n".join(imports_tests),
+    }
 
 
 RECURSO = Pieza(
@@ -215,6 +261,7 @@ RECURSO = Pieza(
     formas=("pascal", "snake"),
     usa_campos=True,
     usa_plural=True,
+    opciones=frozenset({"protegido"}),
     contexto=_contexto_recurso_api,
     campos_reservados=_campos_reservados,
     marcadores={
@@ -235,6 +282,12 @@ RECURSO = Pieza(
         "datos_modificados": "datos de ejemplo para el test de modificación",
         "verificacion": "lo que controla el test de modificación",
         "imports_test": "import que necesita esa verificación (si hace falta)",
+        "bloque_login": "con --protegido: PIDE_LOGIN, la dependencia que pide el token (vacío si no)",
+        "pide_login": "con --protegido: dependencies=PIDE_LOGIN en crear, modificar y eliminar",
+        "tests_login": "con --protegido: los tests entran con un usuario, y uno controla el 401 sin login",
+        "import_depends": "con --protegido: ', Depends' en el import de fastapi",
+        "import_login": "con --protegido: el import de usuario_actual (del login)",
+        "imports_login_test": "con --protegido: los import que usan los tests del login",
     },
     existe_si=("app/@@plural@@",),
     inserciones=(
@@ -261,6 +314,97 @@ RECURSO = Pieza(
 )
 
 
+# --- Login con JWT (nuevo login): el mismo contrato que la API de Django ---------------
+
+# La versión de PyJWT que agrega 'nuevo login' (el CI la instala para los tests).
+VERSION_PYJWT = "2.15.1"
+
+
+def _login_generado(raiz: Path) -> str | None:
+    """La carpeta del login (app/cuentas) si ya se generó, o None."""
+    try:
+        main = (raiz / "app" / "main.py").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return None
+    for linea in main.splitlines():
+        # from app.cuentas.router import router as cuentas_router  (lo agrega nuevo login)
+        if linea.startswith("from app.") and ".router import router as" in linea:
+            paquete = linea.split()[1].split(".")[1]
+            if (raiz / "app" / paquete / "seguridad.py").is_file():
+                return paquete
+    return None
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    ya = _login_generado(raiz)
+    if ya:
+        raise AndamioError(
+            f"El proyecto ya tiene el login (app/{ya}/).",
+            "Para que un recurso pida login al crear, modificar y eliminar: python -m andamio nuevo recurso <nombre> <campos> --protegido",
+        )
+    _validar_nombre(raiz, nombre)
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    return {"secret_key": secrets.token_urlsafe(48)}
+
+
+_CONFIG_LOGIN = """
+# --- Login con JWT (lo agregó: andamio nuevo login) ------------------------------
+# Con esta clave se firman los tokens: si alguien la conoce, puede armar tokens válidos.
+# Va en el .env (que no se sube a git); cambiala en cada instalación.
+SECRET_KEY = os.getenv("SECRET_KEY") or "cambiar-por-una-clave-larga-y-secreta"
+"""
+
+LOGIN = Pieza(
+    clave="login",
+    lectura=(
+        ("app/@@plural@@/modelo.py", "el usuario (la tabla) y lo que piden el registro y el login"),
+        ("app/@@plural@@/seguridad.py", "cómo se guardan las contraseñas (hash) y cómo se arman y se leen los tokens"),
+        ("app/@@plural@@/router.py", "registrarse (/api/registro/), el token (/api/token/) y el usuario actual (/api/yo/)"),
+        ("http/login.http", "peticiones para registrarse, pedir el token y usarlo"),
+        ("tests/test_@@plural@@.py", "los tests del login"),
+    ),
+    titulo="Login con JWT",
+    descripcion="registro, token de acceso (JWT) y usuario actual, igual que la API de Django",
+    ejemplo="",
+    nombre_defecto="cuenta",
+    pregunta_nombre="Nombre del paquete del login (Enter para cuenta)",
+    formas=("app/@@plural@@",),
+    validar_nombre=_validar_login,
+    contexto=_contexto_login,
+    marcadores={"secret_key": "una clave al azar para firmar los tokens (va al .env)"},
+    existe_si=("app/@@plural@@",),
+    inserciones=(
+        Insercion(
+            "app/main.py",
+            "from app.@@plural@@.router import router as @@plural@@_router",
+            marcador="imports",
+            descripcion="import del login",
+            ubicacion="arriba, junto a los otros import",
+        ),
+        Insercion(
+            "app/main.py",
+            "app.include_router(@@plural@@_router)",
+            marcador="routers",
+            descripcion="rutas /api/token/, /api/registro/ y /api/yo/",
+            ubicacion="después de app.add_exception_handler(...)",
+        ),
+        Insercion("app/config.py", _CONFIG_LOGIN, descripcion="SECRET_KEY (al final)"),
+        Insercion(".env", "\n# Firma de los tokens del login (nuevo login). Es secreta: no la compartas.\nSECRET_KEY=@@secret_key@@", descripcion="SECRET_KEY", crear_si_falta=True),
+        Insercion(".env.example", "\n# Firma de los tokens del login: en el .env, una clave larga y al azar.\nSECRET_KEY=cambiar-por-una-clave-larga-y-secreta", descripcion="SECRET_KEY de ejemplo", crear_si_falta=True),
+        Insercion("requirements.txt", f"\n# Login con tokens JWT (andamio nuevo login).\nPyJWT~={VERSION_PYJWT}", descripcion="PyJWT"),
+    ),
+    siguiente_paso=[
+        "pip install -r requirements.txt",
+        "python -m uvicorn app.main:app --reload",
+        "# Registrate (POST /api/registro/) y pedí un token (POST /api/token/): http/login.http",
+        "http://127.0.0.1:8000/docs",
+        "# Para que un recurso pida login al crear, modificar y eliminar: nuevo recurso ... --protegido",
+    ],
+)
+
+
 def _activar() -> str:
     return r".venv\Scripts\activate" if os.name == "nt" else "source .venv/bin/activate"
 
@@ -271,7 +415,7 @@ STACK = Stack(
     senal="app/main.py y requirements.txt con fastapi",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"recurso": RECURSO},
+    piezas={"recurso": RECURSO, "login": LOGIN},
     ejemplo_proyecto="mi-api",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

@@ -35,14 +35,17 @@ def json_ejemplo(campos: Sequence[Campo], indice: int = 0, solo_el_primero: bool
     return json.dumps(datos, ensure_ascii=False, indent=2)
 
 
-def _login_http() -> str:
-    """Lo que agrega un recurso protegido: pedir el token antes de crear, modificar o eliminar."""
+def _login_http(usuario: str = "python manage.py createsuperuser") -> str:
+    """Lo que agrega un recurso protegido: pedir el token antes de crear, modificar o eliminar.
+
+    usuario: cómo se crea un usuario en esa API (Django: createsuperuser; FastAPI: el registro).
+    """
     return """@usuario = admin
 @clave = cambiar-esta-clave
 
 # Este recurso está protegido (--protegido): ver es libre, pero crear, modificar y
 # eliminar piden el token. Hace falta el login (python -m andamio nuevo login) y un
-# usuario que exista (python manage.py createsuperuser). Ejecutá primero "Pedir el token".
+# usuario que exista (USUARIO_QUE_EXISTA). Ejecutá primero "Pedir el token".
 
 ### Pedir el token
 # @name login
@@ -56,10 +59,12 @@ Content-Type: application/json
 
 ###
 # REST Client toma el token de la respuesta de arriba: no hace falta copiarlo.
-@token = {{login.response.body.access}}"""
+@token = {{login.response.body.access}}""".replace("USUARIO_QUE_EXISTA", usuario)
 
 
-def contexto_http(campos: Sequence[Campo], url_api: str, comando_api: str, protegido: bool = False) -> dict[str, str]:
+def contexto_http(
+    campos: Sequence[Campo], url_api: str, comando_api: str, protegido: bool = False, usuario: str = "python manage.py createsuperuser"
+) -> dict[str, str]:
     """Marcadores de la plantilla http/<plural>.http.
 
     url_api: la dirección base de la API (http://127.0.0.1:8000/api).
@@ -69,7 +74,7 @@ def contexto_http(campos: Sequence[Campo], url_api: str, comando_api: str, prote
     return {
         "url_api": url_api,
         "comando_api": comando_api,
-        "http_login": _login_http() if protegido else "",
+        "http_login": _login_http(usuario) if protegido else "",
         "http_auth": "Authorization: Bearer {{token}}" if protegido else "",
         "json_crear": json_ejemplo(campos, 0),
         "json_reemplazar": json_ejemplo(campos, 1),
