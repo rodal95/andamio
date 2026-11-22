@@ -297,10 +297,10 @@ def test_recurso_protegido(proyecto):
 
 
 def test_protegido_no_existe_en_otras_piezas(en_carpeta, monkeypatch, capsys):
-    assert main(["crear", "fastapi", "api"]) == 0
-    monkeypatch.chdir(en_carpeta / "api")
+    assert main(["crear", "python", "app"]) == 0
+    monkeypatch.chdir(en_carpeta / "app")
     capsys.readouterr()
-    assert main(["nuevo", "recurso", "producto", "nombre", "--protegido"]) == 1
+    assert main(["nuevo", "entidad", "producto", "nombre", "--protegido"]) == 1
     assert "no acepta la opción --protegido" in capsys.readouterr().err
 
 

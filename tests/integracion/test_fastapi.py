@@ -216,7 +216,7 @@ def test_crear_desde_el_menu(en_carpeta, respuestas, capsys):
 
 
 def test_menu_interactivo(proyecto, respuestas, capsys):
-    respuestas(["1", "producto", "", "nombre", "1", "precio", "4", "", "n", "s"])  # n: sin --protegido
+    respuestas(["1", "producto", "", "n", "nombre", "1", "precio", "4", "", "s"])  # n: sin --protegido
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out

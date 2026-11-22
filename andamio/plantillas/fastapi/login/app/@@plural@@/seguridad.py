@@ -29,9 +29,9 @@ DURACION_ACCESO = timedelta(minutes=60)
 DURACION_REFRESCO = timedelta(days=7)
 
 
-def hash_de(password: str, sal: bytes | None = None) -> str:
+def hash_de(password: str) -> str:
     """El hash de una contraseña, con el formato pbkdf2_sha256$iteraciones$sal$hash."""
-    sal = sal or secrets.token_bytes(16)
+    sal = secrets.token_bytes(16)  # al azar: dos usuarios con la misma contraseña tienen hashes distintos
     clave = hashlib.pbkdf2_hmac("sha256", password.encode(), sal, ITERACIONES)
     return "$".join(["pbkdf2_sha256", str(ITERACIONES), base64.b64encode(sal).decode(), base64.b64encode(clave).decode()])
 

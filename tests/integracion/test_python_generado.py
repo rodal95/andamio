@@ -20,6 +20,7 @@ TODOS_LOS_TIPOS = ["texto:str", "detalle:text", "cantidad:int", "precio:decimal"
 
 
 def _piezas(stack):
+    protegidos = []  # al final: --protegido puede necesitar el login (FastAPI)
     for clave, pieza in stack.piezas.items():
         nombre, *campos = pieza.ejemplo.split() or [pieza.nombre_defecto]
         if pieza.preparar:
@@ -33,7 +34,8 @@ def _piezas(stack):
             campos = TODOS_LOS_TIPOS if stack.clave != "python" else ["texto:str", "cantidad:int", "peso:float"]
         yield [clave, nombre, *campos]
         if "protegido" in pieza.opciones:
-            yield [clave, f"{nombre}-protegido", *campos, "--protegido"]
+            protegidos.append([clave, f"{nombre}-protegido", *campos, "--protegido"])
+    yield from protegidos
 
 
 @pytest.mark.parametrize("clave", STACKS_PYTHON)
