@@ -24,6 +24,7 @@ _OPCIONES_PIEZA = {
     "solo_lectura": "--solo-lectura",
     "solo": "--solo <funciones>",
     "sin_registro": "--sin-registro",
+    "obligatorio": "--obligatorio",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 

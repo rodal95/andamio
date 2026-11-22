@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
@@ -178,6 +179,36 @@ def archivos_de_la_pieza(sol: Solicitud, carpeta: Traversable) -> list[plantilla
     return [a for a in plantillas.leer_arbol(carpeta) if a.ruta not in omitidos]
 
 
+def tiene_marcador(ruta: Path, marcador: str) -> bool:
+    try:
+        texto = ruta.read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return False
+    return re.search(rf"andamio:{re.escape(marcador)}\b", texto) is not None
+
+
+def ruta_de_insercion(ins: Insercion, contexto: dict[str, str], conexiones: dict[str, str], origen: str = "") -> PurePosixPath:
+    if ins.marcador and ins.marcador in conexiones:
+        # andamio.json indica que ese punto de conexión está en otro archivo.
+        return PurePosixPath(conexiones[ins.marcador])
+    return renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen or f"inserción en {ins.archivo}")
+
+
+def elegir_insercion(ins: Insercion, contexto: dict[str, str], raiz: Path, conexiones: dict[str, str]) -> tuple[Insercion, PurePosixPath]:
+    """La inserción que corresponde en este proyecto y su archivo: la primera de la cadena
+    (ins, su alternativa...) cuyo archivo tiene el marcador. Si ninguno lo tiene, la primera
+    cuyo archivo existe (y el plan muestra qué pegar y dónde); si ninguno existe, ins."""
+    cadena: list[tuple[Insercion, PurePosixPath]] = []
+    candidata: Insercion | None = ins
+    while candidata is not None:
+        cadena.append((candidata, ruta_de_insercion(candidata, contexto, conexiones)))
+        candidata = candidata.alternativa
+    for candidata, ruta in cadena:
+        if candidata.marcador and tiene_marcador(raiz / ruta, candidata.marcador):
+            return candidata, ruta
+    return next(((c, r) for c, r in cadena if (raiz / r).is_file()), cadena[0])
+
+
 def inserciones_de_la_pieza(sol: Solicitud) -> list[Insercion]:
     """Las inserciones que corresponden a esta solicitud (las que no tienen condición o la cumplen)."""
     return [ins for ins in sol.pieza.inserciones if ins.condicion is None or ins.condicion(sol)]
@@ -219,12 +250,8 @@ def planificar_pieza(sol: Solicitud) -> Plan:
 
     conexiones = ajustes.de_proyecto(sol.raiz).conexiones
     for ins in inserciones_de_la_pieza(sol):
+        ins, ruta = elegir_insercion(ins, contexto, sol.raiz, conexiones)
         origen = f"inserción en {ins.archivo}"
-        if ins.marcador and ins.marcador in conexiones:
-            # andamio.json indica que ese punto de conexión está en otro archivo.
-            ruta = PurePosixPath(conexiones[ins.marcador])
-        else:
-            ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto, origen)
         bloque = renderizar(ins.texto, contexto, origen, sol.guia)
         if centinela is not None:
             choque = _choque_insercion(pieza, sol, ruta, renderizar(ins.texto, centinela, origen), bloque)

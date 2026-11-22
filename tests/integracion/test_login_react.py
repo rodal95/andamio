@@ -34,12 +34,15 @@ def test_login_genera_la_sesion_y_las_paginas(web):
     for esperado in (
         "import { IngresarPage } from './pages/IngresarPage';",
         "import { RegistroPage } from './pages/RegistroPage';",
-        "import { MenuSesion } from './sesion';",
         '<Route path="/ingresar" element={<IngresarPage />} />',
         '<Route path="/registro" element={<RegistroPage />} />',
-        "<MenuSesion />",
     ):
         assert esperado in app, esperado
+    # Sin --obligatorio, /ingresar se ve con el menú y el pie (dentro del Layout).
+    assert app.index('path="/ingresar"') < app.index("andamio:rutas (")
+    navbar = _leer(web / "src/components/Navbar/Navbar.tsx")
+    assert "import { MenuSesion } from '../../sesion';" in navbar and "<MenuSesion />" in navbar
+    assert "usePedirIngreso" not in _leer(web / "src/components/Layout/Layout.tsx")
     sesion = _leer(web / "src/sesion/sesion.ts")
     assert "import { alVencerLaSesion, leerToken } from '../services/http';" in sesion
     assert "alVencerLaSesion(() => cambiar({ usuario: null, cargando: false }));" in sesion
@@ -101,6 +104,75 @@ def test_pagina_protegida_necesita_el_login(web, capsys):
     assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 1
     assert "nuevo login" in capsys.readouterr().err
     assert not (web / "src/pages/PerfilPage").exists()
+
+
+def test_login_obligatorio_protege_toda_la_app(web):
+    assert main(["nuevo", "login", "--obligatorio"]) == 0
+    layout = _leer(web / "src/components/Layout/Layout.tsx")
+    assert "import { usePedirIngreso } from '../../sesion';" in layout
+    assert "  const pedirIngreso = usePedirIngreso();\n  if (pedirIngreso) {\n    return pedirIngreso;\n  }" in layout
+    # El guardia va antes del return: sin sesión no se ve ni el menú, ni el pie, ni la página.
+    assert layout.index("usePedirIngreso();") < layout.index("<Navbar />")
+    app = _leer(web / "src/App.tsx")
+    # /ingresar y /registro fuera del Layout: si no, /ingresar se pediría a sí misma.
+    assert app.index("</Route>") < app.index('path="/ingresar"') < app.index("andamio:rutas_sin_layout")
+    assert app.index("</Route>") < app.index('path="/registro"')
+
+
+def test_login_obligatorio_necesita_el_layout(web, capsys):
+    (web / "src/components/Layout/Layout.tsx").write_text("export function Layout() { return null; }\n", encoding="utf-8")
+    assert main(["nuevo", "login", "--obligatorio"]) == 1
+    assert "--protegido" in capsys.readouterr().err
+    assert not (web / "src/sesion").exists()
+
+
+def test_el_enlace_de_una_pagina_protegida_se_ve_solo_con_sesion(web):
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert "/perfil" not in _leer(web / "src/components/Navbar/Navbar.tsx")
+    menu = _leer(web / "src/sesion/MenuSesion.tsx")
+    assert menu.index('<Link to="/perfil">Perfil</Link>') < menu.index("{usuario.username}")
+    assert menu.index("usuario ? (") < menu.index('<Link to="/perfil">')
+
+
+def test_un_proyecto_anterior_sin_navbar(web):
+    """Los proyectos creados antes (menú dentro de App, sin Navbar ni Layout) siguen igual."""
+    import shutil
+
+    for carpeta in ("Layout", "Navbar", "Footer"):
+        shutil.rmtree(web / "src/components" / carpeta)
+    (web / "src/components/index.ts").write_text("", encoding="utf-8")
+    (web / "src/App.tsx").write_text(APP_ANTERIOR, encoding="utf-8")
+    assert main(["nuevo", "pagina", "Contacto"]) == 0
+    assert main(["nuevo", "login"]) == 0
+    app = _leer(web / "src/App.tsx")
+    for esperado in ('<Link to="/contacto">Contacto</Link>', "import { MenuSesion } from './sesion';", "<MenuSesion />"):
+        assert esperado in app, esperado
+    assert not (web / "src/components/Navbar").exists()
+    assert main(["mapa"]) == 0
+
+
+APP_ANTERIOR = """import { BrowserRouter, Link, Route, Routes } from 'react-router';
+import { InicioPage } from './pages/InicioPage';
+// --- andamio:imports (no borrar esta línea) ---
+
+function App() {
+  return (
+    <BrowserRouter>
+      <nav>
+        <Link to="/">Inicio</Link>
+        {/* --- andamio:enlaces (no borrar esta línea) --- */}
+      </nav>
+      <Routes>
+        <Route path="/" element={<InicioPage />} />
+        {/* --- andamio:rutas (no borrar esta línea) --- */}
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+"""
 
 
 def test_paginas_protegidas(web):

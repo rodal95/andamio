@@ -6,6 +6,18 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
+- React: los proyectos nuevos traen el menú (`Navbar`), el pie (`Footer`) y el `Layout`
+  que los muestra en todas las páginas (con `<Outlet />`): en `App`, las rutas van dentro de
+  `<Route element={<Layout />}>`. `pagina` y `crud` agregan su enlace en el `Navbar`. En los
+  proyectos anteriores (menú dentro de `App`) todo sigue igual.
+- React: `nuevo login --obligatorio` (`--required`): toda la app pide ingresar (el `Layout`
+  muestra `/ingresar` si nadie ingresó: sin sesión no se ven ni el menú, ni el pie, ni las
+  páginas); `/ingresar` y `/registro` van fuera del `Layout`.
+- React: el enlace de una página `--protegido` va en el menú de la sesión: solo se ve si
+  alguien ingresó.
+- Inserciones con alternativa (`Insercion.alternativa`): si el proyecto no tiene el punto de
+  conexión nuevo (ej.: el `Navbar`), se usa el de antes (`App`). `init` y `mapa` lo tienen en
+  cuenta.
 - React: `nuevo login`, contra la API de Django con `nuevo login`: `src/services/authService`
   (pide el token y lo guarda, crea usuarios, pregunta quién ingresó en `/api/yo/`),
   `src/sesion/` (`useSesion()`: quién ingresó, compartido por toda la app sin envolverla en

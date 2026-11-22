@@ -705,13 +705,14 @@ TEMAS = {
     },
     "react": {
         "router": {
-            "titulo": "El router: rutas y menú",
+            "titulo": "El router: rutas, menú y pie",
             "texto": [
                 "Una aplicación de React es una sola página: el router (react-router) decide qué componente mostrar según la dirección. andamio ya lo dejó configurado en src/App.",
-                "Cada <Route path=\"/contacto\" element={<ContactoPage />} /> asocia una dirección con una página, y <Link to=\"/contacto\"> navega sin recargar. pagina y crud agregan su ruta y su enlace solos.",
+                "Cada <Route path=\"/contacto\" element={<ContactoPage />} /> asocia una dirección con una página. Las que están dentro de <Route element={<Layout />}> se ven con el menú (Navbar) arriba y el pie (Footer) abajo: el Layout los dibuja y pone la página en <Outlet />.",
+                "<Link to=\"/contacto\"> navega sin recargar: pagina y crud agregan su ruta en App y su enlace en el Navbar solos.",
                 "Adentro de una página: useNavigate() para ir a otra dirección desde el código y useParams() para leer la parte variable de la ruta (el :id de /productos/:id).",
             ],
-            "archivos": ["src/App.{extx}", "src/pages/productos/ProductoDetallePage.{extx}"],
+            "archivos": ["src/App.{extx}", "src/components/Layout/Layout.{extx}", "src/components/Navbar/Navbar.{extx}", "src/pages/productos/ProductoDetallePage.{extx}"],
         }
     },
     "react-native": {
@@ -1350,9 +1351,13 @@ DESCRIPCIONES = {
         ("tsconfig*.json", "Configuración de TypeScript (modo estricto)."),
         ("src/main.*", "Punto de entrada: monta el componente App en la página."),
         ("src/App.module.css", "Estilos de App. Las clases de un .module.css solo afectan a ese componente."),
-        ("src/App.*", "Componente principal: el menú y las rutas (qué página se ve en cada dirección). andamio agrega acá las páginas que generes."),
+        ("src/App.*", "Componente principal: las rutas (qué página se ve en cada dirección). Las de adentro del Layout se ven con el menú y el pie. andamio agrega acá las páginas que generes."),
         ("src/index.css", "Estilos globales de toda la aplicación."),
         ("src/components/index.*", "Exporta todos los componentes desde un lugar: import { Tarjeta } from './components'."),
+        ("src/components/Layout/Layout.?sx", "Lo que se ve en todas las páginas: el menú (Navbar), la página de la ruta (<Outlet />) y el pie (Footer). Con nuevo login --obligatorio, también pide ingresar."),
+        ("src/components/Layout/Layout.module.css", "Estilos del Layout: ocupa toda la altura, así el pie queda abajo aunque la página sea corta."),
+        ("src/components/Navbar/Navbar.?sx", "El menú de navegación: andamio agrega acá un enlace por cada página que generes."),
+        ("src/components/Footer/Footer.?sx", "El pie de todas las páginas, con el año y el nombre del proyecto."),
         ("src/components/*/index.*", "Permite importar el componente por el nombre de su carpeta."),
         ("src/components/*Detalle/*Detalle.?sx", "Muestra un registro con los botones Editar y Eliminar. No llama a la API: recibe los datos y avisa con onEditar y onEliminar."),
         ("src/components/*.module.css", "Estilos propios del componente (clase .root): no afectan al resto."),
@@ -1425,7 +1430,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one", "--solo": "--only", "--sin-registro": "--no-register"}
+_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one", "--solo": "--only", "--sin-registro": "--no-register", "--obligatorio": "--required"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1490,6 +1495,8 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
+        elif opcion == "obligatorio":
+            filas.append({"comando": "nuevo login --obligatorio", "descripcion": "Toda la app pide ingresar: el Layout (menú, pie y páginas) no se ve sin sesión; /ingresar y /registro quedan fuera del Layout, solas."})
         elif opcion == "sin_registro":
             filas.append({"comando": "nuevo login --sin-registro", "descripcion": "Solo ingresar, sin la página para crear una cuenta (cuando los usuarios se crean desde /admin/)."})
         elif opcion == "solo":
@@ -2295,6 +2302,7 @@ _FORMAS_OPCION = {
     ("pagina", "protegido"): ("--protegido", "{p} nuevo pagina Perfil --protegido", "La página pide ingresar (RutaProtegida; con nuevo login)."),
     ("crud", "protegido"): ("--protegido", "{p} nuevo crud pedido total:decimal --protegido", "La lista y el detalle son libres; crear y editar piden ingresar (con nuevo login)."),
     "sin_registro": ("--sin-registro", "{p} nuevo login --sin-registro", "Solo ingresar, sin la página para crear una cuenta."),
+    "obligatorio": ("--obligatorio", "{p} nuevo login --obligatorio", "Toda la app pide ingresar (el menú, el pie y todas las páginas)."),
     "solo_lectura": ("--solo-lectura", "{p} nuevo recurso categoria nombre:str --solo-lectura", "La API solo lista y muestra; los datos se cargan desde /admin/."),
     "solo": ("--solo <funciones>", "{p} nuevo servicio contacto nombre:str email:email --solo crear", "El servicio solo con esas funciones (ej.: solo crear, para un formulario de contacto)."),
     "migrar": ("--migrar", "{p} nuevo recurso producto nombre:str --migrar", "Además crea y aplica la migración."),

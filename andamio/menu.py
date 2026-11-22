@@ -135,6 +135,10 @@ def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
         extras["protegido"] = consola.confirmar(
             "¿Proteger el recurso? (solo usuarios con login pueden crear, modificar y eliminar)", defecto=False
         )
+    if "obligatorio" in pieza.opciones:
+        extras["obligatorio"] = consola.confirmar(
+            "¿Toda la app pide ingresar? (sin sesión no se ven ni el menú, ni el pie, ni las páginas)", defecto=False
+        )
     if "sin_registro" in pieza.opciones:
         extras["sin_registro"] = not consola.confirmar("¿También la página para crear una cuenta (/registro)?", defecto=True)
     if "solo_lectura" in pieza.opciones and not extras.get("protegido"):

@@ -29,6 +29,7 @@ _OPCIONES = {
     "migrar": ("--migrar", "además crea y aplica la migración (la tabla en la base)"),
     "protegido": ("--protegido", "solo para quien ingresó: crear, modificar y eliminar en la API; la página o el formulario en React (generá antes: nuevo login)"),
     "sin_registro": ("--sin-registro", "el login sin la página para crear una cuenta"),
+    "obligatorio": ("--obligatorio", "toda la app pide ingresar: sin sesión no se ven ni el menú, ni el pie, ni las páginas"),
     "solo_lectura": ("--solo-lectura", "la API solo lista y muestra; los datos se cargan desde /admin/"),
     "carpeta": ("--carpeta <carpeta>", "dentro de una carpeta de app/ (es parte de la ruta)"),
     "modo": ("--modo auto|claro|oscuro", "el modo del tema"),

@@ -12,6 +12,8 @@ export function MenuSesion() {
     <span className={styles.sesion}>
       {usuario ? (
         <>
+          {/* guía: Los enlaces a las páginas protegidas (--protegido): solo se ven si alguien ingresó. */}
+          {/* --- andamio:enlaces_sesion (no borrar esta línea) --- */}
           <span>{usuario.username}</span>
           <button type="button" onClick={salir}>
             Salir

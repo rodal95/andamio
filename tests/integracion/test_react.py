@@ -87,8 +87,14 @@ def test_estructura_del_proyecto(proyecto):
     assert all(v[0].isdigit() for v in versiones.values()), "las versiones tienen que ser fijas"
     assert {"react", "react-dom", "react-router", "vite", "typescript", "@vitejs/plugin-react"} <= set(versiones)
     app = leer(proyecto / "src/App.tsx")
-    for marcador in ("andamio:imports", "andamio:rutas", "andamio:enlaces"):
+    for marcador in ("andamio:imports", "andamio:rutas", "andamio:rutas_sin_layout"):
         assert marcador in app
+    assert "<Route element={<Layout />}>" in app and "<nav" not in app
+    # El menú, el pie y lo que los junta (Layout), listos para usar.
+    assert "andamio:enlaces" in leer(proyecto / "src/components/Navbar/Navbar.tsx")
+    assert "<footer" in leer(proyecto / "src/components/Footer/Footer.tsx")
+    layout = leer(proyecto / "src/components/Layout/Layout.tsx")
+    assert "<Navbar />" in layout and "<Outlet />" in layout and "<Footer />" in layout and "andamio:layout" in layout
     assert "Mi web" in leer(proyecto / "src/pages/InicioPage/InicioPage.tsx")
     assert "VITE_API_URL=http://localhost:8000/api" in leer(proyecto / ".env")
     assert not (proyecto / "node_modules").exists(), "andamio no ejecuta npm install"
@@ -183,7 +189,7 @@ def test_pagina_registra_su_ruta_y_su_enlace(con_piezas):
     app = leer(con_piezas / "src/App.tsx")
     assert "import { ContactoPage } from './pages/ContactoPage';" in app
     assert '<Route path="/contacto" element={<ContactoPage />} />' in app
-    assert '<Link to="/contacto">Contacto</Link>' in app
+    assert '<Link to="/contacto">Contacto</Link>' in leer(con_piezas / "src/components/Navbar/Navbar.tsx")
 
 
 def test_servicio_trae_el_hook_de_consulta(proyecto):
@@ -215,7 +221,7 @@ def test_pagina_con_datos_lista(con_piezas):
         assert esperado in pagina, esperado
     app = leer(con_piezas / "src/App.tsx")
     assert '<Route path="/cliente-lista" element={<ClienteListaPage />} />' in app
-    assert '<Link to="/cliente-lista">Cliente lista</Link>' in app
+    assert '<Link to="/cliente-lista">Cliente lista</Link>' in leer(con_piezas / "src/components/Navbar/Navbar.tsx")
 
 
 def test_pagina_con_datos_de_uno(con_piezas):
@@ -252,7 +258,7 @@ def test_pagina_con_formulario(con_piezas):
     app = leer(con_piezas / "src/App.tsx")
     assert '<Route path="/producto-editar" element={<ProductoEditarPage />} />' in app
     assert '<Route path="/producto-editar/:id" element={<ProductoEditarPage />} />' in app
-    assert '<Link to="/producto-editar">' in app
+    assert '<Link to="/producto-editar">' in leer(con_piezas / "src/components/Navbar/Navbar.tsx")
 
 
 def test_cada_pagina_crea_solo_el_hook_que_usa(proyecto):
@@ -339,7 +345,7 @@ def test_crud(con_piezas):
     assert "import { ProductoDetallePage, ProductoFormPage, ProductoListaPage } from './pages/productos';" in app
     for ruta in ('"/productos"', '"/productos/nuevo"', '"/productos/:id"', '"/productos/:id/editar"'):
         assert f"<Route path={ruta}" in app
-    assert '<Link to="/productos">Productos</Link>' in app
+    assert '<Link to="/productos">Productos</Link>' in leer(raiz / "src/components/Navbar/Navbar.tsx")
     assert "export { ProductoDetalle } from './ProductoDetalle';" in leer(raiz / "src/components/index.ts")
     formulario = leer(raiz / "src/pages/productos/ProductoFormPage.tsx")
     assert "<input type=\"checkbox\" checked={datos.activo}" in formulario

@@ -23,6 +23,7 @@ from andamio.nucleo.errores import AndamioError
 from andamio.nucleo.generador import (
     archivos_de_la_pieza,
     contexto_pieza,
+    elegir_insercion,
     inserciones_de_la_pieza,
     nombre_para_pieza,
     nombre_variante,
@@ -131,7 +132,9 @@ def puntos_de_conexion(stack: Stack, raiz: Path, variante: str) -> list[PuntoDeC
             if not ins.marcador:
                 continue
             try:
-                archivo = conexiones.get(ins.marcador) or renderizar_ruta(tuple(ins.archivo.split("/")), contexto).as_posix()
+                # En un proyecto de una versión anterior, el punto puede estar en la alternativa.
+                ins, ruta = elegir_insercion(ins, contexto, raiz, conexiones)
+                archivo = ruta.as_posix()
                 ubicacion = renderizar(ins.ubicacion, contexto) if ins.ubicacion else "en el lugar que corresponda"
             except AndamioError:
                 continue  # la ruta depende del nombre de la pieza: no es un punto fijo del proyecto
@@ -274,10 +277,8 @@ def revisar_entrada(stack: Stack, raiz: Path, entrada: historial.Entrada) -> Est
             estado.archivos.append((ruta, (raiz / ruta).is_file()))
         conexiones = ajustes.de_proyecto(raiz).conexiones
         for ins in inserciones_de_la_pieza(sol):
-            if ins.marcador and ins.marcador in conexiones:
-                ruta = conexiones[ins.marcador]
-            else:
-                ruta = renderizar_ruta(tuple(ins.archivo.split("/")), contexto).as_posix()
+            ins, ruta_elegida = elegir_insercion(ins, contexto, raiz, conexiones)
+            ruta = ruta_elegida.as_posix()
             actual = _leer(raiz / ruta)
             bloques = {renderizar(ins.texto, contexto, guia=True), renderizar(ins.texto, contexto, guia=False)}
             esta = actual is not None and any(ya_presente(actual, b) for b in bloques)

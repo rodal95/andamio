@@ -33,6 +33,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --form                                        con --datos: el formulario para crear y editar
 │     --solo <funciones>   (--only)                 el servicio solo con esas funciones: --solo crear
 │     --sin-registro       (--no-register)          el login de React sin la página para crear una cuenta
+│     --obligatorio        (--required)             el login de React es obligatorio para toda la app
 │     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
 │     --solo-lectura       (--read-only)            la API solo lista y muestra (Django)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
@@ -55,7 +56,7 @@ Qué opciones acepta cada pieza:
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
 | `--protegido` | `recurso` (Django), `crud` (Django con plantillas, React), `pagina` (React) |
-| `--sin-registro` | `login` (React) |
+| `--sin-registro`, `--obligatorio` | `login` (React) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -107,7 +108,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda`, `accion` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search`, `action` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--solo`, `--sin-registro`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--only`, `--no-register`, `--no-menu`, `--read-only`, `--no-guide` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--solo`, `--sin-registro`, `--obligatorio`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--only`, `--no-register`, `--required`, `--no-menu`, `--read-only`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `menu`, `info` y `--form` son iguales en los dos idiomas.
@@ -134,6 +135,7 @@ Opciones que sirven en todas las piezas:
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
 | `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). En React, la página (`pagina`) o el formulario para crear y editar (`crud`) piden ingresar: la ruta va envuelta en `<RutaProtegida>` (necesita `nuevo login`). Eso es para que se vea bien; lo que protege los datos es la API. |
 | `--sin-registro` | El login de React sin la página `/registro` (cuando los usuarios se crean desde `/admin/`). |
+| `--obligatorio` | El login de React es obligatorio para toda la app: sin sesión no se ven ni el menú, ni el pie, ni las páginas (el `Layout` pide ingresar). `/ingresar` y `/registro` quedan fuera del `Layout`. |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
 | `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
 | `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
@@ -318,10 +320,14 @@ npm install
 npm run dev                                      http://localhost:5173
 ```
 
+El proyecto trae el menú (`src/components/Navbar`), el pie (`src/components/Footer`) y lo
+que los junta con la página de cada ruta (`src/components/Layout`, con `<Outlet />`). En
+`src/App`, las rutas de adentro de `<Route element={<Layout />}>` se ven con el menú y el pie.
+
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `componente` | `nuevo componente Tarjeta` | `src/components/Tarjeta/` con su `.module.css`, exportado en `src/components/index`. |
-| `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage/`, con su ruta `/contacto` y su enlace en `src/App`. |
+| `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage/`, con su ruta `/contacto` en `src/App` y su enlace en el `Navbar` (en los proyectos anteriores, sin `Navbar`, en `src/App`). |
 | `pagina --datos` | `nuevo pagina ProductoLista --datos producto` | La página con la lista del servicio `productoService`: `useConsulta(productoService.listar)`, con cargando, error y lista vacía. Necesita el servicio (crea `useConsulta` si falta). |
 | `pagina --datos --uno` | `nuevo pagina ProductoDetalle --datos producto --uno` | La página de uno solo: toma el id de la ruta (`/producto-detalle/:id`) y usa `obtener(id)`. Muestra los campos con que se generó el servicio. No va en el menú. |
 | `pagina --datos --form` | `nuevo pagina ProductoEditar --datos producto --form` | El formulario para crear (`/producto-editar`) y editar (`/producto-editar/3`) con el hook `useFormulario`: carga el registro, guarda con `crear` o `actualizar` y muestra los errores de la API en cada campo. |
@@ -333,7 +339,8 @@ npm run dev                                      http://localhost:5173
 | `crud --protegido` | `nuevo crud pedido total:decimal --protegido` | Lo mismo; las rutas para crear y editar van envueltas en `<RutaProtegida>` (la lista y el detalle son libres, como en Django). Necesita `nuevo login`. |
 | `login` | `nuevo login` | Contra la API de Django con `nuevo login`: `src/services/authService` (pide el token, crea usuarios, `/api/yo/`), `src/sesion/` (`useSesion()`, `ingresar`, `registrarse`, `salir`, `RutaProtegida` y `MenuSesion`), las páginas `/ingresar` y `/registro`, y Ingresar o Salir en el menú. Si la API responde 401 a un pedido con token (venció), la sesión se cierra. |
 | `login --sin-registro` | `nuevo login --sin-registro` | Lo mismo, sin `/registro`. |
-| `pagina --protegido` | `nuevo pagina Perfil --protegido` | La página, con la ruta envuelta en `<RutaProtegida>`: si nadie ingresó, lleva a `/ingresar` y después vuelve. Se combina con `--datos`. |
+| `login --obligatorio` | `nuevo login --obligatorio` | Toda la app pide ingresar: el `Layout` (menú, pie y páginas) muestra `/ingresar` si nadie ingresó; `/ingresar` y `/registro` van fuera del `Layout`. |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | La página, con la ruta envuelta en `<RutaProtegida>`: si nadie ingresó, lleva a `/ingresar` y después vuelve. Su enlace va en el menú de la sesión: solo se ve si alguien ingresó. Se combina con `--datos`. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |

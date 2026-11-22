@@ -68,6 +68,20 @@ def _insercion_app(
 _HOOKS = _js.hooks("src/hooks")  # useConsulta y useFormulario
 
 
+def _insercion_menu(texto: str, descripcion: str, condicion=None) -> Insercion:
+    """Un enlace en el menú: en el Navbar; en los proyectos sin Navbar (anteriores), en App."""
+    return Insercion(
+        "src/components/Navbar/Navbar.@@extx@@",
+        texto,
+        marcador="enlaces",
+        descripcion=descripcion,
+        ubicacion="dentro de <nav>",
+        comentario="{/*",
+        condicion=condicion,
+        alternativa=_insercion_app(texto, "enlaces", descripcion, "dentro de <nav>", "{/*", condicion),
+    )
+
+
 # Con --protegido (pagina o crud): RutaProtegida, que generó el login. Si ya está importado
 # (otra página protegida), no se repite.
 _IMPORT_RUTA_PROTEGIDA = _insercion_app(
@@ -77,6 +91,14 @@ _IMPORT_RUTA_PROTEGIDA = _insercion_app(
 
 def _sin_uno(sol) -> bool:
     return not sol.opciones.get("uno")
+
+
+def _enlace_publico(sol) -> bool:
+    return _sin_uno(sol) and not sol.opciones.get("protegido")
+
+
+def _enlace_con_sesion(sol) -> bool:
+    return _sin_uno(sol) and bool(sol.opciones.get("protegido"))
 
 
 PAGINA = Pieza(
@@ -116,7 +138,18 @@ PAGINA = Pieza(
             _js.form_edita,
         ),
         # Una página de uno solo (--uno) necesita un id en la ruta: no va en el menú.
-        _insercion_app('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*", _sin_uno),
+        _insercion_menu('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlace en el menú", _enlace_publico),
+        # Una página protegida: su enlace se ve solo si alguien ingresó (en el menú de la sesión).
+        Insercion(
+            "src/sesion/MenuSesion.@@extx@@",
+            '<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>',
+            marcador="enlaces_sesion",
+            descripcion="enlace en el menú, solo con sesión",
+            ubicacion="dentro de MenuSesion, antes del nombre del usuario",
+            comentario="{/*",
+            condicion=_enlace_con_sesion,
+            alternativa=_insercion_menu('<Link to="/@@nombreKebab@@">@@nombreTitulo@@</Link>', "enlace en el menú"),
+        ),
     ),
     siguiente_paso=_js.pasos_pagina,
 )
@@ -185,7 +218,7 @@ CRUD = Pieza(
             "dentro de <Routes>",
             "{/*",
         ),
-        _insercion_app('<Link to="/@@pluralKebab@@">@@titulo@@</Link>', "enlaces", "enlace en el menú", "dentro de <nav>", "{/*"),
+        _insercion_menu('<Link to="/@@pluralKebab@@">@@titulo@@</Link>', "enlace en el menú"),
         Insercion(
             "src/components/index.@@ext@@",
             "export { @@Nombre@@Detalle } from './@@Nombre@@Detalle';",
@@ -258,7 +291,43 @@ def _con_registro(sol: Solicitud) -> bool:
     return not sol.opciones.get("sin_registro")
 
 
+def _obligatorio(sol: Solicitud) -> bool:
+    return bool(sol.opciones.get("obligatorio"))
+
+
+def _no_obligatorio(sol: Solicitud) -> bool:
+    return not _obligatorio(sol)
+
+
+def _registro_obligatorio(sol: Solicitud) -> bool:
+    return _con_registro(sol) and _obligatorio(sol)
+
+
+def _registro_no_obligatorio(sol: Solicitud) -> bool:
+    return _con_registro(sol) and not _obligatorio(sol)
+
+
+_LAYOUT = "src/components/Layout/Layout"
+
+
+def _validar_obligatorio(sol: Solicitud) -> None:
+    """--obligatorio protege el Layout: hace falta el de los proyectos nuevos (con su marcador)."""
+    ext = _js.MARCADORES_VARIANTE[sol.variante or "ts"]["extx"]
+    try:
+        texto = (sol.raiz / f"{_LAYOUT}.{ext}").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        texto = ""
+    if "andamio:layout" not in texto:
+        raise AndamioError(
+            f"--obligatorio pide ingresar en el Layout ({_LAYOUT}.{ext}), y este proyecto no lo tiene.",
+            "Los proyectos de React creados con andamio 1.7 o más nuevo lo traen (Navbar, Footer y Layout). "
+            "En este, protegé las páginas de a una: python -m andamio nuevo pagina Perfil --protegido",
+        )
+
+
 def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    if _obligatorio(sol):
+        _validar_obligatorio(sol)
     registro = _con_registro(sol)
     avisa = _http_avisa_vencimiento(sol)
     explicacion = (
@@ -275,6 +344,11 @@ def _contexto_login(sol: Solicitud) -> dict[str, str]:
         else "",
         "enlace_registro": '<Link to="/registro">Registrarse</Link>' if registro else "",
         "y_registrarse": " y Registrarse" if registro else "",
+        "lectura_layout": f"{_LAYOUT}.{_js.MARCADORES_VARIANTE[sol.variante or 'ts']['extx']}" if _obligatorio(sol) else "",
+        "guardia_layout": "\n".join(
+            (["// Toda la app pide ingresar (nuevo login --obligatorio): sin sesión, a /ingresar."] if sol.guia else [])
+            + ["const pedirIngreso = usePedirIngreso();", "if (pedirIngreso) {", "  return pedirIngreso;", "}", ""]
+        ),
     }
 
 
@@ -324,6 +398,7 @@ LOGIN = Pieza(
         ("src/services/authService.@@ext@@", "pide el token a la API, crea usuarios y pregunta quién ingresó (/api/yo/)"),
         ("src/sesion/sesion.@@ext@@", "la sesión: useSesion() (quién ingresó), ingresar, registrarse y salir"),
         ("src/sesion/RutaProtegida.@@extx@@", "si nadie ingresó, lleva a /ingresar (y después vuelve)"),
+        ("@@lectura_layout@@", "con --obligatorio: pide ingresar antes de mostrar el menú, el pie y la página"),
         ("src/pages/IngresarPage/IngresarPage.@@extx@@", "el formulario para ingresar"),
         ("src/pages/RegistroPage/RegistroPage.@@extx@@", "el formulario para crear una cuenta"),
         ("src/sesion/MenuSesion.@@extx@@", "Ingresar, o quién ingresó y Salir, en el menú"),
@@ -335,7 +410,7 @@ LOGIN = Pieza(
     ejemplo="",
     nombre_defecto="sesion",
     formas=("src/@@nombre@@/ (rutas /ingresar y /registro)",),
-    opciones=frozenset({"sin_registro"}),
+    opciones=frozenset({"sin_registro", "obligatorio"}),
     validar_nombre=_validar_login,
     contexto=_contexto_login,
     marcadores={
@@ -346,6 +421,8 @@ LOGIN = Pieza(
         "pie_ingresar": "el enlace a /registro debajo del formulario (vacío con --sin-registro)",
         "enlace_registro": "Registrarse en el menú (vacío con --sin-registro)",
         "y_registrarse": "' y Registrarse', para el comentario del menú (vacío con --sin-registro)",
+        "guardia_layout": "con --obligatorio: el Layout muestra /ingresar si nadie ingresó (usePedirIngreso)",
+        "lectura_layout": "con --obligatorio: el Layout, para el orden de lectura (vacío si no)",
     },
     existe_si=("src/sesion",),
     si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}),
@@ -355,10 +432,51 @@ LOGIN = Pieza(
         _insercion_app(
             "import { RegistroPage } from './pages/RegistroPage';", "imports", "import de RegistroPage", "arriba, junto a los otros import", "//", _con_registro
         ),
-        _insercion_app("import { MenuSesion } from './sesion';", "imports", "import de MenuSesion", "arriba, junto a los otros import", "//"),
-        _insercion_app('<Route path="/ingresar" element={<IngresarPage />} />', "rutas", "ruta /ingresar", "dentro de <Routes>", "{/*"),
-        _insercion_app('<Route path="/registro" element={<RegistroPage />} />', "rutas", "ruta /registro", "dentro de <Routes>", "{/*", _con_registro),
-        _insercion_app("<MenuSesion />", "enlaces", "la sesión en el menú", "dentro de <nav>", "{/*"),
+        Insercion(
+            "src/components/Navbar/Navbar.@@extx@@",
+            "import { MenuSesion } from '../../sesion';",
+            marcador="imports_navbar",
+            descripcion="import de MenuSesion",
+            ubicacion="arriba, junto a los otros import",
+            comentario="//",
+            alternativa=_insercion_app("import { MenuSesion } from './sesion';", "imports", "import de MenuSesion", "arriba, junto a los otros import", "//"),
+        ),
+        _insercion_menu("<MenuSesion />", "la sesión en el menú"),
+        # Sin --obligatorio, /ingresar y /registro se ven con el menú y el pie (dentro del Layout).
+        _insercion_app('<Route path="/ingresar" element={<IngresarPage />} />', "rutas", "ruta /ingresar", "dentro de <Routes>", "{/*", _no_obligatorio),
+        _insercion_app(
+            '<Route path="/registro" element={<RegistroPage />} />', "rutas", "ruta /registro", "dentro de <Routes>", "{/*", _registro_no_obligatorio
+        ),
+        # Con --obligatorio, fuera del Layout: el Layout pide ingresar (y /ingresar se pediría a sí misma).
+        _insercion_app(
+            '<Route path="/ingresar" element={<IngresarPage />} />', "rutas_sin_layout", "ruta /ingresar (sin el Layout)", "dentro de <Routes>, fuera del Layout", "{/*", _obligatorio
+        ),
+        _insercion_app(
+            '<Route path="/registro" element={<RegistroPage />} />',
+            "rutas_sin_layout",
+            "ruta /registro (sin el Layout)",
+            "dentro de <Routes>, fuera del Layout",
+            "{/*",
+            _registro_obligatorio,
+        ),
+        Insercion(
+            "src/components/Layout/Layout.@@extx@@",
+            "import { usePedirIngreso } from '../../sesion';",
+            marcador="imports_layout",
+            descripcion="import de usePedirIngreso",
+            ubicacion="arriba, junto a los otros import",
+            comentario="//",
+            condicion=_obligatorio,
+        ),
+        Insercion(
+            "src/components/Layout/Layout.@@extx@@",
+            "@@guardia_layout@@",
+            marcador="layout",
+            descripcion="toda la app pide ingresar",
+            ubicacion="al principio de la función Layout, antes del return",
+            comentario="//",
+            condicion=_obligatorio,
+        ),
     ),
     siguiente_paso=_pasos_login,
 )

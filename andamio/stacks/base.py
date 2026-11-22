@@ -53,6 +53,10 @@ class Insercion:
     # Si se agrega según la solicitud (ej.: el enlace del menú, que no va en una página con
     # :id en la ruta). None = siempre.
     condicion: Callable[[Solicitud], bool] | None = None
+    # Dónde va en los proyectos que no tienen este punto de conexión (creados con una versión
+    # anterior): si el archivo no tiene el marcador y la alternativa sí, se usa la alternativa.
+    # Ej.: el enlace del menú va en el Navbar; en los proyectos sin Navbar, en App.
+    alternativa: Insercion | None = None
 
 
 @dataclass(frozen=True)
