@@ -6,6 +6,12 @@ Todos los cambios importantes de andamio. El proyecto usa
 ## [Sin publicar]
 
 ### Agregado
+- `andamio base` (en inglés: `db`): conecta la API (Django, Django con plantillas, FastAPI
+  o Reflex) a PostgreSQL, MySQL o de vuelta a SQLite. Pregunta los datos según el motor, o
+  toma la URL de conexión (aunque la contraseña tenga #, @ o espacios sin codificar).
+  Escribe la conexión en el `.env`, deja un ejemplo sin datos en `.env.example` y agrega el
+  driver. Con `--docker` crea `docker-compose.yml` con la base (contraseña al azar, solo
+  accesible desde la PC). Al terminar, avisa si no responde nada en el servidor y el puerto.
 - FastAPI: `nuevo login`, con las mismas rutas y respuestas que la API de Django
   (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`): el login de React
   funciona igual con las dos. Usuarios con la contraseña con hash (PBKDF2, como Django),
