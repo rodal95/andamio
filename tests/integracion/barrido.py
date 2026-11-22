@@ -182,7 +182,9 @@ def barrer(
             elif campos:
                 argumentos = ["nuevo", pieza_clave, f"ficha {indice}", f"{candidato}:str"]
             else:
-                argumentos = ["nuevo", pieza_clave, candidato, *(["dato:str"] if pieza.usa_campos else [])]
+                # Con las opciones de su ejemplo (el login de Django con plantillas es --obligatorio).
+                opciones = [a for a in pieza.ejemplo.split() if a.startswith("--")]
+                argumentos = ["nuevo", pieza_clave, candidato, *(["dato:str"] if pieza.usa_campos else []), *opciones]
             antes = _foto(raiz)
             codigo, salida = _andamio(*argumentos)
             if "error inesperado" in salida:
