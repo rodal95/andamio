@@ -123,7 +123,7 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--datos", "--data", dest="datos", help="la página muestra datos de la API con este servicio (React): --datos producto")
     nuevo.add_argument("--uno", "--one", dest="uno", action="store_true", help="con --datos: muestra uno solo, con el id en la ruta")
     nuevo.add_argument("--form", dest="form", action="store_true", help="con --datos: el formulario para crear y editar")
-    nuevo.add_argument("--obligatorio", "--required", dest="obligatorio", action="store_true", help="el login de React es obligatorio para toda la app (menú, pie y páginas)")
+    nuevo.add_argument("--obligatorio", "--required", dest="obligatorio", action="store_true", help="login obligatorio para todo: la API entera (Django) o la app entera (React)")
     nuevo.add_argument("--sin-registro", "--no-register", dest="sin_registro", action="store_true", help="el login sin la página para crear una cuenta (React)")
     nuevo.add_argument("--solo", "--only", dest="solo", help="el servicio solo con estas funciones: --solo crear, --solo listar,obtener")
     nuevo.add_argument("--sin-menu", "--no-menu", dest="sin_menu", action="store_true", help="la entidad sin su menú de consola (Python + SQLite)")

@@ -159,9 +159,48 @@ def test_sin_login_no_se_puede_crear(self):
 """
 
 
+_PREPARAR_TESTS_OBLIGATORIO = """\
+def setUp(self):
+    # Toda la API pide login (nuevo login --obligatorio): los tests entran con un usuario.
+    usuario = get_user_model().objects.create_user("prueba", password="clave-de-prueba-123")
+    self.client.force_authenticate(usuario)
+
+def test_sin_login_no_se_puede_ver(self):
+    self.client.force_authenticate(None)
+    self.assertEqual(self.client.get(URL).status_code, status.HTTP_401_UNAUTHORIZED)
+"""
+
+# La línea que agrega nuevo login --obligatorio en config/settings.py.
+_PERMISO_OBLIGATORIO = 'REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = ["rest_framework.permissions.IsAuthenticated"]'
+
+_CONFIG_OBLIGATORIO = f"""
+# Toda la API pide login (nuevo login --obligatorio): sin token, 401. Registrarse, pedir el
+# token y la documentación siguen abiertos (sus vistas lo dicen). Un recurso --protegido
+# sigue dejando ver: su vista lo dice (IsAuthenticatedOrReadOnly).
+{_PERMISO_OBLIGATORIO}"""
+
+
+def login_obligatorio(raiz: Path) -> bool:
+    """Si el proyecto tiene el login obligatorio para toda la API (nuevo login --obligatorio)."""
+    try:
+        return _PERMISO_OBLIGATORIO in (raiz / "config" / "settings.py").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
 def _contexto_permisos(sol: Solicitud) -> dict[str, str]:
-    """--protegido: cualquiera puede leer; para crear, modificar y eliminar hay que tener login."""
+    """--protegido: cualquiera puede leer; para crear, modificar y eliminar hay que tener login.
+
+    Con el login obligatorio (nuevo login --obligatorio), los tests entran con un usuario.
+    """
     if not sol.opciones.get("protegido"):
+        if login_obligatorio(sol.raiz):
+            return {
+                "import_permisos": "",
+                "permisos": "",
+                "import_usuario": "from django.contrib.auth import get_user_model",
+                "preparar_tests": _PREPARAR_TESTS_OBLIGATORIO,
+            }
         return {"import_permisos": "", "permisos": "", "import_usuario": "", "preparar_tests": ""}
     return {
         "import_permisos": "from rest_framework.permissions import IsAuthenticatedOrReadOnly",
@@ -480,8 +519,31 @@ def _validar_login(raiz: Path, nombre: Nombre) -> None:
         )
 
 
+def _tests_sin_login(raiz: Path, login: str) -> list[str]:
+    """Las apps cuyos tests piden sin usuario: con el login obligatorio, responderían 401."""
+    apps = []
+    for tests in sorted(raiz.glob("*/tests.py")):
+        if tests.parent.name == login:
+            continue
+        try:
+            texto = tests.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if "APITestCase" in texto and "force_authenticate" not in texto:
+            apps.append(tests.parent.name)
+    return apps
+
+
 def _pasos_login(sol: Solicitud) -> list[str]:
+    avisos = []
+    if sol.opciones.get("obligatorio"):
+        for app in _tests_sin_login(sol.raiz, sol.nombre.plural):
+            avisos.append(
+                f"# {app}/tests.py pide sin usuario y ahora la API responde 401: en su setUp, "
+                "self.client.force_authenticate(get_user_model().objects.create_user(\"prueba\", password=\"clave-de-prueba-123\"))"
+            )
     return [
+        *avisos,
         "pip install -r requirements.txt",
         "python manage.py createsuperuser",
         "python manage.py runserver",
@@ -625,6 +687,7 @@ LOGIN = Pieza(
     nombre_defecto="cuenta",
     pregunta_nombre="Nombre de la app del login (Enter para cuenta)",
     formas=("app @@plural@@",),
+    opciones=frozenset({"obligatorio"}),
     validar_nombre=_validar_login,
     existe_si=("@@plural@@",),
     inserciones=(
@@ -636,6 +699,7 @@ LOGIN = Pieza(
             ubicacion="dentro de la lista LOCAL_APPS",
         ),
         Insercion("config/settings.py", _CONFIG_JWT, descripcion="autenticación con JWT (al final)"),
+        Insercion("config/settings.py", _CONFIG_OBLIGATORIO, descripcion="toda la API pide login (al final)", condicion=lambda sol: bool(sol.opciones.get("obligatorio"))),
         Insercion(
             "config/urls.py",
             'path("api/", include("@@plural@@.urls")),',

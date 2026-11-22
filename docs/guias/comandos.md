@@ -33,7 +33,7 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --form                                        con --datos: el formulario para crear y editar
 │     --solo <funciones>   (--only)                 el servicio solo con esas funciones: --solo crear
 │     --sin-registro       (--no-register)          el login de React sin la página para crear una cuenta
-│     --obligatorio        (--required)             el login de React es obligatorio para toda la app
+│     --obligatorio        (--required)             login obligatorio para todo (la API de Django o la app de React)
 │     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
 │     --solo-lectura       (--read-only)            la API solo lista y muestra (Django)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
@@ -56,7 +56,8 @@ Qué opciones acepta cada pieza:
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
 | `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React), `pagina` (React) |
-| `--sin-registro`, `--obligatorio` | `login` (React) |
+| `--sin-registro` | `login` (React) |
+| `--obligatorio` | `login` (Django, React) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -135,7 +136,7 @@ Opciones que sirven en todas las piezas:
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
 | `--protegido` | Crear, modificar y eliminar piden login (Django, FastAPI, Express y Django con plantillas; en FastAPI y Express, después de `nuevo login`). En React, la página (`pagina`) o el formulario para crear y editar (`crud`) piden ingresar: la ruta va envuelta en `<RutaProtegida>` (necesita `nuevo login`). Eso es para que se vea bien; lo que protege los datos es la API. |
 | `--sin-registro` | El login de React sin la página `/registro` (cuando los usuarios se crean desde `/admin/`). |
-| `--obligatorio` | El login de React es obligatorio para toda la app: sin sesión no se ven ni el menú, ni el pie, ni las páginas (el `Layout` pide ingresar). `/ingresar` y `/registro` quedan fuera del `Layout`. |
+| `--obligatorio` | Login obligatorio para todo. En la API de Django, todo responde 401 sin token (registrarse y pedir el token siguen abiertos; un recurso `--protegido` sigue dejando ver). En React, sin sesión no se ven ni el menú, ni el pie, ni las páginas (el `Layout` pide ingresar); `/ingresar` y `/registro` quedan fuera del `Layout`. |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
 | `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
 | `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
@@ -192,6 +193,7 @@ python manage.py runserver             http://127.0.0.1:8000/api/docs/
 | `recurso --solo-lectura` | `nuevo recurso pais nombre:str --plural paises --solo-lectura` | Un `ReadOnlyModelViewSet`: la API solo lista y muestra (crear, modificar y eliminar responden 405) y los datos se cargan desde `/admin/`. Para catálogos fijos. |
 | `accion` | `nuevo accion producto destacar` | Una acción propia en el ViewSet que ya existe: `POST /api/productos/3/destacar/`, con la marca `TODO(logica)` para lo que hace, su test y su petición en el `.http`. Con varias: `nuevo accion producto destacar archivar`. |
 | `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo, con `permission_classes = [IsAuthenticatedOrReadOnly]` y un test más (sin login no se puede crear). |
+| `login --obligatorio` | `nuevo login --obligatorio` | El login, y toda la API pide el token (`DEFAULT_PERMISSION_CLASSES = IsAuthenticated`). Los recursos que generes después entran a sus tests con un usuario; si ya tenías recursos, los siguientes pasos te dicen qué agregar en sus tests. |
 | `login` | `nuevo login` | La app `cuentas/` con SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/token/verify/`, `/api/registro/` y `/api/yo/`, 6 tests, y la configuración en `settings.py` y `requirements.txt`. No lleva nombre. |
 
 ```

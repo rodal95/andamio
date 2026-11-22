@@ -265,7 +265,7 @@ def test_login_genera_la_app_y_configura_jwt(proyecto, capsys):
 
 
 def test_login_en_el_menu_usa_cuenta_con_enter(proyecto, respuestas):
-    preguntas = respuestas(["3", "", "s"])
+    preguntas = respuestas(["3", "", "n", "s"])  # n: sin --obligatorio
     assert main([]) == 0
     assert any("Nombre de la app del login" in p for p in preguntas)
     assert (proyecto / "cuentas/urls.py").is_file()
@@ -434,3 +434,31 @@ def test_accion_en_un_recurso_que_se_llama_como_el_parametro(proyecto):
     assert main(["nuevo", "accion", "request", "destacar"]) == 0
     vistas = leer(proyecto / "requestes/views.py")  # el plural automático, con las reglas del español
     assert "objeto = self.get_object()" in vistas and "request = self.get_object()" not in vistas
+
+
+def test_login_obligatorio(en_carpeta, monkeypatch, capsys):
+    assert main(["crear", "django", "api"]) == 0
+    raiz = en_carpeta / "api"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "recurso", "nota", "texto"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "login", "--obligatorio"]) == 0
+    salida = capsys.readouterr().out
+    settings = (raiz / "config/settings.py").read_text(encoding="utf-8")
+    assert 'REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = ["rest_framework.permissions.IsAuthenticated"]' in settings
+    # El recurso que ya estaba: sus tests piden sin usuario. Los pasos lo dicen.
+    assert "notas/tests.py pide sin usuario" in salida
+    # Uno nuevo entra a sus tests con un usuario, y controla el 401.
+    assert main(["nuevo", "recurso", "pedido", "total:decimal"]) == 0
+    tests = (raiz / "pedidos/tests.py").read_text(encoding="utf-8")
+    assert "self.client.force_authenticate(usuario)" in tests and "def test_sin_login_no_se_puede_ver" in tests
+
+
+def test_login_sin_obligatorio_no_cambia_los_permisos(en_carpeta, monkeypatch):
+    assert main(["crear", "django", "api"]) == 0
+    raiz = en_carpeta / "api"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "login"]) == 0
+    assert "IsAuthenticated\"]" not in (raiz / "config/settings.py").read_text(encoding="utf-8")
+    assert main(["nuevo", "recurso", "nota", "texto"]) == 0
+    assert "force_authenticate" not in (raiz / "notas/tests.py").read_text(encoding="utf-8")

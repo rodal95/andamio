@@ -1518,7 +1518,7 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
         elif opcion == "obligatorio":
-            filas.append({"comando": "nuevo login --obligatorio", "descripcion": "Toda la app pide ingresar: el Layout (menú, pie y páginas) no se ve sin sesión; /ingresar y /registro quedan fuera del Layout, solas."})
+            filas.append({"comando": "nuevo login --obligatorio", "descripcion": "Login obligatorio para todo: sin ingresar no se puede usar nada (en una API, todo responde 401 sin token; en React, ni el menú ni el pie se ven). Registrarse e ingresar siguen abiertos."})
         elif opcion == "sin_registro":
             filas.append({"comando": "nuevo login --sin-registro", "descripcion": "Solo ingresar, sin la página para crear una cuenta (cuando los usuarios se crean desde /admin/)."})
         elif opcion == "solo":
@@ -2324,7 +2324,7 @@ _FORMAS_OPCION = {
     ("pagina", "protegido"): ("--protegido", "{p} nuevo pagina Perfil --protegido", "La página pide ingresar (RutaProtegida; con nuevo login)."),
     ("crud", "protegido"): ("--protegido", "{p} nuevo crud pedido total:decimal --protegido", "La lista y el detalle son libres; crear y editar piden ingresar (con nuevo login)."),
     "sin_registro": ("--sin-registro", "{p} nuevo login --sin-registro", "Solo ingresar, sin la página para crear una cuenta."),
-    "obligatorio": ("--obligatorio", "{p} nuevo login --obligatorio", "Toda la app pide ingresar (el menú, el pie y todas las páginas)."),
+    "obligatorio": ("--obligatorio", "{p} nuevo login --obligatorio", "Login obligatorio para todo (registrarse e ingresar siguen abiertos)."),
     "solo_lectura": ("--solo-lectura", "{p} nuevo recurso categoria nombre:str --solo-lectura", "La API solo lista y muestra; los datos se cargan desde /admin/."),
     "solo": ("--solo <funciones>", "{p} nuevo servicio contacto nombre:str email:email --solo crear", "El servicio solo con esas funciones (ej.: solo crear, para un formulario de contacto)."),
     "migrar": ("--migrar", "{p} nuevo recurso producto nombre:str --migrar", "Además crea y aplica la migración."),
