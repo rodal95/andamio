@@ -352,8 +352,11 @@ def _contexto_login(sol: Solicitud) -> dict[str, str]:
 _CONFIG_LOGIN = """
 # --- Login con JWT (lo agregó: andamio nuevo login) ------------------------------
 # Con esta clave se firman los tokens: si alguien la conoce, puede armar tokens válidos.
-# Va en el .env (que no se sube a git); cambiala en cada instalación.
-SECRET_KEY = os.getenv("SECRET_KEY") or "cambiar-por-una-clave-larga-y-secreta"
+# Va en el .env (que no se sube a git); cambiala en cada instalación. Sin ella la API no
+# arranca (como Django): una clave por defecto la conocería cualquiera que lea este código.
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("Falta SECRET_KEY. Copiá el archivo .env.example con el nombre .env y poné una clave larga y al azar.")
 """
 
 LOGIN = Pieza(

@@ -28,3 +28,14 @@ def ejecutar(comando, cwd, env=None, timeout=900):
 
 def npm_install(cwd):
     return ejecutar([NPM, "install", "--no-audit", "--no-fund", "--loglevel=error"], cwd)
+
+
+def resultado_de_node_test(salida: str) -> tuple[int, int] | None:
+    """(pasaron, fallaron) de node --test: "# pass 5" (Node 22/23) o "ℹ pass 5" (Node 24)."""
+    import re
+
+    pasaron = re.search(r"^(?:#|ℹ) pass (\d+)$", salida, re.MULTILINE)
+    fallaron = re.search(r"^(?:#|ℹ) fail (\d+)$", salida, re.MULTILINE)
+    if not pasaron or not fallaron:
+        return None
+    return int(pasaron.group(1)), int(fallaron.group(1))

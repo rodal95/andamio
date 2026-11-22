@@ -1,12 +1,19 @@
 /**
  * Ayuda para los tests: llama a las funciones de app/api/ (GET, POST, ...) como lo hace
- * Next.js, sin levantar el servidor, con otra base de datos (test.db, que npm test crea
- * vacía antes de empezar). Así no toca tus datos.
+ * Next.js, sin levantar el servidor, con otra base de datos (TEST_DATABASE_URL del .env, o test.db,
+ * que npm test prepara antes de empezar). Así no toca tus datos.
  *
  *   const { api, prisma } = await abrir('productos');
  *   const respuesta = await api.get('/api/productos/');   // { status: 200, datos: [...] }
  */
-process.env.DATABASE_URL = 'file:./test.db'; // antes de cargar la conexión
+// Los tests firman tokens: con el .env, o una clave solo para los tests si no está.
+try {
+  process.loadEnvFile();
+} catch {
+  // sin .env
+}
+process.env.SECRET_KEY ||= 'clave-solo-para-los-tests';
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db'; // antes de cargar la conexión
 const { prisma } = await import('../lib/db.js');
 
 // Con el login (recurso --protegido): el token que se manda en cada pedido.

@@ -7,6 +7,7 @@ generado con andamio funciona con las dos.
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from app.db import Sesion as SesionBD
@@ -51,7 +52,13 @@ def registrarse(datos: Registro, bd: SesionBD):
         return JSONResponse(status_code=400, content=errores)
     usuario = Usuario(**datos.model_dump(exclude={"password"}), password_hash=hash_de(datos.password))
     bd.add(usuario)
-    bd.commit()
+    try:
+        bd.commit()
+    except IntegrityError:
+        # Dos registros con el mismo nombre al mismo tiempo: los dos pasaron la búsqueda de
+        # arriba, pero la base (username es único) acepta solo el primero.
+        bd.rollback()
+        return JSONResponse(status_code=400, content={"username": ["Ya existe un usuario con este nombre."]})
     bd.refresh(usuario)
     return usuario
 

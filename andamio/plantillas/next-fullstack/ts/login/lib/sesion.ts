@@ -60,6 +60,26 @@ function tokenDelPedido(request: Request): string | undefined {
   return undefined;
 }
 
+const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Si el pedido cambia datos con la cookie y viene de otra página (otro origen). El navegador
+ * manda la cookie aunque el pedido lo arme otro sitio (CSRF): en POST, PUT, PATCH y DELETE
+ * se pide que el encabezado Origin sea el de esta misma app. Con Bearer no hace falta:
+ * el token no lo agrega el navegador solo.
+ */
+function deOtroOrigen(request: Request): boolean {
+  if (METODOS_SEGUROS.has(request.method)) return false;
+  if ((request.headers.get('authorization') ?? '').startsWith('Bearer ')) return false;
+  const origen = request.headers.get('origin');
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+  try {
+    return !origen || !host || new URL(origen).host !== host;
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Para las rutas que piden login: el usuario del pedido o, sin sesión, la respuesta 401.
  *   const usuario = await pedirSesion(request);
@@ -69,6 +89,9 @@ export async function pedirSesion(request: Request): Promise<Usuario | Response>
   const token = tokenDelPedido(request);
   if (!token) {
     return Response.json({ detail: 'Las credenciales de autenticación no se proveyeron.' }, { status: 401 });
+  }
+  if (deOtroOrigen(request)) {
+    return Response.json({ detail: 'El pedido viene de otro sitio (CSRF).' }, { status: 403 });
   }
   return (await usuarioDelToken(token, 'access')) ?? Response.json({ detail: 'El token no es válido o expiró.' }, { status: 401 });
 }

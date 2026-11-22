@@ -2,7 +2,14 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 
-process.env.DATABASE_URL = 'file:./test.db'; // antes de cargar la conexión (como en tests/api)
+// Los tests firman tokens: con el .env, o una clave solo para los tests si no está.
+try {
+  process.loadEnvFile();
+} catch {
+  // sin .env
+}
+process.env.SECRET_KEY ||= 'clave-solo-para-los-tests';
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db'; // antes de cargar la conexión (como en tests/api)
 const { prisma } = await import('../lib/db');
 const RUTAS = {
   '/api/registro/': await import('../app/api/registro/route'),

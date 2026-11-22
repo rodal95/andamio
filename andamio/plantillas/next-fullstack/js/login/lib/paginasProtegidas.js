@@ -19,6 +19,8 @@ const TODAS = @@todas@@;
 
 const DEL_LOGIN = ['/ingresar', '/registro'];
 
+const ARCHIVO_PUBLICO = /\.(png|jpe?g|gif|svg|webp|avif|ico|txt|xml|webmanifest|json|css|js|map|woff2?|ttf|otf|pdf|mp4|webm|mp3)$/i;
+
 /**
  * Si la ruta es la de la página o está adentro.
  * @param {string} pagina
@@ -32,8 +34,9 @@ function abarca(pagina, ruta) {
 
 /** @param {string} ruta */
 function pideIngreso(ruta) {
-  // Los archivos de public/ (logo.png...) y las páginas del login siempre se ven.
-  if (/\.\w+$/.test(ruta) || DEL_LOGIN.some((pagina) => abarca(pagina, ruta))) return false;
+  // Los archivos de public/ (logo.png...) y las páginas del login siempre se ven. Solo con
+  // estas extensiones: con cualquier punto, /productos/1.x se saltearía el ingreso.
+  if (ARCHIVO_PUBLICO.test(ruta) || DEL_LOGIN.some((pagina) => abarca(pagina, ruta))) return false;
   return TODAS || PAGINAS.some((pagina) => abarca(pagina, ruta));
 }
 

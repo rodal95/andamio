@@ -15,8 +15,9 @@ export async function usuarioActual() {
   }
   try {
     usuario = await pedir('/yo/');
-  } catch {
-    localStorage.removeItem('token'); // venció o no es válido
+  } catch (error) {
+    // Se borra si venció o no es válido (401). Si la API no responde o falla, el token se guarda: sirve cuando vuelva.
+    if (error?.estado === 401) localStorage.removeItem('token');
     usuario = null;
   }
   return usuario;

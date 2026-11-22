@@ -14,7 +14,7 @@ from andamio.cli import main
 from andamio.nucleo.deteccion import buscar_proyecto
 
 from .apis import NODE, api_en_marcha, puerto_libre, requiere
-from .node import NPM, NPX, ejecutar, npm_install, requiere_node
+from .node import NPM, NPX, ejecutar, npm_install, requiere_node, resultado_de_node_test
 from .test_coherencia import CAMPOS
 from .test_crud_navegador import SCRIPT as SCRIPT_NAVEGADOR
 from .test_crud_navegador import requiere_playwright
@@ -307,7 +307,7 @@ def test_fullstack_instala_migra_pasa_tests_y_funciona_en_el_navegador(app, vari
         ejecutar([NPX, "prisma", "migrate", "dev", "--name", "productos"], app)
     assert main(["nuevo", "crud", "producto", *CAMPOS]) == 0
     resultado = ejecutar([NPM, "test"], app)
-    assert "# pass 5" in resultado.stdout and "# fail 0" in resultado.stdout, resultado.stdout[-3000:]
+    assert resultado_de_node_test(resultado.stdout) == (5, 0), resultado.stdout[-3000:]
     _compilar_y_probar(app, puerto_libre())
 
 

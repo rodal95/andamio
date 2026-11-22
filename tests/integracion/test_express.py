@@ -10,7 +10,7 @@ from andamio import stacks
 from andamio.cli import main
 from andamio.nucleo.deteccion import buscar_proyecto
 
-from .node import NPM, NPX, ejecutar, npm_install, requiere_node
+from .node import NPM, NPX, ejecutar, npm_install, requiere_node, resultado_de_node_test
 
 TODOS_LOS_TIPOS = [
     "nombre:str",
@@ -254,6 +254,17 @@ def test_login_una_sola_vez(proyecto, capsys):
     assert "ya tiene el login" in capsys.readouterr().err
 
 
+def test_login_con_comillas_dobles(proyecto, variante, capsys):
+    """Con app formateado por Prettier (comillas dobles) se sigue encontrando el login."""
+    assert main(["nuevo", "login"]) == 0
+    app = proyecto / f"src/app.{variante}"
+    app.write_text(leer(app).replace("'", '"'), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "login", "acceso"]) == 1
+    assert "ya tiene el login" in capsys.readouterr().err
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 0
+
+
 def test_recurso_protegido(proyecto, variante, capsys):
     assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 1
     assert "nuevo login" in capsys.readouterr().err
@@ -294,6 +305,6 @@ def test_el_proyecto_generado_instala_migra_y_pasa_sus_tests(con_recursos, varia
     assert list((raiz / "prisma/migrations").glob("*/migration.sql"))
     resultado = ejecutar([NPM, "test"], raiz)
     total = (25 if variante == "js" else 20) + 7 + 6  # + el login + el recurso protegido (con el 401)
-    assert f"# pass {total}" in resultado.stdout and "# fail 0" in resultado.stdout, resultado.stdout[-3000:]
+    assert resultado_de_node_test(resultado.stdout) == (total, 0), resultado.stdout[-3000:]
     if variante == "ts":
         ejecutar([NPM, "run", "tipos"], raiz)

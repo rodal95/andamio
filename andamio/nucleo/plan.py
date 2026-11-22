@@ -166,6 +166,32 @@ class Plan:
         if descripcion and descripcion not in mod.descripciones:
             mod.descripciones.append(descripcion)
 
+    def modificar(self, rel: str | PurePath, cambio, descripcion: str = "") -> bool:
+        """Cambia un archivo que ya existe con `cambio(texto) -> texto nuevo`.
+
+        Devuelve False (sin tocar nada) si el archivo no existe o no se puede leer.
+        """
+        ruta = self._ruta(rel)
+        if ruta in self.nuevos:
+            nuevo = self.nuevos[ruta]
+            nuevo.contenido = cambio(nuevo.contenido.decode("utf-8")).encode("utf-8")
+            return True
+        try:
+            actual = self._texto_actual(ruta)
+        except (OSError, UnicodeDecodeError):
+            return False
+        if actual is None:
+            return False
+        texto, original, bom = actual
+        resultado = cambio(texto)
+        if resultado == texto:
+            return True
+        mod = self.modificados.setdefault(ruta, _Modificado(ruta, original, texto, bom))
+        mod.texto = resultado
+        if descripcion and descripcion not in mod.descripciones:
+            mod.descripciones.append(descripcion)
+        return True
+
     # --- Validación y resumen ----------------------------------------------
 
     def validar(self) -> None:

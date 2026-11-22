@@ -82,6 +82,7 @@ function encabezados(datos) {
  */
 async function pedir(metodo, ruta, datos) {
   let respuesta;
+  const enviado = leerToken(); // el token con el que sale el pedido
   try {
     respuesta = await fetch(`${API_URL}${ruta}`, {
       method: metodo,
@@ -92,7 +93,9 @@ async function pedir(metodo, ruta, datos) {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
   }
-  if (respuesta.status === 401) {
+  if (respuesta.status === 401 && enviado === leerToken()) {
+    // Solo si es el mismo token con el que salió el pedido: si mientras tanto se volvió a
+    // ingresar, el token nuevo no se toca.
     // Sin sesión, o venció (el token dura 60 minutos): se borra el token y se avisa a la sesión.
     borrarToken();
     alVencer?.();

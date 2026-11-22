@@ -161,6 +161,10 @@ andamio arma la estructura; la lógica la escribís vos. Para que el código no 
 - **`python -m andamio mapa`:** las piezas que generaste, si siguen conectadas (rutas, imports,
   menú) y si una API y su interfaz tienen campos distintos.
 
+**¿PostgreSQL o MySQL en lugar de SQLite?** `python -m andamio base` conecta la API (Django,
+FastAPI, Express, Next.js full stack o Reflex) a la base que elijas: pregunta los datos o toma la URL de conexión, y con
+`--docker` crea la base en Docker. Ver [la guía de comandos](docs/guias/comandos.md#base-de-datos-andamio-base).
+
 **¿Tu proyecto no lo creó andamio?** `python -m andamio init` revisa sus puntos de conexión,
 te dice qué línea pegar en cada lugar que falta y crea `andamio.json`, donde también se puede
 indicar otra carpeta de plantillas o que las rutas están en otro archivo. Ver

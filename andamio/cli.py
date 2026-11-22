@@ -48,6 +48,7 @@ def _ejemplos() -> str:
         (f"{p} info", "qué se puede generar acá"),
         (f"{p} init", "prepara un proyecto que ya existe (crea andamio.json)"),
         (f"{p} mapa", "las piezas generadas y si siguen conectadas"),
+        (f"{p} base", "conecta la API a una base de datos (PostgreSQL, MySQL), con Docker si querés"),
         (f"{p} pendientes", "dónde falta escribir tu lógica (marcas TODO(logica))"),
         (f"{p} comandos", "todos los comandos, opciones y piezas"),
         (f"{p} new resource producto nombre:str", "lo mismo que 'nuevo recurso', en inglés"),
@@ -66,6 +67,7 @@ ALIAS_COMANDOS = {
     "info": [],
     "init": [],
     "mapa": ["map"],
+    "base": ["db", "database"],
     "pendientes": ["todo", "pending"],
     "comandos": ["commands"],
     "plantillas": ["templates"],
@@ -143,6 +145,27 @@ def construir_parser() -> argparse.ArgumentParser:
     init.add_argument("--js", dest="variante", action="store_const", const="js", help="atajo de --variante js")
     init.add_argument("--ts", dest="variante", action="store_const", const="ts", help="atajo de --variante ts")
     init.add_argument("--simular", "--dry-run", **simular)
+    base = comando(
+        "base",
+        help="conecta el proyecto a una base de datos: PostgreSQL, MySQL o SQLite (con Docker si querés)",
+        description="Conecta la API (Django, FastAPI o Reflex) a una base de datos: escribe la conexión en el .env "
+        "y agrega el driver. Sin opciones, pregunta los datos. Con --docker, crea docker-compose.yml con la base.",
+        epilog="ejemplos:\n"
+        f"  {consola.programa()} base                                  pregunta todo\n"
+        f"  {consola.programa()} base postgres --docker                PostgreSQL nuevo en Docker\n"
+        f"  {consola.programa()} base --url postgres://u:clave@host:5432/base   una base que ya existe\n"
+        f"  {consola.programa()} base sqlite                           vuelve a SQLite\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    base.add_argument("motor", nargs="?", help="postgres, mysql o sqlite (sin esto ni --url, pregunta)")
+    base.add_argument("--url", help="la URL de conexión de una base que ya existe")
+    base.add_argument("--docker", action="store_true", help="crea la base en Docker (docker-compose.yml) con los mismos datos")
+    base.add_argument("--host", help="servidor (por defecto localhost)")
+    base.add_argument("--puerto", "--port", dest="puerto", help="puerto (por defecto, el del motor: 5432 o 3306)")
+    base.add_argument("--nombre", "--name", dest="nombre", help="nombre de la base (por defecto, el de la carpeta)")
+    base.add_argument("--usuario", "--user", dest="usuario", help="usuario de la base")
+    base.add_argument("--clave", "--password", dest="clave", help="contraseña (con --docker, si no se indica, una al azar)")
+    base.add_argument("--simular", "--dry-run", **simular)
     comando("mapa", help="muestra las piezas generadas y controla sus archivos y conexiones")
     comando("pendientes", help="lista las marcas TODO(logica): dónde falta escribir tu lógica")
     comando("comandos", help="muestra todos los comandos, sus opciones y las piezas de cada tecnología")
@@ -181,6 +204,11 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         from andamio import inspeccion
 
         return inspeccion.init(cwd, args.tipo, args.variante, args.simular)
+    if args.comando == "base":
+        from andamio import base_datos
+
+        opciones = {c: getattr(args, c) for c in ("motor", "url", "docker", "host", "puerto", "nombre", "usuario", "clave")}
+        return base_datos.base(cwd, opciones, simular=args.simular)
     if args.comando == "mapa":
         from andamio import inspeccion
 

@@ -96,7 +96,8 @@ def crear_proyecto(
         consola.escribir(f"Se usará la carpeta: {consola.color(contexto['carpeta'], 'negrita')}")
     if variante:
         consola.escribir(f"Variante: {consola.color(nombre_variante(stack, variante), 'negrita')}")
-    existente = None if contexto.get("aqui") else buscar_proyecto(padre)
+    # Con "crear <tipo> ." el proyecto es la carpeta actual: se busca desde la de arriba.
+    existente = buscar_proyecto(padre.parent if contexto.get("aqui") else padre)
     if existente:
         consola.aviso(
             f"Estás dentro de un proyecto {existente[0].titulo} ({existente[1]}). "
