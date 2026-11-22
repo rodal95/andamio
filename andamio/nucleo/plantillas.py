@@ -64,6 +64,46 @@ def carpeta_personalizada(raiz: Path, stack: str, pieza: str) -> Path:
     return carpeta_usuario(raiz) / stack / pieza
 
 
+class CarpetaCombinada:
+    """Una carpeta de plantillas hecha de dos: los archivos de `base` y, encima, los de `propia`
+    (un archivo con la misma ruta reemplaza al de base; las subcarpetas se combinan igual).
+
+    La usa un stack que extiende a otro (next-fullstack extiende next) para cambiar solo
+    algunos archivos de una pieza en lugar de copiarla entera. Se recorre como cualquier
+    carpeta de plantillas (iterdir, is_dir, name).
+    """
+
+    def __init__(self, propia: Traversable, base: Traversable) -> None:
+        self._propia = propia
+        self._base = base
+
+    @property
+    def name(self) -> str:
+        return self._propia.name
+
+    def is_dir(self) -> bool:
+        return self._propia.is_dir() or self._base.is_dir()
+
+    def is_file(self) -> bool:
+        return False
+
+    def iterdir(self):
+        de_propia = {h.name: h for h in self._propia.iterdir()} if self._propia.is_dir() else {}
+        de_base = {h.name: h for h in self._base.iterdir()} if self._base.is_dir() else {}
+        for nombre in {**de_base, **de_propia}:
+            propia, base = de_propia.get(nombre), de_base.get(nombre)
+            if propia is not None and base is not None and propia.is_dir() and base.is_dir():
+                yield CarpetaCombinada(propia, base)
+            else:
+                yield propia if propia is not None else base
+
+    def joinpath(self, *partes: str) -> CarpetaCombinada:
+        return CarpetaCombinada(self._propia.joinpath(*partes), self._base.joinpath(*partes))
+
+    def __truediv__(self, parte: str) -> CarpetaCombinada:
+        return self.joinpath(parte)
+
+
 def leer_arbol(carpeta: Traversable, ignorar_leeme: bool = True) -> list[ArchivoPlantilla]:
     archivos: list[ArchivoPlantilla] = []
 

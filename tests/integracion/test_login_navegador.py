@@ -16,7 +16,7 @@ import pytest
 from andamio.cli import main
 
 from .apis import NODE, api_en_marcha, puerto_libre
-from .node import NPX, ejecutar, npm_install, requiere_node
+from .node import NPM, NPX, ejecutar, npm_install, requiere_node
 from .test_crud_navegador import _SPA, requiere_playwright
 
 SCRIPT = Path(__file__).with_name("login_navegador.js")
@@ -32,22 +32,29 @@ SCRIPT_OBLIGATORIO = Path(__file__).with_name("login_obligatorio_navegador.js")
 
 
 @contextlib.contextmanager
+def _next_en_marcha(web: Path, puerto: int, entorno: dict | None = None):
+    """next build y next start en el puerto."""
+    ejecutar([NPM, "run", "build"], web, env={"NEXT_TELEMETRY_DISABLED": "1", **(entorno or {})})
+    servidor = subprocess.Popen(
+        [NODE, "node_modules/next/dist/bin/next", "start", "-p", str(puerto), "-H", "127.0.0.1"], cwd=web, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    try:
+        from .test_next import _esperar
+
+        _esperar(f"http://127.0.0.1:{puerto}", servidor)
+        yield
+    finally:
+        servidor.terminate()
+        servidor.wait(timeout=30)
+
+
+@contextlib.contextmanager
 def _web_en_marcha(web: Path, frontend: str, puerto: int, url_api: str):
     """Compila la web (Vite o Next.js) con la dirección de la API y la sirve en el puerto."""
     npm_install(web)
     if frontend == "next":
-        ejecutar([NPX, "next", "build"], web, env={"NEXT_PUBLIC_API_URL": url_api, "NEXT_TELEMETRY_DISABLED": "1"})
-        servidor = subprocess.Popen(
-            [NODE, "node_modules/next/dist/bin/next", "start", "-p", str(puerto), "-H", "127.0.0.1"], cwd=web, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        try:
-            from .test_next import _esperar
-
-            _esperar(f"http://127.0.0.1:{puerto}", servidor)
+        with _next_en_marcha(web, puerto, {"NEXT_PUBLIC_API_URL": url_api}):
             yield
-        finally:
-            servidor.terminate()
-            servidor.wait(timeout=30)
         return
     ejecutar([NPX, "vite", "build", "--logLevel", "error"], web, env={"VITE_API_URL": url_api})
     servidor = http.server.ThreadingHTTPServer(("127.0.0.1", puerto), functools.partial(_SPA, directory=str(web / "dist")))
@@ -164,3 +171,44 @@ def test_login_de_react_native_en_el_navegador(en_carpeta, monkeypatch):
         finally:
             servidor.shutdown()
         assert resultado.stdout.count("ok - ") == 8, resultado.stdout
+
+
+@pytest.mark.lento
+@requiere_node
+@requiere_playwright
+@pytest.mark.parametrize("variante", ["ts", "js"])
+def test_login_de_next_fullstack_en_el_navegador(variante, en_carpeta, monkeypatch):
+    """Next.js full stack: la API propia con la cookie httpOnly, proxy.ts y recurso --protegido."""
+    assert main(["crear", "next-fullstack", "app", "--variante", variante]) == 0
+    app = en_carpeta / "app"
+    monkeypatch.chdir(app)
+    npm_install(app)
+    assert main(["nuevo", "login", "--migrar"]) == 0
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    campos = ["cliente:str", "total:decimal", "--protegido"]
+    assert main(["nuevo", "recurso", "pedido", *campos, "--migrar"]) == 0
+    assert main(["nuevo", "crud", "pedido", *campos]) == 0
+    pruebas = ejecutar([NPM, "test"], app)
+    assert "# pass 13" in pruebas.stdout and "# fail 0" in pruebas.stdout, pruebas.stdout[-3000:]
+    puerto = puerto_libre()
+    with _next_en_marcha(app, puerto):
+        resultado = ejecutar(["node", str(Path(__file__).with_name("login_fullstack_navegador.js")), f"http://127.0.0.1:{puerto}"], app, env={"NO_PROXY": "127.0.0.1,localhost"})
+    assert resultado.stdout.count("ok - ") == 8, resultado.stdout
+
+
+@pytest.mark.lento
+@requiere_node
+@requiere_playwright
+def test_login_obligatorio_de_next_fullstack(en_carpeta, monkeypatch):
+    """--obligatorio en full stack: proxy.ts pide ingresar en todas las páginas."""
+    assert main(["crear", "next-fullstack", "app"]) == 0
+    app = en_carpeta / "app"
+    monkeypatch.chdir(app)
+    npm_install(app)
+    assert main(["nuevo", "login", "--obligatorio", "--migrar"]) == 0
+    assert main(["nuevo", "pagina", "Nosotros"]) == 0
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    puerto = puerto_libre()
+    with _next_en_marcha(app, puerto):
+        resultado = ejecutar(["node", str(SCRIPT_OBLIGATORIO), f"http://127.0.0.1:{puerto}"], app, env={"NO_PROXY": "127.0.0.1,localhost"})
+    assert resultado.stdout.count("ok - ") == 5, resultado.stdout

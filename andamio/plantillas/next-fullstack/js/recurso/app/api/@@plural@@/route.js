@@ -11,6 +11,7 @@
  */
 import { prisma } from '@/lib/db';
 import { leerJson, responder, validar } from '@/lib/errores';
+@@import_login@@
 import { @@nombreCamel@@Crear, @@nombreCamel@@Filtros, aJson, CAMPOS_ORDEN } from './esquema';
 
 // Listar, con búsqueda, orden y filtros opcionales.
@@ -35,6 +36,7 @@ export async function GET(request) {
 // Crear.
 /** @param {Request} request */
 export async function POST(request) {
+  @@pedir_sesion@@
   return responder(async () => {
     const datos = validar(@@nombreCamel@@Crear, await leerJson(request));
     // TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).

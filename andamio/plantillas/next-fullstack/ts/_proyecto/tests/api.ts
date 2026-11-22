@@ -12,6 +12,14 @@ const { prisma } = await import('../lib/db');
 type Contexto = { params: Promise<{ id: string }> };
 type Rutas = Record<string, ((request: Request, contexto: Contexto) => Promise<Response>) | undefined>;
 
+// Con el login (recurso --protegido): el token que se manda en cada pedido.
+let token: string | null = null;
+
+/** Desde acá, cada pedido manda Authorization: Bearer <token> (null: sin token). */
+export function usarToken(nuevo: string | null) {
+  token = nuevo;
+}
+
 export async function abrir(recurso: string) {
   const lista: Rutas = await import(`../app/api/${recurso}/route`);
   const detalle: Rutas = await import(`../app/api/${recurso}/[id]/route`);
@@ -23,7 +31,10 @@ export async function abrir(recurso: string) {
     if (!funcion) throw new Error(`No hay ${metodo} en app/api/${recurso}${id ? '/[id]' : ''}/route`);
     const request = new Request(`http://localhost${ruta}`, {
       method: metodo,
-      headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        ...(datos === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: datos === undefined ? undefined : JSON.stringify(datos),
     });
     const respuesta = await funcion(request, { params: Promise.resolve({ id }) });

@@ -12,6 +12,7 @@ interfaz (componente, página, hook, servicio y CRUD) usan las mismas plantillas
 from __future__ import annotations
 
 import dataclasses
+import secrets
 from pathlib import Path
 
 from andamio.estilos import piezas_de_estilos
@@ -485,12 +486,86 @@ def _pasos_crud_fullstack(sol: Solicitud) -> list[str]:
     return pasos
 
 
+def _login_fullstack_generado(raiz: Path) -> bool:
+    return any((raiz / "lib" / f"sesion.{ext}").is_file() for ext in ("ts", "js"))
+
+
+_CLAVES_PROTEGIDO = ("import_login", "pedir_sesion", "importar_before", "importar_usar_token", "importar_crear_token", "tests_login")
+
+
+def _contexto_recurso_protegido(sol: Solicitud) -> dict[str, str]:
+    """--protegido: crear, reemplazar, modificar y eliminar piden login (ver es libre, como en Django)."""
+    if not _protegido(sol):
+        return dict.fromkeys(_CLAVES_PROTEGIDO, "")
+    if not _login_fullstack_generado(sol.raiz):
+        raise AndamioError(
+            "--protegido pide el login, y este proyecto todavía no lo tiene.",
+            f"Generá primero el login: {consola.programa()} nuevo login --migrar",
+        )
+    ext = _js.MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    try:
+        ayuda = (sol.raiz / "tests" / f"api.{ext}").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        ayuda = ""
+    if "usarToken" not in ayuda:
+        raise AndamioError(
+            f"Tu tests/api.{ext} es de una versión anterior: los tests del recurso no podrían mandar el token.",
+            f"Agregale usarToken como en un proyecto nuevo ({consola.programa()} crear next-fullstack prueba) y generá el recurso de nuevo.",
+        )
+    usuario = f"prueba-{sol.nombre.kebab}"
+    explicacion = ["// Pide login (--protegido): sin sesión, responde 401."] if sol.guia else []
+    tests = [
+        "// --- Login (--protegido) ---------------------------------------------------------",
+        *(["// Crear, modificar y eliminar piden login: los tests entran con un usuario."] if sol.guia else []),
+        "let token = '';",
+        "",
+        "before(async () => {",
+        "  const usuario = await prisma.usuario.upsert({",
+        f"    where: {{ username: '{usuario}' }},",
+        "    update: {},",
+        f"    create: {{ username: '{usuario}', passwordHash: '-' }}, // no ingresa con contraseña: el token se arma acá",
+        "  });",
+        "  token = await crearToken(usuario.id, 'access');",
+        "  usarToken(token);",
+        "});",
+        "",
+        "test('sin login no se puede crear', async () => {",
+        "  usarToken(null);",
+        "  try {",
+        "    assert.equal((await api.post(URL, DATOS)).status, 401);",
+        "    assert.equal((await api.get(URL)).status, 200); // ver es libre",
+        "  } finally {",
+        "    usarToken(token);",
+        "  }",
+        "});",
+        "",
+    ]
+    return {
+        "import_login": "import { pedirSesion } from '@/lib/sesion';",
+        "pedir_sesion": "\n".join([*explicacion, "const usuario = await pedirSesion(request);", "if (usuario instanceof Response) return usuario;"]),
+        "importar_before": "before, ",
+        "importar_usar_token": ", usarToken",
+        "importar_crear_token": f"import {{ crearToken }} from '../lib/tokens{'.js' if ext == 'js' else ''}';",
+        "tests_login": "\n".join(tests),
+    }
+
+
+def _contexto_recurso_fullstack(sol: Solicitud) -> dict[str, str]:
+    return {**express.contexto_recurso_api("http://localhost:3000/api")(sol), **_contexto_recurso_protegido(sol)}
+
+
 RECURSO = dataclasses.replace(
     express.RECURSO,
     descripcion="API en app/api/ (Route Handlers), modelo de Prisma, validación y tests",
     existe_si=("app/api/@@plural@@",),
-    opciones=frozenset({"migrar"}),  # --protegido: cuando Next full stack tenga su login
-    contexto=express.contexto_recurso_api("http://localhost:3000/api"),
+    opciones=frozenset({"migrar", "protegido"}),
+    contexto=_contexto_recurso_fullstack,
+    marcadores={
+        **{k: v for k, v in express.RECURSO.marcadores.items() if k != "pide_login"},
+        "import_login": "con --protegido: el import de pedirSesion (lib/sesion, del login)",
+        "pedir_sesion": "con --protegido: al principio de crear, reemplazar, modificar y eliminar (sin sesión, 401)",
+        "importar_crear_token": "con --protegido: el import de crearToken, para el usuario de los tests",
+    },
     lectura=(
         ("prisma/schema.prisma", "el modelo @@Nombre@@ (la tabla), al final del archivo"),
         ("app/api/@@plural@@/esquema.@@ext@@", "qué datos acepta la API (validación con Zod)"),
@@ -504,6 +579,142 @@ RECURSO = dataclasses.replace(
     siguiente_paso=express.pasos_recurso(["npm run dev", "http://localhost:3000/api/@@plural@@/"]),
 )
 
+# --- Login propio (next-fullstack): la API con la cookie httpOnly y proxy.ts -------------
+
+
+def _pagina_protegida(texto: str) -> Insercion:
+    """La ruta de una página --protegido en lib/paginasProtegidas (la revisa proxy.ts)."""
+    return Insercion(
+        "lib/paginasProtegidas.@@ext@@",
+        texto,
+        marcador="paginas_protegidas",
+        descripcion="la página pide ingresar (proxy.ts)",
+        ubicacion="dentro de la lista PAGINAS",
+        comentario="//",
+        condicion=_protegido,
+    )
+
+
+def _validar_login_fullstack(raiz: Path, nombre: Nombre) -> None:
+    _validar_login(raiz, nombre)
+    if (raiz / "app" / "api" / "token").exists():
+        raise AndamioError("Ya hay una API en app/api/token: el login usa esa ruta.", "Cambiale el nombre a la tuya y generá el login de nuevo.")
+
+
+def _contexto_login_fullstack(sol: Solicitud) -> dict[str, str]:
+    contexto = _contexto_login(sol)
+    avisa = "alVencerLaSesion" in _http_del_proyecto(sol)
+    return {
+        **contexto,
+        "importar_http": "import { alVencerLaSesion } from '@/services/http';" if avisa else "",
+        "todas": "true" if _obligatorio(sol) else "false",
+        "secret_key": secrets.token_urlsafe(48),
+        "modelo_usuario": express.MODELO_USUARIO,
+    }
+
+
+def _pasos_login_fullstack(sol: Solicitud) -> list[str]:
+    pasos: list[str] = []
+    try:
+        paquete = (sol.raiz / "package.json").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        paquete = '"jose"'
+    if '"jose"' not in paquete:
+        # Los proyectos creados antes no traen jose (la librería de los tokens).
+        pasos.append("npm install jose@6.2.15")
+    if not sol.opciones.get("migrado"):
+        pasos.append("npx prisma migrate dev --name usuarios")
+    try:
+        proxy = next(t for t in ((sol.raiz / f"proxy.{e}").read_text(encoding="utf-8-sig") for e in ("ts", "js") if (sol.raiz / f"proxy.{e}").is_file()))
+    except StopIteration:
+        proxy = "andamio:paginas"
+    if "andamio:paginas" not in proxy:
+        pasos += [
+            "# Tu proxy es de una versión anterior: solo atiende la API. Para que revise las páginas,",
+            "# pegá lo que se indica arriba y cambiá el matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']",
+        ]
+    return [
+        *pasos,
+        "npm run dev",
+        "http://localhost:3000/ingresar",
+        "# Los tests del login se ejecutan con: npm test",
+        "# Para que una página pida ingresar:",
+        f"{consola.programa()} nuevo pagina Perfil --protegido",
+        "# Para que un recurso pida login al crear, modificar y eliminar: nuevo recurso ... --protegido",
+    ]
+
+
+LOGIN_FULLSTACK = dataclasses.replace(
+    LOGIN,
+    descripcion="registro, ingreso y salida con la API de este proyecto (cookie httpOnly), y páginas que piden ingresar",
+    lectura=(
+        ("prisma/schema.prisma", "el modelo Usuario (la tabla), al final del archivo"),
+        ("lib/sesion.@@ext@@", "cómo se guardan las contraseñas (hash) y quién hace cada pedido (pedirSesion)"),
+        ("lib/tokens.@@ext@@", "cómo se arman y se leen los tokens, y la cookie httpOnly de la sesión"),
+        ("app/api/token/route.@@ext@@", "ingresar: devuelve los tokens y deja la cookie"),
+        ("app/api/registro/route.@@ext@@", "crear una cuenta (con las reglas de la contraseña)"),
+        ("lib/paginasProtegidas.@@ext@@", "qué páginas piden ingresar: proxy.ts lo revisa en el servidor"),
+        ("sesion/sesion.@@ext@@", "la sesión en las páginas: useSesion() (quién ingresó), ingresar y salir"),
+        ("app/ingresar/FormularioIngreso.@@extx@@", "el formulario para ingresar"),
+        ("tests/login.test.@@ext@@", "los tests del login"),
+        ("http/login.http", "peticiones para registrarse, pedir el token y usarlo"),
+    ),
+    opciones=frozenset({"sin_registro", "obligatorio", "migrar"}),
+    validar_nombre=_validar_login_fullstack,
+    contexto=_contexto_login_fullstack,
+    marcadores={
+        **LOGIN.marcadores,
+        "importar_http": "el import de alVencerLaSesion (vacío con un services/http anterior)",
+        "todas": "true con --obligatorio: todas las páginas piden ingresar",
+        "secret_key": "una clave al azar para firmar los tokens (va al .env)",
+        "modelo_usuario": "el model Usuario para prisma/schema.prisma",
+    },
+    existe_si=("sesion", "app/api/token"),
+    inserciones=(
+        *LOGIN.inserciones,
+        Insercion(
+            "prisma/schema.prisma", "@@modelo_usuario@@", marcador="modelos", descripcion="modelo Usuario (tabla usuarios)", ubicacion="al final del archivo", comentario="//"
+        ),
+        Insercion(
+            "proxy.@@ext@@",
+            "import { pedirIngreso } from '@/lib/paginasProtegidas';",
+            marcador="imports_proxy",
+            descripcion="import de pedirIngreso",
+            ubicacion="arriba, junto a los otros import",
+            comentario="//",
+        ),
+        Insercion(
+            "proxy.@@ext@@",
+            "\n".join(
+                [
+                    "// Las páginas que piden ingresar (lib/paginasProtegidas): sin sesión, a /ingresar.",
+                    "const aIngresar = await pedirIngreso(request);",
+                    "if (aIngresar) {",
+                    "  return aIngresar;",
+                    "}",
+                ]
+            ),
+            marcador="paginas",
+            descripcion="las páginas que piden ingresar",
+            ubicacion="en la función proxy, después de lo de la API",
+            comentario="//",
+        ),
+        Insercion(".env", "\n# Firma de los tokens del login (nuevo login). Es secreta: no la compartas.\nSECRET_KEY=@@secret_key@@", descripcion="SECRET_KEY", crear_si_falta=True),
+        Insercion(".env.example", "\n# Firma de los tokens del login: en el .env, una clave larga y al azar.\nSECRET_KEY=cambiar-por-una-clave-larga-y-secreta", descripcion="SECRET_KEY de ejemplo", crear_si_falta=True),
+    ),
+    siguiente_paso=_pasos_login_fullstack,
+    despues=lambda sol: express._migrar(sol, "usuarios"),
+    confirmaciones={"migrar": "¿Crear ahora la migración de la base de datos (npx prisma migrate dev)?"},
+)
+
+PAGINA_FULLSTACK = dataclasses.replace(PAGINA, inserciones=(*PAGINA.inserciones, _pagina_protegida("'/@@nombreKebab@@',")))
+
+CRUD_FULLSTACK = dataclasses.replace(
+    CRUD,
+    siguiente_paso=_pasos_crud_fullstack,
+    inserciones=(*CRUD.inserciones, _pagina_protegida("'/@@pluralKebab@@/nuevo',\n'/@@pluralKebab@@/[id]/editar',")),
+)
+
 STACK_FULLSTACK = Stack(
     clave="next-fullstack",
     titulo="Next.js full stack",
@@ -512,8 +723,8 @@ STACK_FULLSTACK = Stack(
     tipos=_js.TIPOS,
     piezas={
         "recurso": RECURSO,
-        "crud": dataclasses.replace(CRUD, siguiente_paso=_pasos_crud_fullstack),
-        "pagina": PAGINA,
+        "crud": CRUD_FULLSTACK,
+        "pagina": PAGINA_FULLSTACK,
         "componente": COMPONENTE,
         "hook": HOOK,
         "servicio": dataclasses.replace(
@@ -521,6 +732,7 @@ STACK_FULLSTACK = Stack(
             descripcion="funciones para usar un recurso de la API de este proyecto",
             siguiente_paso=SERVICIO.siguiente_paso[:2],
         ),
+        "login": LOGIN_FULLSTACK,
         **ESTILOS,
     },
     ejemplo_proyecto="mi-app",

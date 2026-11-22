@@ -450,7 +450,8 @@ Lo mismo que `next` (incluidos `tema`, `ui` y `estilo`), más la pieza `recurso`
 
 | Pieza | Comando | Qué genera |
 |---|---|---|
-| `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int --migrar` | La API en `app/api/productos/` (Route Handlers con Prisma y Zod), con el mismo contrato que las otras APIs, y 5 tests. |
+| `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int --migrar` | La API en `app/api/productos/` (Route Handlers con Prisma y Zod), con el mismo contrato que las otras APIs, y 5 tests. Con `--protegido`, crear, reemplazar, modificar y eliminar piden login (el token o la cookie; ver es libre) y los tests entran con un usuario. |
+| `login` | `nuevo login --migrar` | La API del login (`app/api/token`, `token/refresh`, `registro`, `yo` y `salir`, con las mismas respuestas que Django), el modelo `Usuario`, `lib/sesion` y `lib/tokens`, 7 tests y `http/login.http`; y las páginas `/ingresar` y `/registro`. La API deja el token en una **cookie httpOnly** (las páginas no lo guardan) y `proxy.ts` revisa en el servidor las páginas que piden ingresar (`lib/paginasProtegidas`: las de `pagina` y `crud --protegido`, o todas con `--obligatorio`). |
 
 ---
 

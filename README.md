@@ -57,7 +57,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `login`, `tema` |
 | Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
-| Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio`, `tema`, `ui`, `estilo` |
+| Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio`, `login`, `tema`, `ui`, `estilo` |
 | Reflex (web solo con Python) | `reflex` | `crud`, `crud-api`, `pagina`, `componente`, `estado`, `servicio`, `tema` |
 
 **Guías paso a paso** (en [docs/guias/](docs/guias/README.md)): [todos los comandos con
@@ -91,6 +91,9 @@ tests, y el enlace en el menú; `pagina` una plantilla con su ruta. `--protegido
 
 **Next.js full stack:** `recurso` crea la API en `app/api/` (Route Handlers, con su
 tabla de Prisma) y `crud` las páginas que la usan; generalos con los mismos campos.
+`nuevo login --migrar` agrega el login con las mismas rutas que Django: las páginas no
+guardan el token (la API lo deja en una cookie httpOnly) y `proxy.ts` revisa en el servidor
+las páginas `--protegido` antes de mostrarlas.
 La API tiene la misma forma que las otras, así que también la puede usar React Native.
 
 **Reflex:** la web se escribe solo en Python. `crud` guarda los datos en su propia base
@@ -129,7 +132,7 @@ Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
 - `--plural`: indica el plural cuando el automático no sirve (`--plural paises`).
-- `--protegido`: en un `recurso` de Django, FastAPI o Express, crear, modificar y eliminar
+- `--protegido`: en un `recurso` de Django, FastAPI, Express o Next.js full stack, crear, modificar y eliminar
   piden el token. En Django con plantillas, React, Vue y Next.js (`pagina`, `crud`), HTML + JS
   (`pagina`) y React Native (`pantalla`), la página pide ingresar (con `nuevo login`).
 - `--obligatorio` (en `nuevo login`; Django, Django con plantillas, React, Vue, Next.js y HTML + JS):

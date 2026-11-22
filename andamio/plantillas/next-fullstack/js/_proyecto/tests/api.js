@@ -9,6 +9,18 @@
 process.env.DATABASE_URL = 'file:./test.db'; // antes de cargar la conexión
 const { prisma } = await import('../lib/db.js');
 
+// Con el login (recurso --protegido): el token que se manda en cada pedido.
+/** @type {string | null} */
+let token = null;
+
+/**
+ * Desde acá, cada pedido manda Authorization: Bearer <token> (null: sin token).
+ * @param {string | null} nuevo
+ */
+export function usarToken(nuevo) {
+  token = nuevo;
+}
+
 /** @param {string} recurso */
 export async function abrir(recurso) {
   const lista = await import(`../app/api/${recurso}/route.js`);
@@ -21,7 +33,10 @@ export async function abrir(recurso) {
     if (!funcion) throw new Error(`No hay ${metodo} en app/api/${recurso}${id ? '/[id]' : ''}/route`);
     const request = new Request(`http://localhost${ruta}`, {
       method: metodo,
-      headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        ...(datos === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: datos === undefined ? undefined : JSON.stringify(datos),
     });
     const respuesta = await funcion(request, { params: Promise.resolve({ id }) });

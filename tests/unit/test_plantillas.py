@@ -99,3 +99,17 @@ def test_las_plantillas_js_no_tienen_sintaxis_de_typescript(stack):
                 if linea.lstrip().startswith(("*", "/**", "//")):
                     continue
                 assert not tipos.search(linea), f"{carpeta.name}/{archivo.ruta}:{numero}: {linea}"
+
+
+def test_carpeta_combinada(tmp_path):
+    """Un stack que extiende a otro reemplaza solo los archivos que cambian de una pieza."""
+    base, propia = tmp_path / "base", tmp_path / "propia"
+    for ruta, texto in {"a.txt": "base", "sub/b.txt": "base", "sub/c.txt": "base"}.items():
+        (base / ruta).parent.mkdir(parents=True, exist_ok=True)
+        (base / ruta).write_text(texto)
+    for ruta, texto in {"sub/b.txt": "propia", "nuevo.txt": "propia"}.items():
+        (propia / ruta).parent.mkdir(parents=True, exist_ok=True)
+        (propia / ruta).write_text(texto)
+    archivos = {a.ruta: a.contenido.decode() for a in plantillas.leer_arbol(plantillas.CarpetaCombinada(propia, base))}
+    assert archivos == {"a.txt": "base", "sub/b.txt": "propia", "sub/c.txt": "base", "nuevo.txt": "propia"}
+    assert plantillas.CarpetaCombinada(tmp_path / "no", base).is_dir()

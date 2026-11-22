@@ -48,7 +48,8 @@ export function RutaProtegida({ children }) {
  */
 export function useLoginObligatorio() {
   const { usuario } = useSesion();
-  const esDelLogin = RUTAS_DEL_LOGIN.includes(usePathname()) && !usuario;
+  // Sin la barra del final: con trailingSlash (Next.js full stack), la ruta es /ingresar/.
+  const esDelLogin = RUTAS_DEL_LOGIN.includes(usePathname().replace(/(.)\/$/, '$1')) && !usuario;
   const pedirIngreso = usePedirIngreso(!esDelLogin);
   return { esDelLogin, pedirIngreso };
 }

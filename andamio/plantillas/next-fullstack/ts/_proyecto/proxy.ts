@@ -1,10 +1,12 @@
 /**
- * Permite que otras páginas usen la API de este proyecto (CORS): por ejemplo, una app
- * de React con Vite o de Expo en el navegador. Las páginas de este mismo proyecto no lo
- * necesitan. Las direcciones permitidas se configuran en CORS_ALLOWED_ORIGINS (.env).
- * Una app de React Native en el celular tampoco lo necesita.
+ * Se ejecuta en el servidor antes de cada pedido (Next.js lo llama "proxy"):
+ * - La API (/api/...): permite que otras páginas la usen (CORS), por ejemplo una app de
+ *   React con Vite o de Expo en el navegador. Las páginas de este mismo proyecto no lo
+ *   necesitan. Las direcciones permitidas se configuran en CORS_ALLOWED_ORIGINS (.env).
+ * - Las páginas que piden ingresar (con nuevo login): sin sesión, lleva a /ingresar.
  */
 import { NextResponse, type NextRequest } from 'next/server';
+// --- andamio:imports_proxy (no borrar esta línea) ---
 
 const PERMITIDOS = (process.env.CORS_ALLOWED_ORIGINS ?? '')
   .split(',')
@@ -16,7 +18,15 @@ const CABECERAS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return cors(request);
+  }
+  // --- andamio:paginas (no borrar esta línea) ---
+  return NextResponse.next();
+}
+
+function cors(request: NextRequest) {
   const cabeceras = new Headers(CABECERAS);
   const origen = request.headers.get('origin') ?? '';
   if (PERMITIDOS.includes(origen)) {
@@ -32,7 +42,7 @@ export function proxy(request: NextRequest) {
   return respuesta;
 }
 
-// Solo para las rutas de la API.
+// Todos los pedidos, menos los archivos que arma Next.js (_next/) y el ícono.
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

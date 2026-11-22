@@ -50,6 +50,19 @@ Todos los cambios importantes de andamio. El proyecto usa
   Next: protege también las páginas de adentro). `--obligatorio`: el `Layout` pasa a ser
   `'use client'` y pide ingresar en toda la app. `--sin-registro` también. `services/http`
   avisa cuando la API responde 401 con token (`alVencerLaSesion`).
+- Next.js full stack: `nuevo login` (con `--migrar`): la API del login en el mismo proyecto
+  (`app/api/token`, `token/refresh`, `registro`, `yo` y `salir`, con las mismas respuestas
+  que Django, así React o React Native también la usan), el modelo `Usuario`, `lib/sesion`
+  (hash PBKDF2 y `pedirSesion`), `lib/tokens` (JWT con `jose`, ahora en el `package.json`),
+  7 tests y `http/login.http`. Las páginas no guardan el token: la API lo deja en una cookie
+  **httpOnly** (`SameSite=Lax`; `Secure` con https) y `/api/salir/` la borra. `proxy.ts`
+  ahora atiende también las páginas y revisa en el servidor las que piden ingresar
+  (`lib/paginasProtegidas`: las de `pagina` y `crud --protegido`, o todas con
+  `--obligatorio`), así la página no llega al navegador sin sesión. `recurso --protegido`:
+  crear, reemplazar, modificar y eliminar piden el token o la cookie; los tests entran con un
+  usuario (`usarToken`, nuevo en `tests/api`).
+- Un stack que extiende a otro (next-fullstack extiende next) puede cambiar solo algunos
+  archivos de una pieza: las plantillas se combinan (`CarpetaCombinada`).
 - React Native: `nuevo login`, con el mismo contrato: el token se guarda cifrado con
   `expo-secure-store` (en la web, en `localStorage`), la sesión (`useSesion()`, sin
   Provider), las pantallas `/ingresar` y `/registro` y `BotonSesion` (Ingresar / Salir) en la

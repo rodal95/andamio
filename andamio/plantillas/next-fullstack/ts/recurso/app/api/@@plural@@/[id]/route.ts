@@ -6,6 +6,7 @@
  */
 import { prisma } from '@/lib/db';
 import { leerJson, NoEncontrado, responder, validar } from '@/lib/errores';
+@@import_login@@
 import { @@nombreCamel@@Actualizar, @@nombreCamel@@Crear, aJson } from '../esquema';
 
 type Contexto = { params: Promise<{ id: string }> };
@@ -25,6 +26,7 @@ export async function GET(request: Request, contexto: Contexto) {
 
 // Reemplazar (PUT): hay que enviar todos los campos.
 export async function PUT(request: Request, contexto: Contexto) {
+  @@pedir_sesion@@
   return responder(async () => {
     const { id } = await buscarO404(contexto);
     const datos = validar(@@nombreCamel@@Crear, await leerJson(request));
@@ -34,6 +36,7 @@ export async function PUT(request: Request, contexto: Contexto) {
 
 // Modificar (PATCH): solo los campos que se envían.
 export async function PATCH(request: Request, contexto: Contexto) {
+  @@pedir_sesion@@
   return responder(async () => {
     const { id } = await buscarO404(contexto);
     const datos = validar(@@nombreCamel@@Actualizar, await leerJson(request));
@@ -43,6 +46,7 @@ export async function PATCH(request: Request, contexto: Contexto) {
 
 // Eliminar.
 export async function DELETE(request: Request, contexto: Contexto) {
+  @@pedir_sesion@@
   return responder(async () => {
     const { id } = await buscarO404(contexto);
     await prisma.@@nombreCamel@@.delete({ where: { id } });

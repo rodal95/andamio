@@ -188,10 +188,12 @@ def _campos_reservados(nombre: Nombre) -> dict[str, str]:
 # --- Migración (--migrar) ----------------------------------------------------------------
 
 
-def _migrar(sol: Solicitud) -> None:
+def _migrar(sol: Solicitud, nombre: str = "") -> None:
+    """--migrar: npx prisma migrate dev con el nombre de la migración (el plural, si no se da)."""
     if not sol.opciones.get("migrar"):
         return
-    comando = f"npx prisma migrate dev --name {sol.nombre.plural}"
+    nombre = nombre or sol.nombre.plural
+    comando = f"npx prisma migrate dev --name {nombre}"
     npx = shutil.which("npx")
     if npx is None:
         raise AndamioError(
@@ -205,7 +207,7 @@ def _migrar(sol: Solicitud) -> None:
         )
     consola.escribir()
     consola.titulo(f"Ejecutando: {comando}")
-    resultado = subprocess.run([npx, "prisma", "migrate", "dev", "--name", sol.nombre.plural], cwd=sol.raiz)
+    resultado = subprocess.run([npx, "prisma", "migrate", "dev", "--name", nombre], cwd=sol.raiz)
     if resultado.returncode != 0:
         raise AndamioError(
             f"Falló '{comando}'. Los archivos del recurso se generaron igual.",
@@ -362,7 +364,7 @@ RECURSO = Pieza(
 
 # --- Login con JWT (nuevo login): el mismo contrato que la API de Django ---------------
 
-_MODELO_USUARIO = """model Usuario {
+MODELO_USUARIO = """model Usuario {
   id           Int     @id @default(autoincrement())
   username     String  @unique
   email        String  @default("")
@@ -409,7 +411,7 @@ def _validar_login(raiz: Path, nombre: Nombre) -> None:
 
 
 def _contexto_login(sol: Solicitud) -> dict[str, str]:
-    return {"secret_key": secrets.token_urlsafe(48), "modelo_usuario": _MODELO_USUARIO}
+    return {"secret_key": secrets.token_urlsafe(48), "modelo_usuario": MODELO_USUARIO}
 
 
 def _pasos_login(sol: Solicitud) -> list[str]:

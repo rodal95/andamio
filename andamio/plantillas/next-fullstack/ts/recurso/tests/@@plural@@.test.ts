@@ -1,7 +1,8 @@
 /** Tests de la API de @@titulo@@. Ejecutalos con: npm test */
 import assert from 'node:assert/strict';
-import { beforeEach, test } from 'node:test';
-import { abrir } from './api';
+import { @@importar_before@@beforeEach, test } from 'node:test';
+import { abrir@@importar_usar_token@@ } from './api';
+@@importar_crear_token@@
 
 const { api, prisma } = await abrir('@@plural@@');
 
@@ -15,6 +16,7 @@ const DATOS_MODIFICADOS = {
   @@datos_modificados@@
 };
 
+@@tests_login@@
 // Cada test empieza con la tabla vacía.
 beforeEach(async () => {
   await prisma.@@nombreCamel@@.deleteMany();

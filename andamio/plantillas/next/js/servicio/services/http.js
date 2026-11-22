@@ -54,7 +54,7 @@ export function leerToken() {
 let alVencer = null;
 
 /**
- * Qué hacer si la API responde 401 a un pedido que mandó el token (venció o no es válido).
+ * Qué hacer si la API responde 401 (sin sesión, o el token venció o no es válido).
  * Lo usa la sesión del login (sesion/): la cierra y vuelve a pedir el ingreso.
  * @param {() => void} funcion
  */
@@ -92,8 +92,8 @@ async function pedir(metodo, ruta, datos) {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
   }
-  if (respuesta.status === 401 && leerToken()) {
-    // El token venció (dura 60 minutos) o no es válido: se borra y se avisa.
+  if (respuesta.status === 401) {
+    // Sin sesión, o venció (el token dura 60 minutos): se borra el token y se avisa a la sesión.
     borrarToken();
     alVencer?.();
   }

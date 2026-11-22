@@ -105,12 +105,18 @@ def stack_base(stack: Stack) -> Stack | None:
 
 
 def carpeta_pieza(stack: Stack, pieza: Pieza, variante: str = "") -> Traversable:
-    """Carpeta incorporada de una pieza: la del stack o, si no la tiene, la del stack que extiende."""
+    """Carpeta incorporada de una pieza: la del stack. Si el stack extiende a otro, combinada
+    con la de ese: los archivos propios reemplazan (o se suman) a los del stack base."""
     propia = carpeta_plantillas(stack, variante) / pieza.clave
     base = stack_base(stack)
-    if base is not None and not propia.is_dir():
-        return carpeta_pieza(base, pieza, variante)
-    return propia
+    if base is None:
+        return propia
+    de_base = carpeta_pieza(base, pieza, variante)
+    if not propia.is_dir():
+        return de_base
+    if not de_base.is_dir():
+        return propia
+    return plantillas.CarpetaCombinada(propia, de_base)
 
 
 def archivos_proyecto(stack: Stack, variante: str = "") -> list[plantillas.ArchivoPlantilla]:

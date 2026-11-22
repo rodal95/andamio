@@ -415,3 +415,68 @@ def test_login_con_un_http_sin_aviso_de_vencimiento(web, variante, capsys):
     assert main(["nuevo", "login"]) == 0
     assert "import { leerToken } from '@/services/http';" in leer(web / f"sesion/sesion.{ext}")
     assert "alVencerLaSesion" in capsys.readouterr().out
+
+
+# --- Login de next-fullstack (la API propia, la cookie httpOnly y proxy.ts) -------------
+
+
+def test_login_fullstack(app, variante):
+    ext, extx = EXT[variante]
+    assert main(["nuevo", "login"]) == 0
+    for archivo in (
+        *(f"app/api/{r}/route.{ext}" for r in ("token", "token/refresh", "registro", "yo", "salir")),
+        *(f"lib/{n}.{ext}" for n in ("tokens", "sesion", "usuarios", "paginasProtegidas")),
+        f"tests/login.test.{ext}",
+        "http/login.http",
+        # Lo mismo que en next (las plantillas de next, combinadas)...
+        f"sesion/RutaProtegida.{extx}",
+        f"app/ingresar/FormularioIngreso.{extx}",
+        # ...salvo authService y sesion, que son propios: el token va en la cookie.
+        f"services/authService.{ext}",
+        f"sesion/sesion.{ext}",
+    ):
+        assert (app / archivo).is_file(), archivo
+    assert "guardarToken" not in leer(app / f"services/authService.{ext}")
+    assert "'/salir/'" in leer(app / f"services/authService.{ext}")
+    assert "leerToken" not in leer(app / f"sesion/sesion.{ext}")
+    assert "HttpOnly" in leer(app / f"lib/tokens.{ext}")
+    assert "model Usuario {" in leer(app / "prisma/schema.prisma")
+    assert "SECRET_KEY=" in leer(app / ".env")
+    proxy = leer(app / f"proxy.{ext}")
+    assert "import { pedirIngreso } from '@/lib/paginasProtegidas';" in proxy
+    assert proxy.index("return cors(request);") < proxy.index("await pedirIngreso(request)")
+    assert "const TODAS = false;" in leer(app / f"lib/paginasProtegidas.{ext}")
+    assert '"jose"' in leer(app / "package.json")
+
+
+def test_fullstack_protegido(app, variante):
+    ext, extx = EXT[variante]
+    assert main(["nuevo", "login", "--obligatorio"]) == 0
+    assert "const TODAS = true;" in leer(app / f"lib/paginasProtegidas.{ext}")
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "cliente:str", "--protegido"]) == 0
+    assert main(["nuevo", "crud", "pedido", "cliente:str", "--protegido"]) == 0
+    protegidas = leer(app / f"lib/paginasProtegidas.{ext}")
+    assert "'/perfil',\n  '/pedidos/nuevo',\n  '/pedidos/[id]/editar',\n" in protegidas
+    assert (app / f"app/perfil/layout.{extx}").is_file()
+    lista, detalle = leer(app / f"app/api/pedidos/route.{ext}"), leer(app / f"app/api/pedidos/[id]/route.{ext}")
+    assert "import { pedirSesion } from '@/lib/sesion';" in lista
+    assert lista.count("await pedirSesion(request)") == 1  # crear; listar es libre
+    assert detalle.count("await pedirSesion(request)") == 3  # reemplazar, modificar y eliminar
+    pruebas = leer(app / f"tests/pedidos.test.{ext}")
+    assert "usarToken(token);" in pruebas and "test('sin login no se puede crear'" in pruebas
+
+
+def test_fullstack_recurso_protegido_sin_login(app, capsys):
+    assert main(["nuevo", "recurso", "pedido", "cliente:str", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+
+
+def test_fullstack_login_con_un_proxy_anterior(app, variante, capsys):
+    ext, _ = EXT[variante]
+    (app / f"proxy.{ext}").write_text("export function proxy() {}\nexport const config = { matcher: '/api/:path*' };\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "login"]) == 0
+    salida = capsys.readouterr().out
+    assert "await pedirIngreso(request)" in salida  # qué pegar
+    assert "matcher" in salida
