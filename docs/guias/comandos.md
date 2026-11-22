@@ -55,9 +55,9 @@ Qué opciones acepta cada pieza:
 | Opción | Piezas |
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
-| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React), `pagina` (React) |
+| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React), `pagina` (Django con plantillas, React) |
 | `--sin-registro` | `login` (React) |
-| `--obligatorio` | `login` (Django, React) |
+| `--obligatorio` | `login` (Django, Django con plantillas, React) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -228,7 +228,9 @@ salir, mensajes y `/admin/`.
 |---|---|---|
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | La app `productos/`: modelo, formulario (`forms.py`), 5 vistas (lista con búsqueda y páginas, detalle, crear, editar, eliminar), 4 plantillas HTML, rutas con nombre, admin y 6 tests. Registra la app, las rutas `/productos/` y el enlace en el menú. |
 | `crud --protegido` | `nuevo crud pedido cliente:str total:decimal --protegido` | Lo mismo, con `LoginRequiredMixin` en crear, editar y eliminar. |
-| `pagina` | `nuevo pagina Contacto` | `templates/paginas/contacto.html` (hereda de `base.html`), la ruta `/contacto/` y el enlace en el menú. |
+| `pagina` | `nuevo pagina Contacto` | `templates/paginas/contacto.html` (hereda de `base.html`), la ruta `/contacto/` y el enlace en el menú (`templates/partials/navbar.html`). |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | Lo mismo, con la ruta envuelta en `login_required(...)` (sin sesión lleva a `/cuentas/login/` y después vuelve); su enlace solo se ve si alguien ingresó (`{% if user.is_authenticated %}`). |
+| `login` | `nuevo login --obligatorio` | El login ya viene con el proyecto; `--obligatorio` hace que todo el sitio pida ingresar: `LoginRequiredMiddleware` (Django 5.1+) al final de `settings.py`. Quedan abiertos ingresar, el registro (`@login_not_required`) y `/admin/`. Los crud que generes después entran a sus tests con un usuario; si ya tenías, los pasos dicen qué agregar. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `static/css/tema.css`, cargado en `templates/base.html`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `static/css/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `static/css/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |

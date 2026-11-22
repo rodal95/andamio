@@ -49,7 +49,7 @@ en tu proyecto, escribí `python -m andamio info`.
 |---|---|---|
 | Python + SQLite (consola) | `python` | `entidad`, `menu`, `busqueda` |
 | Django REST (API) | `django` | `recurso`, `accion`, `login` |
-| Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `tema`, `ui`, `estilo` |
+| Django con plantillas (sitio, monolito) | `django-web` | `crud`, `pagina`, `login`, `tema`, `ui`, `estilo` |
 | FastAPI + SQLModel | `fastapi` | `recurso`, `login` |
 | Express + Prisma (TS o JS) | `express` | `recurso`, `login` |
 | HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |

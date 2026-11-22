@@ -48,7 +48,8 @@ def test_python_generado_sin_nombres_sin_definir(clave, guia, en_carpeta, monkey
     monkeypatch.chdir(raiz)
     for argumentos in _piezas(stack):
         if argumentos[0] == "login":
-            argumentos = ["login"]
+            # Sin nombre; con las opciones de su ejemplo (Django con plantillas: --obligatorio).
+            argumentos = ["login", *[a for a in stack.piezas["login"].ejemplo.split() if a.startswith("--")]]
         assert main(["nuevo", *argumentos, *extra]) == 0, argumentos
     problemas = []
     for archivo in sorted(raiz.rglob("*.py")):

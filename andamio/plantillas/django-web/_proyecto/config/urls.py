@@ -13,6 +13,8 @@ from django.views.generic import TemplateView
 
 from . import views
 
+# --- andamio:imports (no borrar esta línea) ---
+
 urlpatterns = [
     path("", TemplateView.as_view(template_name="inicio.html"), name="inicio"),
     path("admin/", admin.site.urls),

@@ -17,6 +17,13 @@ Todos los cambios importantes de andamio. El proyecto usa
   documentación siguen abiertos, y un recurso `--protegido` sigue dejando ver. Los recursos
   que se generen después entran a sus tests con un usuario (y controlan el 401); si ya había
   recursos, los siguientes pasos dicen qué agregar en sus tests.
+- Django con plantillas: el menú y el pie son plantillas parciales
+  (`templates/partials/navbar.html` y `footer.html`) que incluye `base.html`, y el pie queda
+  abajo aunque la página sea corta. `pagina --protegido`: la ruta con `login_required(...)` y
+  el enlace solo con sesión. `nuevo login --obligatorio`: todo el sitio pide ingresar
+  (`LoginRequiredMiddleware`, Django 5.1+); el registro queda abierto (`@login_not_required`).
+  Los crud que se generen después entran a sus tests con un usuario. En los proyectos
+  anteriores (el menú dentro de `base.html`) los enlaces siguen yendo ahí.
 - Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
   la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
   el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo

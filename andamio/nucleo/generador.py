@@ -63,7 +63,12 @@ def _error_identificador(pieza: Pieza, forma: str, donde: str) -> AndamioError:
 def describir_nombre(pieza: Pieza, nombre: Nombre) -> str:
     formas: list[str] = []
     for forma in pieza.formas:
-        valor = renderizar(forma, nombre.marcadores()) if "@@" in forma else nombre.forma(forma)
+        if "@@" in forma:
+            valor = renderizar(forma, nombre.marcadores())
+        elif forma.isidentifier():
+            valor = nombre.forma(forma)  # "snake", "pascal"...
+        else:
+            valor = forma  # un texto fijo: "config/settings.py (LoginRequiredMiddleware)"
         if valor not in formas:
             formas.append(valor)
     texto = " / ".join(formas)

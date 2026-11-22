@@ -72,6 +72,7 @@ def _contexto_crud(sol: Solicitud) -> dict[str, str]:
     modificados = [f'"{c.nombre}": {_valor(c, 1)},' for c in campos if not (c.tipo == "bool")]
     verificado = next((c for c in campos if c.tipo != "bool"), campos[0])
     protegido = bool(sol.opciones.get("protegido"))
+    obligatorio = sitio_obligatorio(sol.raiz)
     contexto.update(
         campos_form=", ".join(f'"{c.nombre}"' for c in campos),
         widgets=(
@@ -89,10 +90,33 @@ def _contexto_crud(sol: Solicitud) -> dict[str, str]:
         campo_verificado=verificado.nombre,
         import_login="from django.contrib.auth.mixins import LoginRequiredMixin" if protegido else "",
         mixin_login="LoginRequiredMixin, " if protegido else "",
-        import_usuario="from django.contrib.auth import get_user_model" if protegido else "",
-        preparar_tests=_PREPARAR_TESTS_PROTEGIDO if protegido else "",
+        import_usuario="from django.contrib.auth import get_user_model" if protegido or obligatorio else "",
+        # Con todo el sitio protegido, los tests entran con un usuario (y la lista tampoco es libre).
+        preparar_tests=_PREPARAR_TESTS_OBLIGATORIO if obligatorio else _PREPARAR_TESTS_PROTEGIDO if protegido else "",
     )
     return contexto
+
+
+_PREPARAR_TESTS_OBLIGATORIO = """\
+def setUp(self):
+    # Todo el sitio pide ingresar (nuevo login --obligatorio): los tests entran con un usuario.
+    self.usuario = get_user_model().objects.create_user("prueba", password="clave-de-prueba-123")
+    self.client.force_login(self.usuario)
+
+def test_sin_login_pide_ingresar(self):
+    self.client.logout()
+    self.assertRedirects(self.client.get(URL), f"/cuentas/login/?next={URL}")
+"""
+
+_MIDDLEWARE_OBLIGATORIO = "django.contrib.auth.middleware.LoginRequiredMiddleware"
+
+
+def sitio_obligatorio(raiz: Path) -> bool:
+    """Si todo el sitio pide ingresar (nuevo login --obligatorio)."""
+    try:
+        return _MIDDLEWARE_OBLIGATORIO in (raiz / "config" / "settings.py").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        return False
 
 
 _PREPARAR_TESTS_PROTEGIDO = """\
@@ -181,6 +205,23 @@ _MARCADORES_CRUD = {
     "mixin_login": "LoginRequiredMixin en las vistas que modifican (vacío sin --protegido)",
 }
 
+def _enlace(texto: str, descripcion: str = "enlace en el menú", condicion=None) -> Insercion:
+    """Un enlace en el menú: en templates/partials/navbar.html; en los proyectos anteriores
+    (el menú dentro de base.html), en base.html."""
+    return Insercion(
+        "templates/partials/navbar.html",
+        texto,
+        marcador="enlaces",
+        descripcion=descripcion,
+        ubicacion="dentro de <nav>",
+        comentario="{#",
+        condicion=condicion,
+        alternativa=Insercion(
+            "templates/base.html", texto, marcador="enlaces", descripcion=descripcion, ubicacion="dentro de <nav>", comentario="{#", condicion=condicion
+        ),
+    )
+
+
 CRUD = Pieza(
     clave="crud",
     lectura=(
@@ -219,26 +260,28 @@ CRUD = Pieza(
             descripcion="rutas /@@pluralKebab@@/",
             ubicacion="dentro de la lista urlpatterns",
         ),
-        Insercion(
-            "templates/base.html",
-            "<a href=\"{% url '@@plural@@:lista' %}\">@@titulo@@</a>",
-            marcador="enlaces",
-            descripcion="enlace en el menú",
-            ubicacion="dentro de <nav>",
-            comentario="{#",
-        ),
+        _enlace("<a href=\"{% url '@@plural@@:lista' %}\">@@titulo@@</a>"),
     ),
     siguiente_paso=_pasos_crud,
     despues=django.migrador("django, dotenv, dj_database_url"),
     confirmaciones={"migrar": "¿Ejecutar ahora las migraciones (makemigrations y migrate)?"},
 )
 
+def _protegida(sol: Solicitud) -> bool:
+    return bool(sol.opciones.get("protegido"))
+
+
+def _publica(sol: Solicitud) -> bool:
+    return not _protegida(sol)
+
+
 PAGINA = Pieza(
     clave="pagina",
     titulo="Página",
-    descripcion="plantilla HTML con su ruta y su enlace en el menú",
+    descripcion="plantilla HTML con su ruta y su enlace en el menú; con --protegido, pide ingresar",
     ejemplo="Contacto",
     formas=("templates/paginas/@@nombreKebab@@.html", "ruta /@@nombreKebab@@/"),
+    opciones=frozenset({"protegido"}),
     validar_nombre=_validar_pagina,
     existe_si=("templates/paginas/@@nombreKebab@@.html",),
     inserciones=(
@@ -248,17 +291,89 @@ PAGINA = Pieza(
             marcador="urls",
             descripcion="ruta /@@nombreKebab@@/",
             ubicacion="dentro de la lista urlpatterns",
+            condicion=_publica,
+        ),
+        # --protegido: login_required lleva a /cuentas/login/ (y después vuelve) si nadie ingresó.
+        Insercion(
+            "config/urls.py",
+            "from django.contrib.auth.decorators import login_required",
+            marcador="imports",
+            descripcion="import de login_required",
+            ubicacion="arriba, junto a los otros import",
+            condicion=_protegida,
         ),
         Insercion(
-            "templates/base.html",
-            "<a href=\"{% url '@@nombre@@' %}\">@@nombreTitulo@@</a>",
-            marcador="enlaces",
-            descripcion="enlace en el menú",
-            ubicacion="dentro de <nav>",
-            comentario="{#",
+            "config/urls.py",
+            'path("@@nombreKebab@@/", login_required(TemplateView.as_view(template_name="paginas/@@nombreKebab@@.html")), name="@@nombre@@"),',
+            marcador="urls",
+            descripcion="ruta /@@nombreKebab@@/ (pide ingresar)",
+            ubicacion="dentro de la lista urlpatterns",
+            condicion=_protegida,
+        ),
+        _enlace("<a href=\"{% url '@@nombre@@' %}\">@@nombreTitulo@@</a>", condicion=_publica),
+        # El enlace a una página protegida solo se ve si alguien ingresó.
+        _enlace(
+            "{% if user.is_authenticated %}<a href=\"{% url '@@nombre@@' %}\">@@nombreTitulo@@</a>{% endif %}",
+            "enlace en el menú, solo con sesión",
+            _protegida,
         ),
     ),
     siguiente_paso=["python manage.py runserver", "http://127.0.0.1:8000/@@nombreKebab@@/"],
+)
+
+# --- Login obligatorio para todo el sitio (nuevo login --obligatorio) ----------------------
+
+_CONFIG_OBLIGATORIO = f"""
+# --- Login obligatorio (lo agregó: andamio nuevo login --obligatorio) --------------
+# Todo el sitio pide ingresar: sin sesión, cualquier página lleva a /cuentas/login/.
+# Quedan abiertas las vistas marcadas con @login_not_required: ingresar, el registro
+# (config/views.py) y el panel /admin/ (que tiene su propio login).
+MIDDLEWARE += ["{_MIDDLEWARE_OBLIGATORIO}"]"""
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    if not sol.opciones.get("obligatorio"):
+        raise AndamioError(
+            "El login ya viene con el proyecto: /cuentas/login/, /cuentas/registro/ y Salir en el menú.",
+            "Para que todo el sitio pida ingresar: python -m andamio nuevo login --obligatorio. "
+            "Para una sola página: nuevo pagina Perfil --protegido",
+        )
+    return {}
+
+
+def _pasos_login(sol: Solicitud) -> list[str]:
+    try:
+        abierto = "login_not_required" in (sol.raiz / "config" / "views.py").read_text(encoding="utf-8-sig")
+    except (OSError, UnicodeDecodeError):
+        abierto = True
+    aviso = [] if abierto else [
+        "# El registro (config/views.py) también pediría login: agregale @login_not_required",
+        "# (from django.contrib.auth.decorators import login_not_required) arriba de def registro.",
+    ]
+    for tests in sorted(sol.raiz.glob("*/tests.py")):
+        try:
+            texto = tests.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if "TestCase" in texto and "force_login" not in texto:
+            aviso.append(
+                f"# {tests.parent.name}/tests.py entra sin usuario y ahora todo pide ingresar: en su setUp, "
+                "self.client.force_login(get_user_model().objects.create_user(\"prueba\", password=\"clave-de-prueba-123\"))"
+            )
+    return [*aviso, "python manage.py runserver", "http://127.0.0.1:8000/   (lleva a /cuentas/login/)"]
+
+
+LOGIN = Pieza(
+    clave="login",
+    titulo="Login obligatorio",
+    descripcion="el login ya viene con el proyecto; con --obligatorio, todo el sitio pide ingresar",
+    ejemplo="--obligatorio",
+    nombre_defecto="sesion",
+    formas=("config/settings.py (LoginRequiredMiddleware)",),
+    opciones=frozenset({"obligatorio"}),
+    contexto=_contexto_login,
+    inserciones=(Insercion("config/settings.py", _CONFIG_OBLIGATORIO, descripcion="todo el sitio pide ingresar (al final)"),),
+    siguiente_paso=_pasos_login,
 )
 
 ESTILOS = piezas_de_estilos(
@@ -280,7 +395,7 @@ STACK = Stack(
     senal="manage.py, config/settings.py y templates/base.html",
     detectar=_detectar,
     tipos=TIPOS,
-    piezas={"crud": CRUD, "pagina": PAGINA, **ESTILOS},
+    piezas={"crud": CRUD, "pagina": PAGINA, "login": LOGIN, **ESTILOS},
     ejemplo_proyecto="mi-sitio",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

@@ -47,7 +47,8 @@ def test_crud_genera_la_app_y_la_registra(con_piezas):
                     "templates/productos/producto_lista.html", "templates/productos/producto_detalle.html",
                     "templates/productos/producto_form.html", "templates/productos/producto_confirmar_eliminar.html"]:  # fmt: skip
         assert (app / archivo).is_file(), archivo
-    urls, base = leer(raiz / "config/urls.py"), leer(raiz / "templates/base.html")
+    # El menú está en una plantilla parcial (la incluye base.html).
+    urls, base = leer(raiz / "config/urls.py"), leer(raiz / "templates/partials/navbar.html")
     assert 'path("productos/", include("productos.urls")),' in urls
     assert 'path("contacto/", TemplateView.as_view(template_name="paginas/contacto.html"), name="contacto"),' in urls
     assert "<a href=\"{% url 'productos:lista' %}\">Productos</a>" in base
@@ -122,3 +123,59 @@ def test_las_paginas_se_ven(con_piezas):
 
     resultado = subprocess.run([sys.executable, "-c", codigo], cwd=con_piezas, capture_output=True, text=True, encoding="utf-8")
     assert resultado.returncode == 0 and "ok" in resultado.stdout, resultado.stderr
+
+
+# --- Menú y pie como plantillas parciales; páginas protegidas; login obligatorio ----------
+
+
+def test_menu_y_pie_como_plantillas_parciales(en_carpeta, monkeypatch):
+    assert main(["crear", "django-web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    base = leer(raiz / "templates/base.html")
+    assert '{% include "partials/navbar.html" %}' in base and '{% include "partials/footer.html" %}' in base
+    assert "andamio:enlaces" in leer(raiz / "templates/partials/navbar.html")
+    assert '<footer class="pie">' in leer(raiz / "templates/partials/footer.html")
+
+
+def test_pagina_protegida(en_carpeta, monkeypatch):
+    assert main(["crear", "django-web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    urls = leer(raiz / "config/urls.py")
+    assert "from django.contrib.auth.decorators import login_required" in urls
+    assert 'path("perfil/", login_required(TemplateView.as_view(template_name="paginas/perfil.html")), name="perfil"),' in urls
+    navbar = leer(raiz / "templates/partials/navbar.html")
+    assert "{% if user.is_authenticated %}<a href=\"{% url 'perfil' %}\">Perfil</a>{% endif %}" in navbar
+
+
+def test_login_obligatorio(en_carpeta, monkeypatch, capsys):
+    assert main(["crear", "django-web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "login"]) == 1
+    assert "ya viene con el proyecto" in capsys.readouterr().err
+    assert main(["nuevo", "crud", "nota", "texto"]) == 0
+    capsys.readouterr()
+    assert main(["nuevo", "login", "--obligatorio"]) == 0
+    assert "notas/tests.py entra sin usuario" in capsys.readouterr().out
+    assert 'MIDDLEWARE += ["django.contrib.auth.middleware.LoginRequiredMiddleware"]' in leer(raiz / "config/settings.py")
+    assert "@login_not_required" in leer(raiz / "config/views.py")  # el registro sigue abierto
+    # Un crud nuevo entra a sus tests con un usuario (y la lista también pide ingresar).
+    assert main(["nuevo", "crud", "producto", "nombre"]) == 0
+    tests = leer(raiz / "productos/tests.py")
+    assert "self.client.force_login(self.usuario)" in tests
+    assert 'self.assertRedirects(self.client.get(URL), f"/cuentas/login/?next={URL}")' in tests
+
+
+def test_proyecto_anterior_con_el_menu_en_base(en_carpeta, monkeypatch):
+    """Los proyectos creados antes (el menú dentro de base.html) siguen funcionando."""
+    assert main(["crear", "django-web", "sitio"]) == 0
+    raiz = en_carpeta / "sitio"
+    monkeypatch.chdir(raiz)
+    navbar = leer(raiz / "templates/partials/navbar.html").replace("{# El menú", "{# Menú")
+    base = leer(raiz / "templates/base.html").replace('{% include "partials/navbar.html" %}', navbar)
+    (raiz / "templates/base.html").write_text(base, encoding="utf-8")
+    (raiz / "templates/partials/navbar.html").unlink()
+    assert main(["nuevo", "pagina", "Contacto"]) == 0
+    assert "<a href=\"{% url 'contacto' %}\">Contacto</a>" in leer(raiz / "templates/base.html")
