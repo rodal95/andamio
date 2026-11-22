@@ -169,7 +169,9 @@ def filtrar_operaciones(texto: str, operaciones: tuple[str, ...], guia: bool = T
     arriba de cada una, sus comentarios. Las funciones que no son de OPERACIONES (las que
     agregaste en una plantilla propia) quedan.
     """
-    lineas = texto.split("\n")
+    # En Windows las plantillas pueden llegar con \r\n (git las convierte): se respeta.
+    salto = "\r\n" if "\r\n" in texto else "\n"
+    lineas = texto.replace("\r\n", "\n").split("\n")
     inicio = next((i for i, linea in enumerate(lineas) if _INICIO_SERVICIO.match(linea)), None)
     fin = next((i for i in range(inicio + 1, len(lineas)) if lineas[i] == "};"), None) if inicio is not None else None
     if inicio is None or fin is None:
@@ -196,7 +198,7 @@ def filtrar_operaciones(texto: str, operaciones: tuple[str, ...], guia: bool = T
     if guia and descartadas:
         elegidas = ", ".join(operaciones)
         aviso = [f"// Solo {elegidas} (--solo {','.join(operaciones)}): {', '.join(descartadas)} no se generaron."]
-    return "\n".join([*lineas[:inicio], *aviso, lineas[inicio], *cuerpo, *lineas[fin:]])
+    return salto.join([*lineas[:inicio], *aviso, lineas[inicio], *cuerpo, *lineas[fin:]])
 
 
 def transformar_servicio(sol: Solicitud, ruta: str, texto: str) -> str:
