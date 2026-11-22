@@ -99,3 +99,18 @@ function enlace(href, texto) {
   a.textContent = texto;
   return a;
 }
+
+/**
+ * A dónde volver después de ingresar (?desde=): solo una página de este mismo sitio. Si no,
+ * alguien podría mandar un enlace a ingresar.html?desde=https://sitio-falso.com (o con
+ * javascript:) y, después de ingresar, la persona terminaría ahí (redirección abierta).
+ */
+export function aDondeVolver() {
+  const desde = new URLSearchParams(location.search).get('desde');
+  try {
+    const destino = new URL(desde || 'index.html', location.href);
+    return destino.origin === location.origin ? destino.href : 'index.html';
+  } catch {
+    return 'index.html';
+  }
+}

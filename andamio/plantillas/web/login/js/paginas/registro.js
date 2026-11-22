@@ -1,12 +1,13 @@
 // Código de la página para crear una cuenta (registro.html).
 import { ErrorApi } from '../http.js';
 import { dibujarMenu } from '../menu.js';
-import { registrarse } from '../sesion.js';
+import { aDondeVolver, registrarse } from '../sesion.js';
 
 dibujarMenu();
 
 const formulario = document.getElementById('formulario');
-const desde = new URLSearchParams(location.search).get('desde') || 'index.html';
+// guía: A dónde volver después de crear la cuenta (?desde=), solo si es de este sitio.
+const desde = aDondeVolver();
 // El enlace a ingresar.html conserva a dónde volver.
 document.getElementById('ingresa').href = `ingresar.html${location.search}`;
 

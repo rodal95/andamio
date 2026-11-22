@@ -2,7 +2,7 @@ import { @@router_ingresar@@ } from 'expo-router';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ErrorApi } from '@/services/http';
-import { ingresar } from '@/sesion';
+import { aDondeVolver, ingresar } from '@/sesion';
 
 /** @type {import('@/services/authService').Credenciales} */
 const VACIO = { username: '', password: '' };
@@ -24,7 +24,7 @@ export default function IngresarPantalla() {
     setEnviando(true);
     try {
       await ingresar(datos);
-      router.replace(typeof desde === 'string' ? desde : '/');
+      router.replace(aDondeVolver(desde));
     } catch (e) {
       // guía: Usuario o contraseña incorrectos: la API responde 401 y lo explica (va en general).
       if (e instanceof ErrorApi && e.estado === 400) {

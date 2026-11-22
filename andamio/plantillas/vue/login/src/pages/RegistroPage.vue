@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { ErrorApi } from '../services/http';
-import { registrarse } from '../sesion/sesion';
+import { aDondeVolver, registrarse } from '../sesion/sesion';
 
 const ruta = useRoute();
 const router = useRouter();
@@ -24,8 +24,7 @@ async function enviar() {
     const { username, email, password } = datos.value;
     // guía: registrarse() crea el usuario y también ingresa.
     await registrarse({ username, email, password });
-    const desde = ruta.query.desde;
-    router.replace(typeof desde === 'string' ? desde : '/');
+    router.replace(aDondeVolver(ruta.query.desde));
   } catch (e) {
     // guía: 400: la API dice qué está mal en cada campo (ej.: "Ya existe un usuario con este nombre.").
     if (e instanceof ErrorApi && e.estado === 400) {

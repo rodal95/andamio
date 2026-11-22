@@ -81,6 +81,14 @@ Todos los cambios importantes de andamio. El proyecto usa
   borra el token y la sesión se cierra. En proyectos con un `http` anterior, el login lo
   explica en los siguientes pasos.
 
+### Corregido
+- Login de la web (HTML y JS), Vue y React Native: `?desde=` (a dónde volver después de
+  ingresar) se usaba tal cual, así que un enlace a `ingresar?desde=https://sitio-falso.com`
+  llevaba a otro sitio después de ingresar (redirección abierta), y en la web
+  `?desde=javascript:...` ejecutaba código. Ahora `aDondeVolver()` solo acepta direcciones
+  de la misma app (en la web, del mismo origen). React no estaba afectado (usa el `state`
+  de la navegación, no la dirección).
+
 ## [1.6.0] - 2026-11-22
 
 ### Agregado

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Credenciales } from '@/services/authService';
 import { ErrorApi } from '@/services/http';
-import { ingresar } from '@/sesion';
+import { aDondeVolver, ingresar } from '@/sesion';
 
 const VACIO: Credenciales = { username: '', password: '' };
 
@@ -24,7 +24,7 @@ export default function IngresarPantalla() {
     setEnviando(true);
     try {
       await ingresar(datos);
-      router.replace((desde || '/') as Href);
+      router.replace(aDondeVolver(desde) as Href);
     } catch (e) {
       // guía: Usuario o contraseña incorrectos: la API responde 401 y lo explica (va en general).
       if (e instanceof ErrorApi && e.estado === 400) {

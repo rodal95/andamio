@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DatosRegistro } from '@/services/authService';
 import { ErrorApi } from '@/services/http';
-import { registrarse } from '@/sesion';
+import { aDondeVolver, registrarse } from '@/sesion';
 
 // guía: repetir no va a la API: es para controlar acá que la contraseña se escribió bien.
 type Formulario = DatosRegistro & { repetir: string };
@@ -33,7 +33,7 @@ export default function RegistroPantalla() {
     try {
       // guía: registrarse() crea el usuario y también ingresa.
       await registrarse({ username: datos.username, email: datos.email, password: datos.password });
-      router.replace((desde || '/') as Href);
+      router.replace(aDondeVolver(desde) as Href);
     } catch (e) {
       // guía: 400: la API dice qué está mal en cada campo (ej.: "Ya existe un usuario con este nombre.").
       if (e instanceof ErrorApi && e.estado === 400) {

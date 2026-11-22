@@ -1,13 +1,13 @@
 // Código de la página para ingresar (ingresar.html).
 import { ErrorApi } from '../http.js';
 import { dibujarMenu } from '../menu.js';
-import { ingresar } from '../sesion.js';
+import { aDondeVolver, ingresar } from '../sesion.js';
 
 dibujarMenu();
 
 const formulario = document.getElementById('formulario');
 // guía: Si llegó desde una página que pide ingresar, vuelve ahí (la dirección está en ?desde=).
-const desde = new URLSearchParams(location.search).get('desde') || 'index.html';
+const desde = aDondeVolver();
 // El enlace a registro.html (si está) conserva a dónde volver.
 const registrate = document.getElementById('registrate');
 if (registrate) registrate.href = `registro.html${location.search}`;

@@ -117,7 +117,7 @@ def test_login_de_la_web_en_el_navegador(en_carpeta, monkeypatch):
             resultado = ejecutar(["node", str(Path(__file__).with_name("login_web_navegador.js")), origen], web, env={"NO_PROXY": "127.0.0.1,localhost"})
         finally:
             servidor.shutdown()
-        assert resultado.stdout.count("ok - ") == 6, resultado.stdout
+        assert resultado.stdout.count("ok - ") == 7, resultado.stdout
 
 
 @pytest.mark.lento
@@ -144,4 +144,4 @@ def test_login_de_react_native_en_el_navegador(en_carpeta, monkeypatch):
             resultado = ejecutar(["node", str(Path(__file__).with_name("login_rn_navegador.js")), origen], app, env={"NO_PROXY": "127.0.0.1,localhost"})
         finally:
             servidor.shutdown()
-        assert resultado.stdout.count("ok - ") == 7, resultado.stdout
+        assert resultado.stdout.count("ok - ") == 8, resultado.stdout

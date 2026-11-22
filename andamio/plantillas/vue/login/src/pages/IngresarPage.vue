@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { @@router_ingresar@@ } from 'vue-router';
 import { ErrorApi } from '../services/http';
-import { ingresar } from '../sesion/sesion';
+import { aDondeVolver, ingresar } from '../sesion/sesion';
 
 const ruta = useRoute();
 const router = useRouter();
@@ -17,8 +17,7 @@ async function enviar() {
   try {
     await ingresar(datos.value);
     // guía: Si llegó desde una página protegida, vuelve ahí (la dirección está en ?desde=).
-    const desde = ruta.query.desde;
-    router.replace(typeof desde === 'string' ? desde : '/');
+    router.replace(aDondeVolver(ruta.query.desde));
   } catch (e) {
     // guía: Usuario o contraseña incorrectos: la API responde 401 y lo explica (va en general).
     if (e instanceof ErrorApi && e.estado === 400) {

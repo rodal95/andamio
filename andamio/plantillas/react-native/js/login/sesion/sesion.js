@@ -87,3 +87,15 @@ export async function salir() {
   await guardarToken(null);
   cambiar({ usuario: null, cargando: false });
 }
+
+/**
+ * A dónde volver después de ingresar (?desde=): solo una pantalla de esta app. Si no,
+ * alguien podría mandar un enlace a /ingresar?desde=https://sitio-falso.com y, después de
+ * ingresar, la persona terminaría en otro sitio (redirección abierta).
+ * @param {unknown} desde
+ * @returns {string}
+ */
+export function aDondeVolver(desde) {
+  // Empieza con una sola / (//sitio.com y /\sitio.com son de otro sitio).
+  return typeof desde === 'string' && /^\/(?![/\\])/.test(desde) ? desde : '/';
+}

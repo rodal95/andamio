@@ -57,6 +57,14 @@ const errores = [];
   await p.waitForURL(/\/ingresar\.html/);
   ok(await p.evaluate(() => localStorage.getItem('token')) === null, 'un token vencido se borra y pide ingresar');
 
+  // ?desde= con otro sitio: después de ingresar se queda en este (no hay redirección abierta).
+  await p.goto(base + '/ingresar.html?desde=' + encodeURIComponent('https://example.com/'));
+  await p.getByLabel('Usuario').fill('ana');
+  await p.getByLabel('Contraseña').fill('una-clave-larga-123');
+  await p.getByRole('button', { name: 'Ingresar' }).click();
+  await p.waitForURL(base + '/index.html');
+  ok(true, '?desde= con otro sitio vuelve a index.html');
+
   ok(errores.length === 0, 'sin errores de JavaScript: ' + errores.join(' | '));
   await b.close();
 })().catch(async (e) => {
