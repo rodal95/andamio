@@ -35,6 +35,9 @@ def _piezas(stack):
         yield [clave, nombre, *campos]
         if "protegido" in pieza.opciones:
             protegidos.append([clave, f"{nombre}-protegido", *campos, "--protegido"])
+        if "solo" in pieza.opciones:
+            # El servicio con algunas funciones (Reflex): el módulo tiene que seguir siendo válido.
+            yield [clave, f"{nombre}-solo", *campos, "--solo", "crear"]
     yield from protegidos
 
 

@@ -146,6 +146,11 @@ def _contexto_crud_api(sol: Solicitud) -> dict[str, str]:
     return {**_contexto_pantalla(sol, _desde_api), **_contexto_servicio(sol)}
 
 
+def _contexto_crud_api_validado(sol: Solicitud) -> dict[str, str]:
+    _validar_servicio_completo(sol)
+    return _contexto_crud_api(sol)
+
+
 def _contexto_servicio(sol: Solicitud) -> dict[str, str]:
     return {"campos_doc": "\n".join(f"    {c.nombre}: {TIPOS[c.tipo]}" for c in sol.campos)}
 
@@ -298,6 +303,70 @@ CRUD = Pieza(
 
 _ARCHIVOS_SERVICIO = frozenset({"@@app@@/servicios/__init__.py", "@@app@@/servicios/http.py"})
 
+# --- Servicio con algunas funciones (--solo crear, --solo listar,obtener) ----------------
+
+_FUNCION_PY = re.compile(r"^async def (\w+)\(")
+
+
+def filtrar_funciones(texto: str, operaciones: tuple[str, ...]) -> str:
+    """Deja en el módulo del servicio solo estas funciones (async def ...), con lo que tienen
+    abajo hasta la siguiente. Las que no son de OPERACIONES (las de una plantilla propia) quedan."""
+    salto = "\r\n" if "\r\n" in texto else "\n"
+    bloques: list[tuple[str | None, list[str]]] = [(None, [])]
+    for linea in texto.replace("\r\n", "\n").split("\n"):
+        funcion = _FUNCION_PY.match(linea)
+        if funcion:
+            bloques.append((funcion.group(1), []))
+        bloques[-1][1].append(linea)
+    quedan = [linea for nombre, lineas in bloques if nombre is None or nombre in operaciones or nombre not in _js.OPERACIONES for linea in lineas]
+    return salto.join(quedan).rstrip() + salto
+
+
+def _transformar_servicio(sol: Solicitud, ruta: str, texto: str) -> str:
+    """Pieza.transformar: con --solo, el módulo del servicio solo con esas funciones."""
+    if not sol.opciones.get("solo") or not ruta.endswith(f"/servicios/{sol.nombre.snake}.py"):
+        return texto
+    return filtrar_funciones(texto, _js.operaciones_pedidas(sol))
+
+
+def _funciones_del_servicio(archivo: Path) -> set[str]:
+    try:
+        lineas = archivo.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return set(_js.OPERACIONES)  # si no se puede leer, no se controla
+    return {m.group(1) for linea in lineas if (m := _FUNCION_PY.match(linea))}
+
+
+_USA_EL_CRUD = ("listar", "crear", "actualizar", "eliminar")
+
+
+def _validar_servicio_completo(sol: Solicitud) -> None:
+    """crud-api usa el servicio si ya existe: tiene que tener las funciones que llama."""
+    archivo = sol.raiz / nombre_app(sol.raiz) / "servicios" / f"{sol.nombre.snake}.py"
+    if not archivo.is_file():
+        return
+    faltan = [op for op in _USA_EL_CRUD if op not in _funciones_del_servicio(archivo)]
+    if faltan:
+        raise AndamioError(
+            f"El servicio {archivo.relative_to(sol.raiz).as_posix()} no tiene {', '.join(faltan)} (se generó con --solo), y la página del crud las usa.",
+            "Agregáselas (como en un servicio sin --solo), o borralo y generá el crud de nuevo: lo crea completo.",
+        )
+
+
+def _pasos_servicio(sol: Solicitud) -> list[str]:
+    ops = _js.operaciones_pedidas(sol)
+    ejemplo = {
+        "listar": "registros = await @@nombre@@_api.listar()",
+        "obtener": "registro = await @@nombre@@_api.obtener(1)",
+        "crear": "nuevo = await @@nombre@@_api.crear({...})",
+        "actualizar": "registro = await @@nombre@@_api.actualizar(1, {...})",
+        "eliminar": "await @@nombre@@_api.eliminar(1)",
+    }[ops[0]]
+    pasos = ["# Usalo en un estado (las funciones son async):", "import @@app@@.servicios.@@nombre@@ as @@nombre@@_api", ejemplo]
+    if set(_USA_EL_CRUD) <= set(ops):
+        pasos += ["# O la página completa que lo usa:", "python -m andamio nuevo crud-api @@nombre@@ (con los mismos campos)"]
+    return pasos
+
 CRUD_API = Pieza(
     clave="crud-api",
     lectura=(
@@ -310,7 +379,7 @@ CRUD_API = Pieza(
     formas=("@@Nombre@@", "ruta /@@pluralKebab@@"),
     usa_campos=True,
     usa_plural=True,
-    contexto=_con_app(_contexto_crud_api),
+    contexto=_con_app(_contexto_crud_api_validado),
     marcadores={**_MARCADORES_PANTALLA, "campos_doc": "los campos del recurso, con su tipo (en el comentario)"},
     existe_si=("@@app@@/paginas/@@plural@@.py",),
     si_no_existe=_ARCHIVOS_SERVICIO | {"@@app@@/servicios/@@nombre@@.py"},
@@ -339,11 +408,10 @@ SERVICIO = Pieza(
     marcadores={"app": _MARCADORES_PANTALLA["app"], "campos_doc": "los campos del recurso, con su tipo (en el comentario)"},
     existe_si=("@@app@@/servicios/@@nombre@@.py",),
     si_no_existe=_ARCHIVOS_SERVICIO,
-    siguiente_paso=[
-        "# Usalo en un estado (las funciones son async):",
-        "import @@app@@.servicios.@@nombre@@ as @@nombre@@_api",
-        "registros = await @@nombre@@_api.listar()",
-    ],
+    opciones=frozenset({"solo"}),
+    normalizar_opcion={"solo": _js.normalizar_solo},
+    transformar=_transformar_servicio,
+    siguiente_paso=_pasos_servicio,
 )
 
 

@@ -61,7 +61,7 @@ Qué opciones acepta cada pieza:
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
-| `--solo` | `servicio` (React, Next.js, Vue, React Native, web) |
+| `--solo` | `servicio` (React, Next.js, Vue, React Native, web, Reflex) |
 | `--sin-menu` | `entidad` (Python + SQLite) |
 | `--solo-lectura` | `recurso` (Django) |
 | `--plural`, `--simular`, `--sin-guia` | todas (`--plural` solo en las que usan plural) |
@@ -473,7 +473,7 @@ reflex run                                       http://localhost:3000
 | `pagina` | `nuevo pagina Contacto` | `mi_app/paginas/contacto.py`, registrada con su ruta y su enlace. |
 | `componente` | `nuevo componente Tarjeta` | `mi_app/componentes/tarjeta.py`. |
 | `estado` | `nuevo estado contador` | `mi_app/estados/contador.py` (`ContadorState`). |
-| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `mi_app/servicios/producto.py` (funciones async). |
+| `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `mi_app/servicios/producto.py` (funciones async). Con `--solo crear` (o `--solo listar,obtener`), solo esas funciones; `crud-api` avisa si al servicio le falta alguna de las que usa. |
 | `tema` | `nuevo tema violeta --modo auto` | `mi_app/tema.py` con el tema de Radix (color de acento, claro u oscuro), conectado en `rxconfig.py` (`RadixThemesPlugin(theme=TEMA)`). |
 
 ---

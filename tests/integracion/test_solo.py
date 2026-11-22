@@ -231,3 +231,34 @@ def test_la_lectura_no_muestra_los_hooks_que_el_servicio_no_usa(en_carpeta, monk
     assert main(["nuevo", "servicio", "contacto", "nombre:str", "--solo", "crear"]) == 0
     salida = capsys.readouterr().out
     assert "src/services/contactoService.ts" in salida and "src/hooks" not in salida
+
+
+# --- Reflex: el módulo del servicio con algunas funciones (async def) ---------------------
+
+
+def _funciones_py(texto: str) -> list[str]:
+    return [linea.split("(")[0].removeprefix("async def ") for linea in texto.splitlines() if linea.startswith("async def ")]
+
+
+@pytest.mark.parametrize(
+    "solo, esperadas",
+    [("crear", ["crear"]), ("listar,obtener", ["listar", "obtener"]), ("delete", ["eliminar"])],
+)
+def test_servicio_de_reflex_con_solo(solo, esperadas, en_carpeta, monkeypatch):
+    raiz = _proyecto(en_carpeta, monkeypatch, "reflex")
+    assert main(["nuevo", "servicio", "contacto", "nombre:str", "--solo", solo]) == 0
+    texto = (raiz / "web/servicios/contacto.py").read_text(encoding="utf-8")
+    assert _funciones_py(texto) == esperadas
+    assert texto.endswith(")\n") and not texto.endswith("\n\n")  # sin líneas de más al final
+    assert "def pedir" in (raiz / "web/servicios/http.py").read_text(encoding="utf-8")  # http no se filtra
+
+
+def test_crud_api_de_reflex_con_un_servicio_incompleto(en_carpeta, monkeypatch, capsys):
+    raiz = _proyecto(en_carpeta, monkeypatch, "reflex")
+    assert main(["nuevo", "servicio", "contacto", "nombre:str", "--solo", "crear"]) == 0
+    assert main(["nuevo", "crud-api", "contacto", "nombre:str"]) == 1
+    assert "listar, actualizar, eliminar" in capsys.readouterr().err
+    assert not (raiz / "web/paginas/contactos.py").exists()
+    # Con el servicio completo, sí.
+    assert main(["nuevo", "servicio", "producto", "nombre:str"]) == 0
+    assert main(["nuevo", "crud-api", "producto", "nombre:str"]) == 0

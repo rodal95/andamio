@@ -61,6 +61,9 @@ Todos los cambios importantes de andamio. El proyecto usa
   `--obligatorio`), así la página no llega al navegador sin sesión. `recurso --protegido`:
   crear, reemplazar, modificar y eliminar piden el token o la cookie; los tests entran con un
   usuario (`usarToken`, nuevo en `tests/api`).
+- Reflex: `nuevo servicio ... --solo crear` (o `--solo listar,obtener`): el módulo del
+  servicio solo con esas funciones. `crud-api` avisa (y no genera nada) si el servicio que
+  ya existe no tiene las que usa (listar, crear, actualizar y eliminar).
 - Un stack que extiende a otro (next-fullstack extiende next) puede cambiar solo algunos
   archivos de una pieza: las plantillas se combinan (`CarpetaCombinada`).
 - React Native: `nuevo login`, con el mismo contrato: el token se guarda cifrado con
