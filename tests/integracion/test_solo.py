@@ -44,6 +44,14 @@ def test_normalizar_solo(texto, esperado):
     assert _js.normalizar_solo(texto) == esperado
 
 
+def test_filtrar_con_fin_de_linea_de_windows():
+    """En Windows git baja las plantillas con \\r\\n: el filtro tiene que funcionar igual."""
+    texto = "import { http } from './http';\n\nexport const xService = {\n  listar: () => 1,\n  /** Crea. */\n  crear: (d) => 2,\n};\n"
+    resultado = _js.filtrar_operaciones(texto.replace("\n", "\r\n"), ("crear",))
+    assert resultado == _js.filtrar_operaciones(texto, ("crear",)).replace("\n", "\r\n")
+    assert "listar" not in resultado.split(" = {")[1] and "  /** Crea. */\r\n  crear: (d) => 2,\r\n};" in resultado
+
+
 @pytest.mark.parametrize("texto", ["enviar", "get-all", "", " , "])
 def test_normalizar_solo_rechaza_lo_que_no_es_una_funcion(texto):
     with pytest.raises(AndamioError):
