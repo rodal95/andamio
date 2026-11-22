@@ -1,0 +1,15 @@
+/* guía: Toda la altura de la ventana: el pie queda abajo aunque la página sea corta. */
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.contenido {
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}

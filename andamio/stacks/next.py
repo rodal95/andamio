@@ -41,14 +41,20 @@ def _validar_crud(raiz: Path, nombre: Nombre) -> None:
     _validar_ruta("-".join(nombre.plural_palabras))
 
 
-def _enlace(texto: str) -> Insercion:
+def _enlace(texto: str, condicion=None) -> Insercion:
+    """El enlace en el menú (components/Navbar). En los proyectos anteriores, sin Navbar, el
+    menú está en app/layout."""
     return Insercion(
-        "app/layout.@@extx@@",
+        "components/Navbar/Navbar.@@extx@@",
         texto,
         marcador="enlaces",
         descripcion="enlace en el menú",
         ubicacion="dentro de <nav>",
         comentario="{/*",
+        condicion=condicion,
+        alternativa=Insercion(
+            "app/layout.@@extx@@", texto, marcador="enlaces", descripcion="enlace en el menú", ubicacion="dentro de <nav>", comentario="{/*"
+        ),
     )
 
 
@@ -95,7 +101,7 @@ PAGINA = Pieza(
     clave="pagina",
     lectura=(
         ('app/@@nombreKebab@@/page.@@extx@@', 'la página (/@@nombreKebab@@)'),
-        ('app/layout.@@extx@@', 'el enlace en el menú'),
+        ('components/Navbar/Navbar.@@extx@@', 'el enlace en el menú'),
     ),
     titulo="Página",
     descripcion="página con su ruta y su enlace en el menú",

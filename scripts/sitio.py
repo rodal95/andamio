@@ -183,7 +183,7 @@ TECNOLOGIAS = {
             },
             "pagina": {
                 "comando": "nuevo pagina Contacto",
-                "explicacion": "Una página es una pantalla completa. En Next.js, la carpeta app/contacto con su page es la dirección /contacto: no hay que registrar nada. andamio además agrega el enlace en el menú (app/layout).",
+                "explicacion": "Una página es una pantalla completa. En Next.js, la carpeta app/contacto con su page es la dirección /contacto: no hay que registrar nada. andamio además agrega el enlace en el menú (components/Navbar).",
                 "uso": "// Ya queda en el menú. Para enlazarla desde otra página:\nimport Link from 'next/link';\n\n<Link href=\"/contacto\">Escribinos</Link>",
                 "uso_lenguaje": "ts",
             },
@@ -651,10 +651,10 @@ _ROUTER_NEXT = {
     "titulo": "Las rutas: cada carpeta es una dirección",
     "texto": [
         "En Next.js no se escriben rutas: la carpeta de app/ es la dirección. app/contacto/page es /contacto, y una carpeta entre corchetes es una parte variable: app/productos/[id]/page es /productos/3.",
-        "El menú está en app/layout, que envuelve a todas las páginas: andamio agrega un <Link> por cada página que generes.",
+        "app/layout envuelve a todas las páginas con el Layout: el menú (Navbar) arriba, la página y el pie (Footer) abajo. andamio agrega un <Link> en el Navbar por cada página que generes.",
         "Para ir a otra página: <Link href=\"/contacto\"> o, desde el código, useRouter().push('/contacto'). Para leer la parte variable: useParams().",
     ],
-    "archivos": ["app/layout.{extx}", "app/productos/[id]/page.{extx}"],
+    "archivos": ["components/Layout/Layout.{extx}", "components/Navbar/Navbar.{extx}", "app/productos/[id]/page.{extx}"],
 }
 TEMAS = {
     "python": {
@@ -1349,8 +1349,7 @@ DESCRIPCIONES = {
         ("tsconfig.json", "Configuración de TypeScript, con el atajo @/ para importar desde la raíz (import { Tarjeta } from '@/components')."),
         ("jsconfig.json", "Configura el atajo @/ para importar desde la raíz (import { Tarjeta } from '@/components')."),
         ("next.config.*", "Configuración de Next.js."),
-        ("app/layout.module.css", "Estilos del layout: el menú y el contenedor de las páginas."),
-        ("app/layout.*", "Layout principal: envuelve a todas las páginas y tiene el menú. andamio agrega un enlace por cada página."),
+        ("app/layout.*", "Layout principal: envuelve a todas las páginas con el menú y el pie (components/Layout). Acá se cargan los estilos globales."),
         ("app/page.module.css", "Estilos de la página de inicio."),
         ("app/page.*", "La página de inicio (la dirección /)."),
         ("app/globals.css", "Estilos globales de toda la aplicación."),
@@ -1362,7 +1361,10 @@ DESCRIPCIONES = {
         ("app/*/[[]id]/page.*", "El detalle (la dirección /…/3): pide el registro con obtener(id) y lo elimina con eliminar(id). [id] es la parte variable."),
         ("app/*/page.*", "Una página: la carpeta es la dirección. Si es la de un recurso, la lista: pide los registros con listar()."),
         ("components/index.*", "Exporta todos los componentes desde un lugar: import { Tarjeta } from '@/components'."),
-        ("components/BotonSesion.*", "El botón de la barra superior: Ingresar sin sesión, o el usuario y Salir con sesión."),
+        ("components/Layout/Layout.?sx", "Lo que se ve en todas las páginas: el menú (Navbar), la página y el pie (Footer). Lo usa app/layout."),
+        ("components/Layout/Layout.module.css", "Estilos del Layout: ocupa toda la altura, así el pie queda abajo aunque la página sea corta."),
+        ("components/Navbar/Navbar.?sx", "El menú de navegación: andamio agrega acá un enlace por cada página que generes."),
+        ("components/Footer/Footer.?sx", "El pie de todas las páginas, con el año y el nombre del proyecto."),
         ("components/*/index.*", "Permite importar el componente por el nombre de su carpeta."),
         ("components/*Detalle/*Detalle.?sx", "Muestra un registro con los botones Editar y Eliminar. No llama a la API: recibe los datos y avisa con onEditar y onEliminar."),
         ("components/*.module.css", "Estilos propios del componente: no afectan al resto."),

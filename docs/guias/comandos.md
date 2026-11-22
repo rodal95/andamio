@@ -434,7 +434,7 @@ npm run dev                                      http://localhost:3000
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta/`. |
-| `pagina` | `nuevo pagina Contacto` | `app/contacto/page` (la carpeta es la ruta) y el enlace en `app/layout`. |
+| `pagina` | `nuevo pagina Contacto` | `app/contacto/page` (la carpeta es la ruta) y el enlace en el menú (`components/Navbar`). |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService`. |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `app/productos/` (lista, `nuevo`, `[id]`, `[id]/editar`), el detalle, el hook y el servicio. |

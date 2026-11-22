@@ -64,10 +64,12 @@ def test_proyecto_frontend(web, variante):
         "jsconfig.json" if variante == "js" else "tsconfig.json",
         "next.config.ts" if variante == "ts" else "next.config.mjs",
         f"app/layout.{extx}",
-        "app/layout.module.css",
         f"app/page.{extx}",
         "app/globals.css",
         f"components/index.{ext}",
+        *(f"components/{c}/{c}.{extx}" for c in ("Navbar", "Footer", "Layout")),
+        *(f"components/{c}/{c}.module.css" for c in ("Navbar", "Footer", "Layout")),
+        *(f"components/{c}/index.{ext}" for c in ("Navbar", "Footer", "Layout")),
         "hooks/.gitkeep",
         "services/.gitkeep",
         "public/.gitkeep",
@@ -80,9 +82,31 @@ def test_proyecto_frontend(web, variante):
     assert "NEXT_PUBLIC_API_URL=http://localhost:8000/api" in leer(web / ".env")
     assert ".env.example" not in leer(web / ".gitignore")  # .env.example se sube a git
     assert "next/font/google" not in leer(web / f"app/layout.{extx}")  # no descarga fuentes al compilar
+    # El menú y el pie son componentes; app/layout los muestra con el Layout.
+    assert "<Layout>{children}</Layout>" in leer(web / f"app/layout.{extx}")
+    assert "andamio:enlaces" in leer(web / f"components/Navbar/Navbar.{extx}")
+    assert "<Navbar />" in leer(web / f"components/Layout/Layout.{extx}")
     for archivo in web.rglob("*"):
         if archivo.is_file():
             assert "@@" not in leer(archivo), archivo
+
+
+def test_enlaces_en_un_proyecto_sin_navbar(web, variante):
+    """Un proyecto de una versión anterior (el menú en app/layout): los enlaces van ahí."""
+    _, extx = EXT[variante]
+    layout = web / f"app/layout.{extx}"
+    layout.write_text(
+        "import Link from 'next/link';\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <body>\n"
+        "        <nav>\n          <Link href=\"/\">Inicio</Link>\n          {/* --- andamio:enlaces (no borrar esta línea) --- */}\n"
+        "        </nav>\n        {children}\n      </body>\n    </html>\n  );\n}\n",
+        encoding="utf-8",
+    )
+    for carpeta in ("Navbar", "Footer", "Layout"):
+        for archivo in (web / "components" / carpeta).iterdir():
+            archivo.unlink()
+        (web / "components" / carpeta).rmdir()
+    assert main(["nuevo", "pagina", "Contacto"]) == 0
+    assert '<Link href="/contacto">Contacto</Link>\n          {/* --- andamio:enlaces' in leer(layout)
 
 
 def test_proyecto_fullstack_extiende_al_frontend(app, variante):
@@ -128,8 +152,8 @@ def test_piezas_de_interfaz(stack, variante, en_carpeta, monkeypatch):
     assert (raiz / f"app/contacto/page.{extx}").is_file()
     for ruta in ("page", "nuevo/page", "[id]/page", "[id]/editar/page", "ProductoFormulario"):
         assert (raiz / f"app/productos/{ruta}.{extx}").is_file(), ruta
-    layout = leer(raiz / f"app/layout.{extx}")
-    assert '<Link href="/contacto">Contacto</Link>\n          <Link href="/productos">Productos</Link>' in layout
+    navbar = leer(raiz / f"components/Navbar/Navbar.{extx}")
+    assert '<Link href="/contacto">Contacto</Link>\n      <Link href="/productos">Productos</Link>' in navbar
     indice = leer(raiz / f"components/index.{ext}")
     assert "export { Tarjeta } from './Tarjeta';" in indice and "export { ProductoDetalle } from './ProductoDetalle';" in indice
     lista = leer(raiz / f"app/productos/page.{extx}")
