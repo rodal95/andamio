@@ -37,7 +37,7 @@ const ok = (c, m) => { if (!c) throw new Error('FALLÓ: ' + m); console.log('ok 
   for (const [etiqueta, valor] of Object.entries(campos)) await p.getByLabel(etiqueta).fill(valor);
   await p.getByLabel('Precio').fill('123456789012');
   await p.getByRole('button', { name: 'Guardar' }).click();
-  const error = p.locator('small');
+  const error = p.locator('form small'); // el del campo (el pie de página también tiene un <small>)
   await error.first().waitFor();
   ok(/dígitos/.test(await error.first().innerText()), 'error de validación de la API debajo del campo: ' + await error.first().innerText());
   await p.getByRole('link', { name: 'Productos' }).click();
