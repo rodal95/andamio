@@ -22,7 +22,7 @@ export class ErrorApi extends Error {
   }
 }
 
-// --- Login con JWT (API de Django con: python -m andamio nuevo login) -------------------
+// --- Login con JWT (la API con: python -m andamio nuevo login) -------------------------
 // Si guardás el token de acceso, cada pedido lo manda solo: Authorization: Bearer <token>.
 // Así funcionan los recursos generados con --protegido (crear, modificar y eliminar).
 
@@ -48,6 +48,18 @@ export function borrarToken() {
 export function leerToken() {
   // Fuera del navegador (por ejemplo, en el servidor de Next.js) no hay localStorage.
   return typeof localStorage === 'undefined' ? null : localStorage.getItem(CLAVE_TOKEN);
+}
+
+/** @type {(() => void) | null} */
+let alVencer = null;
+
+/**
+ * Qué hacer si la API responde 401 a un pedido que mandó el token (venció o no es válido).
+ * Lo usa la sesión del login (sesion/): la cierra y vuelve a pedir el ingreso.
+ * @param {() => void} funcion
+ */
+export function alVencerLaSesion(funcion) {
+  alVencer = funcion;
 }
 
 /**
@@ -79,6 +91,11 @@ async function pedir(metodo, ruta, datos) {
   } catch {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
+  if (respuesta.status === 401 && leerToken()) {
+    // El token venció (dura 60 minutos) o no es válido: se borra y se avisa.
+    borrarToken();
+    alVencer?.();
   }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);

@@ -1,0 +1,27 @@
+/* Estilos del formulario. */
+.root {
+  padding: 1rem;
+}
+
+.formulario {
+  display: grid;
+  gap: 14px;
+  max-width: 360px;
+}
+
+.campo {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.campo input {
+  font: inherit;
+  font-weight: normal;
+  padding: 6px 8px;
+}
+
+.error {
+  color: #b42318;
+  font-weight: normal;
+}

@@ -437,7 +437,9 @@ npm run dev                                      http://localhost:3000
 | `pagina` | `nuevo pagina Contacto` | `app/contacto/page` (la carpeta es la ruta) y el enlace en el menú (`components/Navbar`). |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService`. |
-| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `app/productos/` (lista, `nuevo`, `[id]`, `[id]/editar`), el detalle, el hook y el servicio. |
+| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `app/productos/` (lista, `nuevo`, `[id]`, `[id]/editar`), el detalle, el hook y el servicio. Con `--protegido`, agregar y editar piden ingresar (un `layout` en cada carpeta). |
+| `login` | `nuevo login` | Ingresar y crear una cuenta con la API (Django, FastAPI o Express, con `nuevo login`): `services/authService`, la sesión en `sesion/` (`useSesion()`, del navegador: el token queda en `localStorage`), las páginas `/ingresar` y `/registro` y Ingresar o Salir en el menú. `--sin-registro`: sin `/registro`. `--obligatorio`: toda la app pide ingresar (el `Layout` pasa a ser `'use client'`). |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | Además de la página, `app/perfil/layout` con `<RutaProtegida>`: sin sesión lleva a `/ingresar` y después vuelve. Su enlace va en el menú de la sesión. Es para que se vea bien: lo que protege los datos es la API (`recurso --protegido`). |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `app/tema.css`, cargado en `app/layout`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `app/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `app/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |

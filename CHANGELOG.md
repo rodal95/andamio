@@ -39,6 +39,17 @@ Todos los cambios importantes de andamio. El proyecto usa
   `pagina --protegido`: el `.js` empieza con `await pedirIngreso()` y el enlace solo se ve
   con sesión. `--obligatorio`: el menú pide el ingreso en todas las páginas. `--sin-registro`
   también. `http.js` borra el token cuando la API responde 401.
+- Next.js: los proyectos nuevos traen `components/Navbar`, `Footer` y `Layout`; `app/layout`
+  muestra `<Layout>{children}</Layout>` y el pie queda abajo. `pagina` y `crud` agregan su
+  enlace en el `Navbar` (en los proyectos anteriores, en `app/layout`, como antes).
+- Next.js (frontend): `nuevo login`, contra la API de Django, FastAPI o Express: la sesión
+  en `sesion/` (`'use client'`; el token en `localStorage`, que el servidor no tiene, así que
+  la sesión se averigua en el navegador), `/ingresar` y `/registro` (la página es del servidor
+  y lee `?desde=`; el formulario, del navegador) e Ingresar o Salir en el menú. `pagina` y
+  `crud --protegido` agregan un `layout` de la carpeta con `<RutaProtegida>` (la forma de
+  Next: protege también las páginas de adentro). `--obligatorio`: el `Layout` pasa a ser
+  `'use client'` y pide ingresar en toda la app. `--sin-registro` también. `services/http`
+  avisa cuando la API responde 401 con token (`alVencerLaSesion`).
 - React Native: `nuevo login`, con el mismo contrato: el token se guarda cifrado con
   `expo-secure-store` (en la web, en `localStorage`), la sesión (`useSesion()`, sin
   Provider), las pantallas `/ingresar` y `/registro` y `BotonSesion` (Ingresar / Salir) en la

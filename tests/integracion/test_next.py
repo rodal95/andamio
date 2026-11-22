@@ -325,3 +325,93 @@ def test_frontend_compila_y_usa_la_api_en_el_navegador(web, variante, en_carpeta
         # La dirección de la API queda dentro de la web al compilar (NEXT_PUBLIC_...).
         _compilar_y_probar(web, puerto, {"NEXT_PUBLIC_API_URL": url_api})
 
+
+
+# --- Login (next: contra la API de Django, FastAPI o Express) -----------------------------
+
+
+def test_login(web, variante):
+    ext, extx = EXT[variante]
+    assert main(["nuevo", "login"]) == 0
+    for archivo in (
+        f"services/authService.{ext}",
+        f"sesion/sesion.{ext}",
+        f"sesion/RutaProtegida.{extx}",
+        f"sesion/MenuSesion.{extx}",
+        f"sesion/index.{ext}",
+        f"app/ingresar/page.{extx}",
+        f"app/ingresar/FormularioIngreso.{extx}",
+        f"app/registro/page.{extx}",
+        f"app/registro/FormularioRegistro.{extx}",
+    ):
+        assert (web / archivo).is_file(), archivo
+    # Lo que usa hooks es del navegador; la página de /ingresar, del servidor.
+    for archivo in (f"sesion/sesion.{ext}", f"sesion/RutaProtegida.{extx}", f"sesion/MenuSesion.{extx}", f"app/ingresar/FormularioIngreso.{extx}"):
+        assert leer(web / archivo).startswith("'use client';"), archivo
+    assert not leer(web / f"app/ingresar/page.{extx}").startswith("'use client'")
+    assert "await searchParams" in leer(web / f"app/ingresar/page.{extx}")
+    # En el servidor no hay localStorage: useSesion() tiene lo que ve el servidor.
+    assert "() => EN_EL_SERVIDOR)" in leer(web / f"sesion/sesion.{ext}")
+    assert "alVencerLaSesion(() => cambiar(" in leer(web / f"sesion/sesion.{ext}")
+    navbar = leer(web / f"components/Navbar/Navbar.{extx}")
+    assert "import { MenuSesion } from '@/sesion';" in navbar and "<MenuSesion />" in navbar
+    # El Layout no cambia sin --obligatorio.
+    assert "'use client'" not in leer(web / f"components/Layout/Layout.{extx}")
+
+
+def test_pagina_y_crud_protegidos(web, variante):
+    _, extx = EXT[variante]
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert main(["nuevo", "pagina", "Contacto"]) == 0
+    assert main(["nuevo", "crud", "producto", *CAMPOS, "--protegido"]) == 0
+    assert "<RutaProtegida>{children}</RutaProtegida>" in leer(web / f"app/perfil/layout.{extx}")
+    assert not (web / f"app/contacto/layout.{extx}").exists()
+    for ruta in ("nuevo", "[id]/editar"):
+        assert "<RutaProtegida>" in leer(web / f"app/productos/{ruta}/layout.{extx}")
+    assert not (web / f"app/productos/layout.{extx}").exists()  # la lista y el detalle son libres
+    # El enlace de la página protegida va en el menú de la sesión; los demás, en el Navbar.
+    assert '<Link href="/perfil">Perfil</Link>' in leer(web / f"sesion/MenuSesion.{extx}")
+    navbar = leer(web / f"components/Navbar/Navbar.{extx}")
+    assert "/perfil" not in navbar and '<Link href="/contacto">' in navbar and '<Link href="/productos">' in navbar
+
+
+def test_protegido_sin_login(web, capsys):
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert not (web / "app/perfil").exists()
+
+
+def test_login_obligatorio_y_sin_registro(web, variante):
+    ext, extx = EXT[variante]
+    assert main(["nuevo", "login", "--obligatorio", "--sin-registro"]) == 0
+    layout = leer(web / f"components/Layout/Layout.{extx}")
+    assert layout.startswith("'use client';\n")
+    assert "import { useLoginObligatorio } from '@/sesion';" in layout
+    assert layout.index("useLoginObligatorio();") < layout.index("<Navbar />")
+    assert not (web / "app/registro").exists()
+    assert "Registrate" not in leer(web / f"app/ingresar/FormularioIngreso.{extx}")
+    assert "next/link" not in leer(web / f"app/ingresar/FormularioIngreso.{extx}")
+    assert "/registro" not in leer(web / f"sesion/MenuSesion.{extx}")
+
+
+def test_login_obligatorio_en_un_proyecto_sin_layout(web, capsys):
+    (web / "components/Layout/Layout.tsx").unlink(missing_ok=True)
+    (web / "components/Layout/Layout.jsx").unlink(missing_ok=True)
+    assert main(["nuevo", "login", "--obligatorio"]) == 1
+    assert "--protegido" in capsys.readouterr().err
+
+
+def test_login_con_un_http_sin_aviso_de_vencimiento(web, variante, capsys):
+    ext, _ = EXT[variante]
+    assert main(["nuevo", "servicio", "cliente", "nombre"]) == 0
+    http = web / f"services/http.{ext}"
+    texto = leer(http)
+    inicio = texto.index("let alVencer")
+    texto = texto[: texto.index("/**", inicio - 40) if variante == "js" else inicio] + texto[texto.index("function encabezados") - (60 if variante == "js" else 0) :]
+    http.write_text(texto.replace("alVencer?.();", ""), encoding="utf-8")
+    assert "alVencerLaSesion" not in leer(http)
+    capsys.readouterr()
+    assert main(["nuevo", "login"]) == 0
+    assert "import { leerToken } from '@/services/http';" in leer(web / f"sesion/sesion.{ext}")
+    assert "alVencerLaSesion" in capsys.readouterr().out

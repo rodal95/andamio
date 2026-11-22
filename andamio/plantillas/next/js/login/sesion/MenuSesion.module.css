@@ -1,0 +1,8 @@
+/* guía: Al final del menú (order: 1), a la derecha (margin-left: auto). */
+.sesion {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-left: auto;
+  order: 1;
+}
