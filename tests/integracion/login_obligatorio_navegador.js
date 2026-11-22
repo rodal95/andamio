@@ -13,7 +13,7 @@ const errores = [];
 
   // Sin sesión, cualquier página lleva a /ingresar, sin menú ni pie.
   await p.goto(base + '/nosotros');
-  await p.waitForURL(/\/ingresar$/);
+  await p.waitForURL(/\/ingresar(\?.*)?$/);
   await p.getByRole('heading', { name: 'Ingresar' }).waitFor();
   ok(await p.locator('nav').count() === 0 && await p.locator('footer').count() === 0, 'sin sesión: /ingresar, sin menú ni pie');
 
@@ -36,7 +36,7 @@ const errores = [];
 
   // Salir: de vuelta a /ingresar, sin menú ni pie.
   await p.locator('nav').getByRole('button', { name: 'Salir' }).click();
-  await p.waitForURL(/\/ingresar$/);
+  await p.waitForURL(/\/ingresar(\?.*)?$/);
   ok(await p.locator('nav').count() === 0, 'salir lleva a /ingresar y oculta el menú');
 
   ok(errores.length === 0, 'sin errores de JavaScript: ' + errores.join(' | '));

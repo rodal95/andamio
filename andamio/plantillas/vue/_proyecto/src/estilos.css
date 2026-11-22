@@ -16,6 +16,13 @@ body {
   margin: 0;
 }
 
+/* Toda la altura de la ventana: el pie queda abajo aunque la página sea corta. */
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* Lo que tiene el atributo hidden no se ve, aunque otra regla le ponga display. */
 [hidden] {
   display: none !important;
@@ -34,6 +41,7 @@ a {
 .barra nav {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -43,9 +51,19 @@ a {
 }
 
 .contenido {
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem;
+}
+
+.pie {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave, #666);
+  text-align: center;
 }
 
 .boton {

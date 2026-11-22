@@ -14,12 +14,12 @@ const errores = [];
 
   // Una página protegida, sin haber ingresado: lleva a /ingresar.
   await p.goto(base + '/perfil');
-  await p.waitForURL(/\/ingresar$/);
+  await p.waitForURL(/\/ingresar(\?.*)?$/);
   ok(await menu.getByRole('link', { name: 'Ingresar' }).isVisible(), 'sin sesión, /perfil lleva a /ingresar');
 
   // Crear una cuenta: primero con las contraseñas distintas (control en la página).
   await p.getByRole('link', { name: 'Registrate' }).click();
-  await p.waitForURL(/\/registro$/);
+  await p.waitForURL(/\/registro(\?.*)?$/);
   // La URL cambia antes de que se dibuje la página nueva: se espera su título (si no, se
   // escribiría en el formulario de /ingresar, que todavía está).
   await p.getByRole('heading', { name: 'Crear una cuenta' }).waitFor();
@@ -59,7 +59,7 @@ const errores = [];
   await p.getByText('Juan').waitFor();
   ok(true, 'sin sesión, la lista del crud protegido se ve');
   await p.goto(base + '/pedidos/nuevo');
-  await p.waitForURL(/\/ingresar$/);
+  await p.waitForURL(/\/ingresar(\?.*)?$/);
   ok(true, 'sin sesión, el formulario del crud protegido lleva a /ingresar');
 
   // Ingresar con la contraseña mal: el error de la API (401), en general.
@@ -67,7 +67,7 @@ const errores = [];
   await p.getByLabel('Contraseña').fill('mal');
   await p.getByRole('button', { name: 'Ingresar' }).click();
   await p.locator('p', { hasText: /credenciales|cuenta/i }).waitFor();
-  ok(p.url().endsWith('/ingresar'), 'la contraseña incorrecta muestra el error de la API');
+  ok(/\/ingresar(\?.*)?$/.test(p.url()), 'la contraseña incorrecta muestra el error de la API');
 
   // Bien: vuelve a /pedidos/nuevo (de donde venía).
   await p.getByLabel('Contraseña').fill('una-clave-larga-123');
@@ -78,7 +78,7 @@ const errores = [];
   // Un token vencido (o inválido): al abrir la app, la sesión se cierra.
   await p.evaluate(() => localStorage.setItem('token', 'vencido'));
   await p.goto(base + '/perfil');
-  await p.waitForURL(/\/ingresar$/);
+  await p.waitForURL(/\/ingresar(\?.*)?$/);
   ok(await p.evaluate(() => localStorage.getItem('token')) === null, 'un token vencido cierra la sesión y lleva a /ingresar');
 
   ok(errores.length === 0, 'sin errores de JavaScript: ' + errores.join(' | '));

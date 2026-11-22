@@ -24,6 +24,15 @@ Todos los cambios importantes de andamio. El proyecto usa
   (`LoginRequiredMiddleware`, Django 5.1+); el registro queda abierto (`@login_not_required`).
   Los crud que se generen después entran a sus tests con un usuario. En los proyectos
   anteriores (el menú dentro de `base.html`) los enlaces siguen yendo ahí.
+- Vue: los proyectos nuevos traen `TheNavbar.vue` y `TheFooter.vue`, que `App.vue` muestra
+  alrededor de `<RouterView />` (una ruta con `meta: { sinMenu: true }` se ve sola).
+  `nuevo login`: la sesión (`sesion.usuario`, reactiva), `/ingresar`, `/registro`,
+  `MenuSesion.vue` y el control `router.beforeEach` al final de `src/router.js`. Se protege
+  como en Vue: `pagina --protegido` y `crud --protegido` ponen `meta: { protegida: true }` en
+  la ruta; `login --obligatorio` protege todo salvo `meta.publica`. `--sin-registro` también.
+  El enlace de una página protegida va en el menú de la sesión. `http.js` avisa cuando la API
+  responde 401 con token (`alVencerLaSesion`). En los proyectos anteriores (el menú dentro de
+  `App.vue`) los enlaces siguen yendo ahí.
 - Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
   la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
   el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo

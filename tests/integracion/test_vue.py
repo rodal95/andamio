@@ -44,7 +44,8 @@ def test_piezas(con_piezas):
     raiz = con_piezas
     assert (raiz / "src/components/Tarjeta.vue").is_file()
     assert "export function useContador(" in leer(raiz / "src/composables/useContador.js")
-    router, app = leer(raiz / "src/router.js"), leer(raiz / "src/App.vue")
+    # El menú está en TheNavbar.vue (lo muestra App.vue, con el pie).
+    router, app = leer(raiz / "src/router.js"), leer(raiz / "src/components/TheNavbar.vue")
     assert "import ContactoPage from './pages/ContactoPage.vue';" in router
     assert "{ path: '/productos/:id/editar', component: ProductoFormPage }," in router
     assert '<RouterLink to="/productos">Productos</RouterLink>' in app
@@ -73,3 +74,50 @@ def test_npm_install_y_build(con_piezas):
     npm_install(con_piezas)
     ejecutar([NPM, "run", "build"], con_piezas)
     assert (con_piezas / "dist/index.html").is_file()
+
+
+# --- Menú y pie; login; páginas protegidas ------------------------------------------------
+
+
+def test_menu_y_pie(en_carpeta, monkeypatch):
+    assert main(["crear", "vue", "web"]) == 0
+    raiz = en_carpeta / "web"
+    app = leer(raiz / "src/App.vue")
+    assert '<TheNavbar v-if="!ruta.meta.sinMenu" />' in app and '<TheFooter v-if="!ruta.meta.sinMenu" />' in app
+    assert "andamio:enlaces" in leer(raiz / "src/components/TheNavbar.vue")
+    assert '<footer class="pie">' in leer(raiz / "src/components/TheFooter.vue")
+
+
+def test_login_y_paginas_protegidas(en_carpeta, monkeypatch, capsys):
+    assert main(["crear", "vue", "web"]) == 0
+    raiz = en_carpeta / "web"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert main(["nuevo", "login"]) == 0
+    for archivo in ("src/sesion/sesion.js", "src/services/authService.js", "src/pages/IngresarPage.vue", "src/pages/RegistroPage.vue", "src/components/MenuSesion.vue"):
+        assert (raiz / archivo).is_file(), archivo
+    router = leer(raiz / "src/router.js")
+    assert "{ path: '/ingresar', component: IngresarPage, meta: { publica: true } }," in router
+    assert "router.beforeEach(async (destino) => {" in router and "destino.meta.protegida && !sesion.usuario" in router
+    navbar = leer(raiz / "src/components/TheNavbar.vue")
+    assert "import MenuSesion from './MenuSesion.vue';" in navbar and "<MenuSesion />" in navbar
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert main(["nuevo", "crud", "pedido", "total:decimal", "--protegido"]) == 0
+    router = leer(raiz / "src/router.js")
+    assert "{ path: '/perfil', component: PerfilPage, meta: { protegida: true } }," in router
+    assert "{ path: '/pedidos/nuevo', component: PedidoFormPage, meta: { protegida: true } }," in router
+    assert "{ path: '/pedidos', component: PedidoListaPage }," in router  # la lista es libre
+    assert '<RouterLink to="/perfil">Perfil</RouterLink>' in leer(raiz / "src/components/MenuSesion.vue")
+    assert "/perfil" not in leer(raiz / "src/components/TheNavbar.vue")
+
+
+def test_login_obligatorio(en_carpeta, monkeypatch):
+    assert main(["crear", "vue", "web"]) == 0
+    raiz = en_carpeta / "web"
+    monkeypatch.chdir(raiz)
+    assert main(["nuevo", "login", "--obligatorio", "--sin-registro"]) == 0
+    router = leer(raiz / "src/router.js")
+    assert "{ path: '/ingresar', component: IngresarPage, meta: { publica: true, sinMenu: true } }," in router
+    assert "!destino.meta.publica && !sesion.usuario" in router
+    assert "RegistroPage" not in router and not (raiz / "src/pages/RegistroPage.vue").exists()

@@ -26,7 +26,8 @@ SCRIPT_OBLIGATORIO = Path(__file__).with_name("login_obligatorio_navegador.js")
 @requiere_playwright
 @pytest.mark.parametrize(
     "variante, backend",
-    [("ts", "django"), ("js", "django"), ("ts", "fastapi"), ("ts", "express")],  # el mismo login de React, con las tres APIs
+    # El mismo login de React con las tres APIs, y el de Vue ("vue").
+    [("ts", "django"), ("js", "django"), ("ts", "fastapi"), ("ts", "express"), ("vue", "django")],
 )
 def test_login_en_el_navegador(variante, backend, en_carpeta, monkeypatch):
     if backend == "fastapi":
@@ -36,7 +37,8 @@ def test_login_en_el_navegador(variante, backend, en_carpeta, monkeypatch):
     recursos = [["pedido", "cliente:str", "total:decimal", "--protegido"]]
     with api_en_marcha(backend, en_carpeta, monkeypatch, recursos, cors=origen, previas=[["login"]]) as url_api:
         monkeypatch.chdir(en_carpeta)
-        assert main(["crear", "react", "web", "--variante", variante]) == 0
+        crear = ["crear", "vue", "web"] if variante == "vue" else ["crear", "react", "web", "--variante", variante]
+        assert main(crear) == 0
         web = en_carpeta / "web"
         monkeypatch.chdir(web)
         assert main(["nuevo", "login"]) == 0
@@ -57,7 +59,8 @@ def test_login_en_el_navegador(variante, backend, en_carpeta, monkeypatch):
 @pytest.mark.lento
 @requiere_node
 @requiere_playwright
-def test_login_obligatorio_en_el_navegador(en_carpeta, monkeypatch):
+@pytest.mark.parametrize("frontend", ["react", "vue"])
+def test_login_obligatorio_en_el_navegador(frontend, en_carpeta, monkeypatch):
     """nuevo login --obligatorio: sin sesión no se ve nada de la app (ni el menú, ni el pie)."""
     puerto_web = puerto_libre()
     origen = f"http://127.0.0.1:{puerto_web}"
@@ -65,7 +68,7 @@ def test_login_obligatorio_en_el_navegador(en_carpeta, monkeypatch):
     recursos = [["nota", "texto:str"]]
     with api_en_marcha("django", en_carpeta, monkeypatch, recursos, cors=origen, previas=[["login"]]) as url_api:
         monkeypatch.chdir(en_carpeta)
-        assert main(["crear", "react", "web"]) == 0
+        assert main(["crear", frontend, "web"]) == 0
         web = en_carpeta / "web"
         monkeypatch.chdir(web)
         assert main(["nuevo", "login", "--obligatorio"]) == 0

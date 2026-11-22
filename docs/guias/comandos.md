@@ -55,9 +55,9 @@ Qué opciones acepta cada pieza:
 | Opción | Piezas |
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
-| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React), `pagina` (Django con plantillas, React) |
-| `--sin-registro` | `login` (React) |
-| `--obligatorio` | `login` (Django, Django con plantillas, React) |
+| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React, Vue), `pagina` (Django con plantillas, React, Vue) |
+| `--sin-registro` | `login` (React, Vue) |
+| `--obligatorio` | `login` (Django, Django con plantillas, React, Vue) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -364,13 +364,18 @@ npm install
 npm run dev                                      http://localhost:5173
 ```
 
+El proyecto trae el menú (`src/components/TheNavbar.vue`) y el pie (`TheFooter.vue`), que
+`App.vue` muestra alrededor de `<RouterView />`. Una ruta con `meta: { sinMenu: true }` se ve sola.
+
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `componente` | `nuevo componente Tarjeta` | `src/components/Tarjeta.vue` con props, slot y `<style scoped>`. |
-| `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage.vue`, su ruta en `src/router.js` y su enlace en `src/App.vue`. |
+| `pagina` | `nuevo pagina Contacto` | `src/pages/ContactoPage.vue`, su ruta en `src/router.js` y su enlace en `TheNavbar.vue` (en los proyectos anteriores, en `App.vue`). |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | Lo mismo, con `meta: { protegida: true }` en la ruta (el control del router pide ingresar) y el enlace en el menú de la sesión (solo con sesión). Necesita `nuevo login`. |
+| `login` | `nuevo login` | Contra la API con `nuevo login` (Django, FastAPI o Express): `src/services/authService.js`, la sesión (`src/sesion/sesion.js`: `sesion.usuario`, `ingresar`, `registrarse`, `salir`), `/ingresar` y `/registro`, `MenuSesion.vue` en el menú y, al final de `src/router.js`, el control `router.beforeEach`. Con `--obligatorio`, todas las páginas piden ingresar salvo las de `meta.publica` (y `/ingresar` se ve sola); con `--sin-registro`, sin `/registro`. |
 | `composable` | `nuevo composable contador` | `src/composables/useContador.js` (como un hook de React). |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService.js` (y `http.js`, si falta). |
-| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `ProductoListaPage`, `ProductoDetallePage` y `ProductoFormPage` (con `v-model` y los errores de la API) en `src/pages/productos/`, el servicio y las 4 rutas con su enlace. |
+| `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | `ProductoListaPage`, `ProductoDetallePage` y `ProductoFormPage` (con `v-model` y los errores de la API) en `src/pages/productos/`, el servicio y las 4 rutas con su enlace. Con `--protegido`, crear y editar llevan `meta: { protegida: true }`. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main.js`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |

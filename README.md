@@ -54,7 +54,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | Express + Prisma (TS o JS) | `express` | `recurso`, `login` |
 | HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
-| Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `tema` |
 | Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
 | Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio`, `tema`, `ui`, `estilo` |

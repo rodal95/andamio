@@ -82,13 +82,57 @@ def _contexto_crud(sol: Solicitud) -> dict[str, str]:
         # datetime-local espera "2025-03-15T10:30": se cortan los segundos y la zona horaria.
         campos_copiar="\n".join(f"{c.nombre}: registro.{c.nombre}{'.slice(0, 16)' if c.tipo == 'datetime' else ''}," for c in sol.campos),
         campos_formulario="\n".join(formulario),
+        # --protegido: crear y editar piden ingresar (la lista y el detalle son libres, como en Django).
+        meta_protegida=_meta_protegida(sol),
     )
     return contexto
 
 
-def _insercion(texto: str, marcador: str, descripcion: str, ubicacion: str) -> Insercion:
-    archivo, comentario = ("src/App.vue", "<!--") if marcador == "enlaces" else ("src/router.js", "//")
-    return Insercion(archivo, texto, marcador=marcador, descripcion=descripcion, ubicacion=ubicacion, comentario=comentario)
+def _insercion(texto: str, marcador: str, descripcion: str, ubicacion: str, condicion=None) -> Insercion:
+    if marcador == "enlaces":
+        # El menú está en TheNavbar.vue; en los proyectos anteriores (sin TheNavbar), en App.vue.
+        return Insercion(
+            "src/components/TheNavbar.vue",
+            texto,
+            marcador="enlaces",
+            descripcion=descripcion,
+            ubicacion=ubicacion,
+            comentario="<!--",
+            condicion=condicion,
+            alternativa=Insercion("src/App.vue", texto, marcador="enlaces", descripcion=descripcion, ubicacion=ubicacion, comentario="<!--", condicion=condicion),
+        )
+    return Insercion("src/router.js", texto, marcador=marcador, descripcion=descripcion, ubicacion=ubicacion, comentario="//", condicion=condicion)
+
+
+# --- Páginas protegidas (--protegido) y login (nuevo login) ---------------------------------
+
+
+def _con_login(raiz: Path) -> bool:
+    return (raiz / "src" / "sesion" / "sesion.js").is_file()
+
+
+def _meta_protegida(sol: Solicitud) -> str:
+    """--protegido: la ruta lleva meta: { protegida: true } (el router pide ingresar)."""
+    if not sol.opciones.get("protegido"):
+        return ""
+    if not _con_login(sol.raiz):
+        raise AndamioError(
+            "--protegido usa la sesión (src/sesion/), que genera el login, y todavía no está.",
+            "Generá primero el login: python -m andamio nuevo login",
+        )
+    return ", meta: { protegida: true }"
+
+
+def _contexto_pagina(sol: Solicitud) -> dict[str, str]:
+    return {"meta_protegida": _meta_protegida(sol)}
+
+
+def _enlace_publico(sol: Solicitud) -> bool:
+    return not sol.opciones.get("protegido")
+
+
+def _enlace_con_sesion(sol: Solicitud) -> bool:
+    return bool(sol.opciones.get("protegido"))
 
 
 COMPONENTE = Pieza(
@@ -112,13 +156,27 @@ PAGINA = Pieza(
     descripcion="página con su ruta y su enlace en el menú",
     ejemplo="Contacto",
     formas=("@@Nombre@@Page.vue", "ruta /@@nombreKebab@@"),
+    opciones=frozenset({"protegido"}),
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_validar_ruta(lambda n: f"/{n.kebab}"),
+    contexto=_contexto_pagina,
+    marcadores={"meta_protegida": "con --protegido: meta: { protegida: true } en la ruta (vacío si no)"},
     existe_si=("src/pages/@@Nombre@@Page.vue",),
     inserciones=(
         _insercion("import @@Nombre@@Page from './pages/@@Nombre@@Page.vue';", "imports", "import", "arriba, junto a los otros import"),
-        _insercion("{ path: '/@@nombreKebab@@', component: @@Nombre@@Page },", "rutas", "ruta /@@nombreKebab@@", "dentro de la lista routes"),
-        _insercion('<RouterLink to="/@@nombreKebab@@">@@nombreTitulo@@</RouterLink>', "enlaces", "enlace en el menú", "dentro de <nav>"),
+        _insercion("{ path: '/@@nombreKebab@@', component: @@Nombre@@Page@@meta_protegida@@ },", "rutas", "ruta /@@nombreKebab@@", "dentro de la lista routes"),
+        _insercion('<RouterLink to="/@@nombreKebab@@">@@nombreTitulo@@</RouterLink>', "enlaces", "enlace en el menú", "dentro de <nav>", _enlace_publico),
+        # Una página protegida: su enlace se ve solo si alguien ingresó (en el menú de la sesión).
+        Insercion(
+            "src/components/MenuSesion.vue",
+            '<RouterLink to="/@@nombreKebab@@">@@nombreTitulo@@</RouterLink>',
+            marcador="enlaces_sesion",
+            descripcion="enlace en el menú, solo con sesión",
+            ubicacion="dentro de MenuSesion, antes del nombre del usuario",
+            comentario="<!--",
+            condicion=_enlace_con_sesion,
+            alternativa=_insercion('<RouterLink to="/@@nombreKebab@@">@@nombreTitulo@@</RouterLink>', "enlaces", "enlace en el menú", "dentro de <nav>"),
+        ),
     ),
     siguiente_paso=["npm run dev", "http://localhost:5173/@@nombreKebab@@"],
 )
@@ -174,6 +232,7 @@ CRUD = Pieza(
     formas=("@@Nombre@@", "ruta /@@pluralKebab@@"),
     usa_campos=True,
     usa_plural=True,
+    opciones=frozenset({"protegido"}),
     contexto=_contexto_crud,
     validar_nombre=_validar_ruta(lambda n: "/" + "-".join(n.plural_palabras)),
     marcadores={
@@ -184,6 +243,7 @@ CRUD = Pieza(
         "valores_vacios": "valores iniciales del formulario: nombre: '',",
         "campos_copiar": "copia un registro de la API a los datos del formulario",
         "campos_formulario": "un <label> con su control (v-model) y su error, por campo",
+        "meta_protegida": "con --protegido: meta: { protegida: true } en las rutas de crear y editar",
     },
     existe_si=("src/pages/@@pluralKebab@@",),
     si_no_existe=frozenset({"src/services/http.js", "src/services/@@nombreCamel@@Service.js"}),
@@ -198,9 +258,9 @@ CRUD = Pieza(
         ),
         _insercion(
             "{ path: '/@@pluralKebab@@', component: @@Nombre@@ListaPage },\n"
-            "{ path: '/@@pluralKebab@@/nuevo', component: @@Nombre@@FormPage },\n"
+            "{ path: '/@@pluralKebab@@/nuevo', component: @@Nombre@@FormPage@@meta_protegida@@ },\n"
             "{ path: '/@@pluralKebab@@/:id', component: @@Nombre@@DetallePage },\n"
-            "{ path: '/@@pluralKebab@@/:id/editar', component: @@Nombre@@FormPage },",
+            "{ path: '/@@pluralKebab@@/:id/editar', component: @@Nombre@@FormPage@@meta_protegida@@ },",
             "rutas",
             "rutas /@@pluralKebab@@",
             "dentro de la lista routes",
@@ -211,6 +271,132 @@ CRUD = Pieza(
         "npm run dev",
         "http://localhost:5173/@@pluralKebab@@",
         "# Necesita la API andando (Django, FastAPI, Express o Next.js full stack), con el recurso /api/@@plural@@/ generado con los mismos campos.",
+    ],
+)
+
+def _con_registro(sol: Solicitud) -> bool:
+    return not sol.opciones.get("sin_registro")
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    registro = _con_registro(sol)
+    try:
+        avisa = "alVencerLaSesion" in (sol.raiz / "src" / "services" / "http.js").read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        avisa = True  # se crea ahora (y avisa)
+    except (OSError, UnicodeDecodeError):
+        avisa = False
+    explicacion = ["// Si la API responde 401 a un pedido con el token (venció), se cierra la sesión."] if sol.guia else []
+    obligatorio = bool(sol.opciones.get("obligatorio"))
+    if obligatorio:
+        regla = [
+            "// Todas las páginas piden ingresar (nuevo login --obligatorio), salvo las de meta.publica.",
+            "if (!destino.meta.publica && !sesion.usuario) {",
+        ]
+    else:
+        regla = ["// Las páginas con meta: { protegida: true } (nuevo pagina X --protegido) piden ingresar.", "if (destino.meta.protegida && !sesion.usuario) {"]
+    guardia = [
+        "",
+        "// Antes de cada página: espera a saber si hay sesión, y si la página pide ingresar y nadie",
+        "// ingresó, lleva a /ingresar (y después vuelve: ?desde=).",
+        "router.beforeEach(async (destino) => {",
+        "  await sesionLista();",
+        *[f"  {linea}" for linea in regla],
+        "    return { path: '/ingresar', query: { desde: destino.fullPath } };",
+        "  }",
+        "  return true;",
+        "});",
+    ]
+    meta = "meta: { publica: true, sinMenu: true }" if obligatorio else "meta: { publica: true }"
+    return {
+        "importar_http": "alVencerLaSesion, leerToken" if avisa else "leerToken",
+        "al_vencer": "\n".join([*explicacion, "alVencerLaSesion(() => {", "  estado.usuario = null;", "});", ""]) if avisa else "",
+        "router_ingresar": "RouterLink, useRoute, useRouter" if registro else "useRoute, useRouter",
+        "pie_ingresar": "<p>¿No tenés cuenta? <RouterLink :to=\"{ path: '/registro', query: ruta.query }\">Registrate</RouterLink></p>" if registro else "",
+        "enlace_registro": '<RouterLink to="/registro">Registrarse</RouterLink>' if registro else "",
+        "y_registrarse": " y Registrarse" if registro else "",
+        "guardia_router": "\n".join(guardia),
+        "meta_publica": meta,
+    }
+
+
+def _registro_a_omitir(sol: Solicitud) -> frozenset[str]:
+    return frozenset() if _con_registro(sol) else frozenset({"src/pages/RegistroPage.vue"})
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    if nombre.snake != "sesion":
+        raise AndamioError(
+            "En Vue el login no lleva nombre: genera src/sesion/ y las páginas /ingresar y /registro.",
+            "Ejemplo: python -m andamio nuevo login",
+        )
+    if _con_login(raiz):
+        raise AndamioError("El proyecto ya tiene el login (src/sesion/).", "Para que una página pida ingresar: python -m andamio nuevo pagina Perfil --protegido")
+
+
+LOGIN = Pieza(
+    clave="login",
+    lectura=(
+        ("src/services/authService.js", "pide el token a la API, crea usuarios y pregunta quién ingresó (/api/yo/)"),
+        ("src/sesion/sesion.js", "la sesión: sesion.usuario (quién ingresó), ingresar, registrarse y salir"),
+        ("src/router.js", "las rutas /ingresar y /registro, y el control antes de cada página (al final)"),
+        ("src/pages/IngresarPage.vue", "el formulario para ingresar"),
+        ("src/pages/RegistroPage.vue", "el formulario para crear una cuenta"),
+        ("src/components/MenuSesion.vue", "Ingresar, o quién ingresó y Salir, en el menú"),
+        ("src/services/http.js", "guarda el token y lo manda en cada pedido; un 401 cierra la sesión"),
+    ),
+    titulo="Login",
+    descripcion="ingresar y crear una cuenta con la API (token JWT), y páginas que piden ingresar (--protegido)",
+    ejemplo="",
+    nombre_defecto="sesion",
+    formas=("src/@@nombre@@/ (rutas /ingresar y /registro)",),
+    opciones=frozenset({"sin_registro", "obligatorio"}),
+    validar_nombre=_validar_login,
+    contexto=_contexto_login,
+    marcadores={
+        "importar_http": "lo que la sesión toma de http: leerToken (y alVencerLaSesion, si http lo tiene)",
+        "al_vencer": "cerrar la sesión cuando la API responde 401 (vacío si http es de una versión anterior)",
+        "router_ingresar": "lo que IngresarPage toma de vue-router (RouterLink, solo con registro)",
+        "pie_ingresar": "el enlace a /registro debajo del formulario (vacío con --sin-registro)",
+        "enlace_registro": "Registrarse en el menú (vacío con --sin-registro)",
+        "y_registrarse": "' y Registrarse', para el comentario del menú (vacío con --sin-registro)",
+        "guardia_router": "router.beforeEach: espera la sesión y pide ingresar donde corresponde",
+        "meta_publica": "el meta de /ingresar y /registro (con --obligatorio, también sinMenu: se ven solas)",
+    },
+    existe_si=("src/sesion",),
+    si_no_existe=frozenset({"src/services/http.js"}),
+    omitir=_registro_a_omitir,
+    inserciones=(
+        _insercion("import { sesion, sesionLista } from './sesion/sesion';", "imports", "import de la sesión", "arriba, junto a los otros import"),
+        _insercion("import IngresarPage from './pages/IngresarPage.vue';", "imports", "import de IngresarPage", "arriba, junto a los otros import"),
+        _insercion("import RegistroPage from './pages/RegistroPage.vue';", "imports", "import de RegistroPage", "arriba, junto a los otros import", _con_registro),
+        _insercion("{ path: '/ingresar', component: IngresarPage, @@meta_publica@@ },", "rutas", "ruta /ingresar", "dentro de la lista routes"),
+        _insercion("{ path: '/registro', component: RegistroPage, @@meta_publica@@ },", "rutas", "ruta /registro", "dentro de la lista routes", _con_registro),
+        Insercion("src/router.js", "@@guardia_router@@", descripcion="el control antes de cada página (al final)"),
+        Insercion(
+            "src/components/TheNavbar.vue",
+            "import MenuSesion from './MenuSesion.vue';",
+            marcador="imports_navbar",
+            descripcion="import de MenuSesion",
+            ubicacion="en <script setup>, junto a los otros import",
+            comentario="//",
+            alternativa=Insercion(
+                "src/App.vue",
+                "import MenuSesion from './components/MenuSesion.vue';",
+                marcador="imports_app",
+                descripcion="import de MenuSesion",
+                ubicacion="en <script setup> de App.vue, junto a los otros import",
+                comentario="//",
+            ),
+        ),
+        _insercion("<MenuSesion />", "enlaces", "la sesión en el menú", "dentro de <nav>"),
+    ),
+    siguiente_paso=[
+        "# La API con el login (Django, FastAPI o Express): python -m andamio nuevo login",
+        "npm run dev",
+        "http://localhost:5173/ingresar",
+        "# Para que una página pida ingresar:",
+        "python -m andamio nuevo pagina Perfil --protegido",
     ],
 )
 
@@ -233,7 +419,7 @@ STACK = Stack(
     senal="package.json con vite y vue",
     detectar=_js.detectar_dependencias("vite", "vue"),
     tipos=_js.TIPOS,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "composable": COMPOSABLE, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "composable": COMPOSABLE, "servicio": SERVICIO, "crud": CRUD, "login": LOGIN, **ESTILOS},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},
