@@ -11,6 +11,7 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { NoEncontrado, validar } from '../errores.js';
+@@import_login@@
 import { @@nombreCamel@@Actualizar, @@nombreCamel@@Crear, @@nombreCamel@@Filtros, aJson, CAMPOS_ORDEN } from './esquema.js';
 
 export const @@pluralCamel@@Router = Router();
@@ -42,7 +43,7 @@ async function buscarO404(texto) {
 });
 
 // Crear.
-@@pluralCamel@@Router.post('/', async (req, res) => {
+@@pluralCamel@@Router.post('/', @@pide_login@@async (req, res) => {
   // TODO(logica): reglas antes de guardar (ej.: que no se repita un nombre, completar un campo).
   const datos = validar(@@nombreCamel@@Crear, req.body);
   const @@nombreCamel@@ = await prisma.@@nombreCamel@@.create({ data: datos });
@@ -55,21 +56,21 @@ async function buscarO404(texto) {
 });
 
 // Reemplazar (PUT): hay que enviar todos los campos.
-@@pluralCamel@@Router.put('/:id/', async (req, res) => {
+@@pluralCamel@@Router.put('/:id/', @@pide_login@@async (req, res) => {
   const { id } = await buscarO404(req.params.id);
   const datos = validar(@@nombreCamel@@Crear, req.body);
   res.json(aJson(await prisma.@@nombreCamel@@.update({ where: { id }, data: datos })));
 });
 
 // Modificar (PATCH): solo los campos que se envían.
-@@pluralCamel@@Router.patch('/:id/', async (req, res) => {
+@@pluralCamel@@Router.patch('/:id/', @@pide_login@@async (req, res) => {
   const { id } = await buscarO404(req.params.id);
   const datos = validar(@@nombreCamel@@Actualizar, req.body);
   res.json(aJson(await prisma.@@nombreCamel@@.update({ where: { id }, data: datos })));
 });
 
 // Eliminar.
-@@pluralCamel@@Router.delete('/:id/', async (req, res) => {
+@@pluralCamel@@Router.delete('/:id/', @@pide_login@@async (req, res) => {
   const { id } = await buscarO404(req.params.id);
   await prisma.@@nombreCamel@@.delete({ where: { id } });
   res.status(204).end();

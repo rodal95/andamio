@@ -227,6 +227,7 @@ RECURSO = dataclasses.replace(
     express.RECURSO,
     descripcion="API en app/api/ (Route Handlers), modelo de Prisma, validación y tests",
     existe_si=("app/api/@@plural@@",),
+    opciones=frozenset({"migrar"}),  # --protegido: cuando Next full stack tenga su login
     contexto=express.contexto_recurso_api("http://localhost:3000/api"),
     lectura=(
         ("prisma/schema.prisma", "el modelo @@Nombre@@ (la tabla), al final del archivo"),

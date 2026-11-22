@@ -23,10 +23,20 @@ after(async () => {
   await prisma.$disconnect();
 });
 
+let token: string | null = null;
+
+/** Desde acá, cada pedido manda este token (Authorization: Bearer ...); null: sin token. Para el login. */
+export function usarToken(nuevo: string | null) {
+  token = nuevo;
+}
+
 async function pedir(metodo: string, ruta: string, datos?: unknown) {
+  const encabezados: Record<string, string> = {};
+  if (datos !== undefined) encabezados['Content-Type'] = 'application/json';
+  if (token) encabezados.Authorization = `Bearer ${token}`;
   const respuesta = await fetch(base + ruta, {
     method: metodo,
-    headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: encabezados,
     body: datos === undefined ? undefined : JSON.stringify(datos),
   });
   const texto = await respuesta.text();

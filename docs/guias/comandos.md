@@ -55,7 +55,7 @@ Qué opciones acepta cada pieza:
 | Opción | Piezas |
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
-| `--protegido` | `recurso` (Django, FastAPI), `crud` (Django con plantillas, React), `pagina` (React) |
+| `--protegido` | `recurso` (Django, FastAPI, Express), `crud` (Django con plantillas, React), `pagina` (React) |
 | `--sin-registro`, `--obligatorio` | `login` (React) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
@@ -133,7 +133,7 @@ Opciones que sirven en todas las piezas:
 | `--plural paises` | Indica el plural cuando el automático no sirve. |
 | `--sin-guia` | Genera el código sin los comentarios que lo explican (para quien ya lo conoce). Las marcas `TODO(logica)`, que dicen dónde va tu lógica, quedan igual. |
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
-| `--protegido` | Crear, modificar y eliminar piden login (Django, FastAPI y Django con plantillas; en FastAPI, después de `nuevo login`). En React, la página (`pagina`) o el formulario para crear y editar (`crud`) piden ingresar: la ruta va envuelta en `<RutaProtegida>` (necesita `nuevo login`). Eso es para que se vea bien; lo que protege los datos es la API. |
+| `--protegido` | Crear, modificar y eliminar piden login (Django, FastAPI, Express y Django con plantillas; en FastAPI y Express, después de `nuevo login`). En React, la página (`pagina`) o el formulario para crear y editar (`crud`) piden ingresar: la ruta va envuelta en `<RutaProtegida>` (necesita `nuevo login`). Eso es para que se vea bien; lo que protege los datos es la API. |
 | `--sin-registro` | El login de React sin la página `/registro` (cuando los usuarios se crean desde `/admin/`). |
 | `--obligatorio` | El login de React es obligatorio para toda la app: sin sesión no se ven ni el menú, ni el pie, ni las páginas (el `Layout` pide ingresar). `/ingresar` y `/registro` quedan fuera del `Layout`. |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
@@ -276,6 +276,8 @@ npm run dev                                      http://localhost:8000/docs
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int --migrar` | El modelo en `prisma/schema.prisma`, la validación (Zod, mensajes en español), el router en `src/productos/` y 5 tests. Con `--migrar`, `npx prisma migrate dev`. |
+| `login` | `nuevo login --migrar` | `src/cuentas/`: el modelo `Usuario` (la contraseña con hash PBKDF2 de Node, como Django), tokens JWT (`jose`) y las mismas rutas que la API de Django (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`), con 6 tests y `http/login.http`. La clave que firma los tokens va al `.env`. |
+| `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo; crear, reemplazar, modificar y eliminar pasan por el middleware `requiereSesion` (piden el token); ver es libre. Los tests registran un usuario y usan su token (`usarToken`), y uno más controla el 401. Necesita `nuevo login`. |
 
 ---
 

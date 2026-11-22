@@ -12,6 +12,12 @@ Todos los cambios importantes de andamio. El proyecto usa
   tokens JWT (PyJWT) firmados con la `SECRET_KEY` del `.env`, 6 tests y `http/login.http`.
 - FastAPI: `nuevo recurso ... --protegido`: crear, reemplazar, modificar y eliminar piden el
   token (ver es libre). Los tests entran como un usuario de prueba, y uno controla el 401.
+- Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
+  la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
+  el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo
+  instalarlo), 6 tests y `http/login.http`. `recurso --protegido`: el middleware
+  `requiereSesion` en crear, reemplazar, modificar y eliminar; los tests usan el token
+  (`usarToken`, nuevo en `tests/api`) y uno controla el 401.
 - React: los proyectos nuevos traen el menú (`Navbar`), el pie (`Footer`) y el `Layout`
   que los muestra en todas las páginas (con `<Outlet />`): en `App`, las rutas van dentro de
   `<Route element={<Layout />}>`. `pagina` y `crud` agregan su enlace en el `Navbar`. En los

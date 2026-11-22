@@ -1,7 +1,7 @@
 /** Tests de la API de @@titulo@@. Ejecutalos con: npm test */
 import assert from 'node:assert/strict';
-import { beforeEach, test } from 'node:test';
-import { api, prisma } from './api.js';
+import { @@importar_before@@beforeEach, test } from 'node:test';
+import { api, prisma@@importar_usar_token@@ } from './api.js';
 
 const URL = '/api/@@plural@@/';
 
@@ -56,3 +56,4 @@ test('eliminar', async () => {
   assert.equal((await api.delete(`${URL}${creado.id}/`)).status, 204);
   assert.equal((await api.get(`${URL}${creado.id}/`)).status, 404);
 });
+@@tests_login@@

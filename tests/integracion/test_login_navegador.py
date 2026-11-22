@@ -26,7 +26,7 @@ SCRIPT_OBLIGATORIO = Path(__file__).with_name("login_obligatorio_navegador.js")
 @requiere_playwright
 @pytest.mark.parametrize(
     "variante, backend",
-    [("ts", "django"), ("js", "django"), ("ts", "fastapi")],  # el mismo login de React, con las dos APIs
+    [("ts", "django"), ("js", "django"), ("ts", "fastapi"), ("ts", "express")],  # el mismo login de React, con las tres APIs
 )
 def test_login_en_el_navegador(variante, backend, en_carpeta, monkeypatch):
     if backend == "fastapi":

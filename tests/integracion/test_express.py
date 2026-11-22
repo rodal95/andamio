@@ -216,13 +216,61 @@ def test_menu(en_carpeta, respuestas, capsys, monkeypatch):
     respuestas(["4", "2", "mi api", "s"])
     assert main([]) == 0
     assert (en_carpeta / "mi-api/src/app.js").is_file()
-    respuestas(["1", "producto", "", "nombre", "1", "", "s", "n"])
+    respuestas(["1", "producto", "", "n", "nombre", "1", "", "s", "n"])  # n: sin --protegido; n: sin migrar
     monkeypatch.chdir(en_carpeta / "mi-api")
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out
     assert "Proyecto Express + Prisma (JavaScript) detectado." in salida
     assert "npx prisma migrate dev --name productos" in salida
+
+
+# --- Login con JWT (nuevo login) y recurso --protegido ------------------------------
+
+
+def test_login_genera_y_registra(proyecto, variante):
+    assert main(["nuevo", "login"]) == 0
+    ext = variante
+    for archivo in ("seguridad", "esquema", "router"):
+        assert (proyecto / f"src/cuentas/{archivo}.{ext}").is_file(), archivo
+    app = leer(proyecto / f"src/app.{ext}")
+    assert f"import {{ cuentasRouter }} from './cuentas/router.{ext}';" in app
+    assert "app.use('/api', cuentasRouter);" in app
+    assert "model Usuario {" in leer(proyecto / "prisma/schema.prisma")
+    assert "export const SECRET_KEY" in leer(proyecto / f"src/config.{ext}")
+    clave = next(l for l in leer(proyecto / ".env").splitlines() if l.startswith("SECRET_KEY=")).split("=", 1)[1]
+    assert len(clave) >= 40 and "cambiar" not in clave
+    seguridad = leer(proyecto / f"src/cuentas/seguridad.{ext}")
+    assert "pbkdf2Sync" in seguridad and "from 'jose'" in seguridad
+    assert '"jose"' in leer(proyecto / "package.json")
+    router = leer(proyecto / f"src/cuentas/router.{ext}")
+    for ruta in ("'/registro/'", "'/token/'", "'/token/refresh/'", "'/yo/'"):
+        assert ruta in router
+
+
+def test_login_una_sola_vez(proyecto, capsys):
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "login", "acceso"]) == 1
+    assert "ya tiene el login" in capsys.readouterr().err
+
+
+def test_recurso_protegido(proyecto, variante, capsys):
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 0
+    router = leer(proyecto / f"src/pedidos/router.{variante}")
+    assert f"import {{ requiereSesion }} from '../cuentas/seguridad.{variante}';" in router
+    assert router.count("requiereSesion, async") == 4  # crear, reemplazar, modificar y eliminar
+    assert "pedidosRouter.get('/', async" in router  # ver es libre
+    tests = leer(proyecto / f"tests/pedidos.test.{variante}")
+    assert "usarToken" in tests and "sin login no se puede crear" in tests
+
+
+def test_recurso_sin_protegido_no_cambia(proyecto, variante):
+    assert main(["nuevo", "recurso", "nota", "texto"]) == 0
+    assert "requiereSesion" not in leer(proyecto / f"src/notas/router.{variante}")
+    assert "usarToken" not in leer(proyecto / f"tests/notas.test.{variante}")
 
 
 # --- Con Node: instalar, migrar, tests generados y tipos -------------------------
@@ -234,6 +282,9 @@ def test_el_proyecto_generado_instala_migra_y_pasa_sus_tests(con_recursos, varia
     raiz = con_recursos
     assert main(["nuevo", "recurso", "evento", "fecha:datetime", "lugar"]) == 0
     assert main(["nuevo", "recurso", "medicion", "valor:float"]) == 0
+    # El login y un recurso protegido: sus tests registran un usuario y usan el token.
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "recurso", "pedido", "cliente", "total:decimal", "--protegido"]) == 0
     npm_install(raiz)
     if variante == "ts":
         ejecutar([NPX, "prisma", "migrate", "dev", "--name", "inicial"], raiz)
@@ -242,7 +293,7 @@ def test_el_proyecto_generado_instala_migra_y_pasa_sus_tests(con_recursos, varia
         assert main(["nuevo", "recurso", "marca", "nombre", "--migrar"]) == 0
     assert list((raiz / "prisma/migrations").glob("*/migration.sql"))
     resultado = ejecutar([NPM, "test"], raiz)
-    total = 25 if variante == "js" else 20
+    total = (25 if variante == "js" else 20) + 6 + 6  # + el login + el recurso protegido (con el 401)
     assert f"# pass {total}" in resultado.stdout and "# fail 0" in resultado.stdout, resultado.stdout[-3000:]
     if variante == "ts":
         ejecutar([NPM, "run", "tipos"], raiz)
