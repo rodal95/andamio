@@ -316,11 +316,21 @@ services:
       - "127.0.0.1:${{DB_PUERTO}}:3306"
     volumes:
       - datos:/var/lib/mysql
+    configs:
+      - source: permisos
+        target: /docker-entrypoint-initdb.d/permisos.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+# Al crear la base, el usuario recibe permiso para crear otras: Prisma (migrate dev) arma
+# una base temporal para calcular las migraciones, y los tests usan su propia base.
+configs:
+  permisos:
+    content: |
+      GRANT ALL PRIVILEGES ON *.* TO '${{DB_USUARIO}}'@'%';
 
 volumes:
   datos:
@@ -454,18 +464,10 @@ def _leer_env(raiz: Path, nombre: str) -> str | None:
     return encontrado.group(1) if encontrado else None
 
 
-def conexion_de_tests(raiz: Path, conexion: Conexion, docker: bool) -> tuple[Conexion, str]:
-    """La base para los tests: otra en el mismo servidor (los tests borran los datos).
-
-    Devuelve también la contraseña de root de MySQL en Docker (vacía si no se usa): el usuario
-    de la base de Docker solo puede usar su base, y para crear la de los tests hace falta root.
-    """
-    clave_root = ""
-    test = Conexion(conexion.motor, conexion.host, conexion.puerto, f"{conexion.nombre}_test", conexion.usuario, conexion.clave, conexion.opciones)
-    if docker and conexion.motor.clave == "mysql":
-        clave_root = _leer_env(raiz, "DB_CLAVE_ROOT") or secrets.token_urlsafe(18)
-        test.usuario, test.clave = "root", clave_root
-    return test, clave_root
+def conexion_de_tests(conexion: Conexion) -> Conexion:
+    """La base para los tests: otra en el mismo servidor, con el mismo usuario (los tests
+    vacían las tablas que usan). En la base de Docker, el usuario puede crear bases."""
+    return Conexion(conexion.motor, conexion.host, conexion.puerto, f"{conexion.nombre}_test", conexion.usuario, conexion.clave, conexion.opciones)
 
 
 def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -> tuple[Plan, list[str]]:
@@ -485,7 +487,7 @@ def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -
     url = conexion.url(backend.esquemas[motor.clave])
     comentario = f"Base de datos {motor.titulo} (andamio base). Es privada: no la compartas."
     valores = {backend.variable: url}
-    test, clave_root = conexion_de_tests(raiz, conexion, docker) if backend.prisma else (None, "")
+    test = conexion_de_tests(conexion) if backend.prisma else None
     if test is not None:
         valores["TEST_DATABASE_URL"] = test.url(backend.esquemas[motor.clave])
 
@@ -493,7 +495,7 @@ def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -
         if docker:
             docker_env = {"DB_NOMBRE": conexion.nombre, "DB_USUARIO": conexion.usuario, "DB_CLAVE": conexion.clave, "DB_PUERTO": str(conexion.puerto)}
             if motor.clave == "mysql":
-                docker_env["DB_CLAVE_ROOT"] = clave_root or _leer_env(raiz, "DB_CLAVE_ROOT") or secrets.token_urlsafe(18)
+                docker_env["DB_CLAVE_ROOT"] = _leer_env(raiz, "DB_CLAVE_ROOT") or secrets.token_urlsafe(18)
             texto = fijar_variables(texto, docker_env, "La base de Docker (docker-compose.yml) se crea con estos datos.")
         texto = fijar_variables(texto, valores, comentario)
         return texto
@@ -518,8 +520,6 @@ def planificar(raiz: Path, backend: Backend, conexion: Conexion, docker: bool) -
         if test is not None:
             base_ejemplo = ejemplo.rsplit("/", 1)
             lineas["TEST_DATABASE_URL"] = f"{base_ejemplo[0]}/{base_ejemplo[1].split('?')[0]}_test"
-            if docker and motor.clave == "mysql":
-                lineas["TEST_DATABASE_URL"] = lineas["TEST_DATABASE_URL"].replace(f"//{conexion.usuario}:cambiar-por-una-clave@", "//root:cambiar-por-otra-clave@")
         for variable, valor in lineas.items():
             # Con Prisma no hay un valor por defecto que sirva: la variable queda activa.
             linea = f"{variable}={valor}" if backend.prisma else f"# {variable}={valor}"

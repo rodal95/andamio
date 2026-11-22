@@ -166,8 +166,9 @@ def test_prisma_mysql_y_volver_a_sqlite(en_carpeta, monkeypatch):
     assert main(["nuevo", "login"]) == 0
     assert main(["base", "mysql", "--docker"]) == 0
     env = dotenv_values(raiz / ".env")
-    # Los tests usan root: el usuario de la base de Docker no puede crear otra base.
-    assert env["TEST_DATABASE_URL"] == f"mysql://root:{env['DB_CLAVE_ROOT']}@localhost:3306/mi_tienda_test"
+    # El mismo usuario: en Docker tiene permiso para crear bases (la de los tests y la de Prisma).
+    assert env["TEST_DATABASE_URL"] == f"mysql://app:{env['DB_CLAVE']}@localhost:3306/mi_tienda_test"
+    assert "GRANT ALL PRIVILEGES ON *.* TO '${DB_USUARIO}'@'%';" in leer(raiz / "docker-compose.yml")
     conexion = leer(raiz / "src/db.ts")
     assert "new PrismaMariaDb(String(DATABASE_URL).replace(/^mysql:/, 'mariadb:'))" in conexion
     assert "@prisma/adapter-mariadb" in leer(raiz / "package.json")

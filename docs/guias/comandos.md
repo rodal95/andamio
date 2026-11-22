@@ -536,8 +536,9 @@ puede usar desde tu PC (127.0.0.1). Se levanta con `docker compose up -d`.
   `prisma/schema.prisma`, el adaptador en `src/db` o `lib/db` y la dependencia en
   `package.json`. Los tests usan otra base del mismo servidor (`TEST_DATABASE_URL`, con
   `_test` al final del nombre): `npm test` le crea las tablas antes de empezar
-  (`scripts/base-de-tests.js`), porque los tests vacían las tablas que usan. Con MySQL en Docker, esa
-  base se crea con root (`DB_CLAVE_ROOT`).
+  (`scripts/base-de-tests.js`), porque los tests vacían las tablas que usan.
+- Con MySQL en Docker, el usuario de la base puede crear otras: Prisma (`migrate dev`) arma
+  una base temporal para calcular las migraciones, y los tests de Django crean la suya.
 - Las migraciones de `prisma/migrations` son SQL del motor anterior: si cambiás de motor,
   andamio te avisa que las crees de nuevo (`npx prisma migrate dev --name inicial`).
 - MySQL con Django usa `mysqlclient`: en Linux necesita antes
