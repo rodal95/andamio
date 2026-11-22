@@ -929,6 +929,24 @@ def contexto_pantalla(sol: Solicitud) -> dict[str, str]:
         "url_pantalla": url,
         "url_abrir": url.replace("[id]", "1"),
         **_contexto_pantalla_datos(sol),
+        **_contexto_pantalla_protegida(sol),
+    }
+
+
+def _contexto_pantalla_protegida(sol: Solicitud) -> dict[str, str]:
+    """React Native, --protegido: la pantalla pide ingresar (usePedirIngreso, del login)."""
+    if not sol.opciones.get("protegido"):
+        return {"importar_sesion": "", "proteger": "", "proteger_retorno": ""}
+    if not any((sol.raiz / "sesion" / f"usePedirIngreso.{ext}").is_file() for ext in ("tsx", "jsx")):
+        raise AndamioError(
+            "--protegido usa la sesión (sesion/), que genera el login, y todavía no está.",
+            f"Generá primero el login: {consola.programa()} nuevo login",
+        )
+    explicacion = ["// Esta pantalla pide ingresar (--protegido): sin sesión, lleva a /ingresar."] if sol.guia else []
+    return {
+        "importar_sesion": "import { usePedirIngreso } from '@/sesion';",
+        "proteger": "\n".join([*explicacion, "const pedirIngreso = usePedirIngreso();"]),
+        "proteger_retorno": "\n".join(["if (pedirIngreso) {", "  return pedirIngreso;", "}"]),
     }
 
 
@@ -1126,6 +1144,9 @@ def _contenido_envio_rn(campos, rels, guia: bool) -> list[str]:
 
 MARCADORES_PANTALLA = {
     **MARCADORES_EXTENSION,
+    "importar_sesion": "con --protegido: el import de usePedirIngreso (vacío si no)",
+    "proteger": "con --protegido: const pedirIngreso = usePedirIngreso(); al principio",
+    "proteger_retorno": "con --protegido: si nadie ingresó, devuelve lo que pide usePedirIngreso",
     "ruta_pantalla": "archivo dentro de app/, sin extensión: productos/detalle-producto (con --uno: producto/[id])",
     "url_pantalla": "ruta para navegar: /productos/detalle-producto (con --uno: /producto/[id])",
     "url_abrir": "una dirección de ejemplo para abrirla: /producto/1 con --uno",

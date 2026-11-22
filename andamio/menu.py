@@ -129,7 +129,7 @@ def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
 
 def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
     extras: dict[str, Any] = {}
-    if "protegido" in pieza.opciones and pieza.clave == "pagina":
+    if "protegido" in pieza.opciones and pieza.clave in ("pagina", "pantalla"):
         extras["protegido"] = consola.confirmar("¿Solo para quien ingresó? (necesita el login: nuevo login)", defecto=False)
     elif "protegido" in pieza.opciones:
         extras["protegido"] = consola.confirmar(

@@ -416,6 +416,8 @@ npx expo start
 | `componente` | `nuevo componente Tarjeta` | `components/Tarjeta` con su `StyleSheet`. |
 | `hook` | `nuevo hook contador` | `hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `services/productoService` (y `http`, que explica qué IP usar, y los hooks `useConsulta` y `useFormulario`, si faltan). |
+| `login` | `nuevo login` | Ingresar y crear una cuenta con la API (Django, FastAPI o Express, con `nuevo login`): `services/authService`, la sesión en `sesion/` (el token cifrado con `expo-secure-store`; `useSesion()`), las pantallas `app/ingresar` y `app/registro`, y `BotonSesion` (Ingresar / Salir) en la barra de arriba de todas las pantallas (`app/_layout`). `--sin-registro`: sin `/registro`. |
+| `pantalla --protegido` | `nuevo pantalla perfil --protegido` | La pantalla empieza con `usePedirIngreso()`: sin sesión lleva a `/ingresar` y, al ingresar, vuelve (con sus parámetros). Necesita `nuevo login`. Sirve también con `--datos`. |
 | `tema` | `nuevo tema violeta --modo auto` | `constants/tema`: los colores del modo claro y del oscuro y `useTema()`, que devuelve los del modo actual. |
 
 ---

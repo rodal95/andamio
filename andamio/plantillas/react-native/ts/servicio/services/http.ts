@@ -22,23 +22,47 @@ export class ErrorApi extends Error {
   readonly detalle: unknown;
 
   constructor(estado: number, detalle: unknown) {
-    super(`La API respondió con el error ${estado}`);
+    // Si la API explica el error (detail), ese es el mensaje: "No se encontró una cuenta...".
+    const explicacion = typeof detalle === 'object' && detalle !== null && 'detail' in detalle ? String(detalle.detail) : '';
+    super(explicacion || `La API respondió con el error ${estado}`);
     this.estado = estado;
     this.detalle = detalle;
   }
 }
 
+// --- Login (nuevo login): el token se guarda en memoria y va en cada pedido ---------------
+let token: string | null = null;
+let alVencer: (() => void) | null = null;
+
+/** Desde acá, cada pedido manda este token (Authorization: Bearer ...); null: sin sesión. */
+export function usarToken(nuevo: string | null): void {
+  token = nuevo;
+}
+
+/** Qué hacer si la API responde 401 a un pedido que mandó el token (venció o no es válido). */
+export function alVencerLaSesion(funcion: () => void): void {
+  alVencer = funcion;
+}
+
 async function pedir<T>(metodo: string, ruta: string, datos?: unknown): Promise<T> {
+  const encabezados: Record<string, string> = {};
+  if (datos !== undefined) encabezados['Content-Type'] = 'application/json';
+  if (token) encabezados.Authorization = `Bearer ${token}`;
   let respuesta: Response;
   try {
     respuesta = await fetch(`${API_URL}${ruta}`, {
       method: metodo,
-      headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: encabezados,
       body: datos === undefined ? undefined : JSON.stringify(datos),
     });
   } catch {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
+  if (respuesta.status === 401 && token) {
+    // El token venció (dura 60 minutos) o no es válido: se deja de usar y se avisa.
+    token = null;
+    alVencer?.();
   }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);

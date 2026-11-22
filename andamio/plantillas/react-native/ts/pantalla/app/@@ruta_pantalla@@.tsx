@@ -1,6 +1,7 @@
 import { @@expo_router@@ } from 'expo-router';
 import { @@react_native@@ } from 'react-native';
 @@datos_imports@@
+@@importar_sesion@@
 
 // Opciones de la barra superior (título, colores, etc.).
 const opciones = { title: '@@nombreTitulo@@' };
@@ -8,7 +9,9 @@ const opciones = { title: '@@nombreTitulo@@' };
 @@datos_previo@@
 /** Pantalla en la ruta @@url_pantalla@@ */
 export default function @@Nombre@@Pantalla() {
+  @@proteger@@
   @@datos_consulta@@
+  @@proteger_retorno@@
   return (
     <View style={styles.contenedor}>
       <Stack.Screen options={opciones} />

@@ -23,10 +23,34 @@ export class ErrorApi extends Error {
    * @param {unknown} detalle lo que respondió la API
    */
   constructor(estado, detalle) {
-    super(`La API respondió con el error ${estado}`);
+    // Si la API explica el error (detail), ese es el mensaje: "No se encontró una cuenta...".
+    const explicacion = typeof detalle === 'object' && detalle !== null && 'detail' in detalle ? String(detalle.detail) : '';
+    super(explicacion || `La API respondió con el error ${estado}`);
     this.estado = estado;
     this.detalle = detalle;
   }
+}
+
+// --- Login (nuevo login): el token se guarda en memoria y va en cada pedido ---------------
+/** @type {string | null} */
+let token = null;
+/** @type {(() => void) | null} */
+let alVencer = null;
+
+/**
+ * Desde acá, cada pedido manda este token (Authorization: Bearer ...); null: sin sesión.
+ * @param {string | null} nuevo
+ */
+export function usarToken(nuevo) {
+  token = nuevo;
+}
+
+/**
+ * Qué hacer si la API responde 401 a un pedido que mandó el token (venció o no es válido).
+ * @param {() => void} funcion
+ */
+export function alVencerLaSesion(funcion) {
+  alVencer = funcion;
 }
 
 /**
@@ -35,16 +59,25 @@ export class ErrorApi extends Error {
  * @param {unknown} [datos] lo que se envía como JSON
  */
 async function pedir(metodo, ruta, datos) {
+  /** @type {Record<string, string>} */
+  const encabezados = {};
+  if (datos !== undefined) encabezados['Content-Type'] = 'application/json';
+  if (token) encabezados.Authorization = `Bearer ${token}`;
   let respuesta;
   try {
     respuesta = await fetch(`${API_URL}${ruta}`, {
       method: metodo,
-      headers: datos === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: encabezados,
       body: datos === undefined ? undefined : JSON.stringify(datos),
     });
   } catch {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
+  if (respuesta.status === 401 && token) {
+    // El token venció (dura 60 minutos) o no es válido: se deja de usar y se avisa.
+    token = null;
+    alVencer?.();
   }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);

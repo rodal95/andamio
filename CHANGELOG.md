@@ -39,6 +39,16 @@ Todos los cambios importantes de andamio. El proyecto usa
   `pagina --protegido`: el `.js` empieza con `await pedirIngreso()` y el enlace solo se ve
   con sesión. `--obligatorio`: el menú pide el ingreso en todas las páginas. `--sin-registro`
   también. `http.js` borra el token cuando la API responde 401.
+- React Native: `nuevo login`, con el mismo contrato: el token se guarda cifrado con
+  `expo-secure-store` (en la web, en `localStorage`), la sesión (`useSesion()`, sin
+  Provider), las pantallas `/ingresar` y `/registro` y `BotonSesion` (Ingresar / Salir) en la
+  barra de arriba de todas las pantallas (`app/_layout` ahora pasa `screenOptions` al
+  `Stack`). `pantalla --protegido`: sin sesión lleva a `/ingresar` y después vuelve a la
+  misma pantalla, con sus parámetros (ej.: el `id` de una para editar). `--sin-registro`
+  también. `services/http` avisa cuando la API responde 401 con token y muestra el mensaje
+  de la API (`detail`). Probado en Chromium con la versión web contra Django.
+  Sin `--obligatorio`: en Expo Router se hace con un grupo de rutas
+  (`app/(app)/_layout`), y para eso habría que mover las pantallas que ya existen.
 - Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
   la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
   el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo

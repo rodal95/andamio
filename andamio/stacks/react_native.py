@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from andamio.estilos import contexto_tema_js, pieza_tema
+from andamio.nucleo.errores import AndamioError
+from andamio.nucleo.nombres import Nombre
 from andamio.stacks import _js
-from andamio.stacks.base import Insercion, Pieza, Stack
+from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
 _HOOKS = _js.hooks("hooks")  # useConsulta y useFormulario
 
@@ -19,7 +23,7 @@ PANTALLA = Pieza(
     descripcion="pantalla de Expo Router (un archivo en app/ es una ruta); con --datos, usa un servicio (lista, --uno o --form)",
     ejemplo="detalle-producto",
     formas=("@@nombreKebab@@", "@@Nombre@@Pantalla"),
-    opciones=frozenset({"carpeta", "datos", "uno", "form"}),
+    opciones=frozenset({"carpeta", "datos", "uno", "form", "protegido"}),
     normalizar_opcion={"carpeta": _js.normalizar_carpeta, "datos": _js.normalizar_datos},
     ajustar_palabras=_js.sin_sufijo("pantalla", "screen"),
     contexto=_js.contexto_pantalla,
@@ -101,6 +105,109 @@ SERVICIO = Pieza(
     ),
 )
 
+# --- Login (nuevo login): el mismo contrato que las APIs de andamio -----------------------
+
+
+def _con_registro(sol: Solicitud) -> bool:
+    return not sol.opciones.get("sin_registro")
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    ext = _js.MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    try:
+        http = (sol.raiz / "services" / f"http.{ext}").read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        http = "usarToken"  # se crea ahora (y lo tiene)
+    except (OSError, UnicodeDecodeError):
+        http = ""
+    if "usarToken" not in http:
+        raise AndamioError(
+            f"Tu services/http.{ext} es de una versión anterior: no manda el token del login.",
+            "Agregale usarToken y el encabezado Authorization como en un proyecto nuevo "
+            "(python -m andamio crear react-native prueba), o borralo y generá el login de nuevo.",
+        )
+    ts = ext == "ts"
+    registro = _con_registro(sol)
+    href = " as Href" if ts else ""
+    return {
+        "router_ingresar": ("type Href, " if ts else "") + ("Link, " if registro else "") + "router, Stack, useLocalSearchParams",
+        "a_registro": "\n".join(
+            ["// A /registro sin perder a dónde volver después.", f"const aRegistro = {{ pathname: '/registro', params: {{ desde }} }}{href};"]
+        )
+        if registro
+        else "",
+        "pie_ingresar": "\n".join(["<Link href={aRegistro} style={styles.enlace}>", "  ¿No tenés cuenta? Registrate", "</Link>"]) if registro else "",
+    }
+
+
+def _registro_a_omitir(sol: Solicitud) -> frozenset[str]:
+    return frozenset() if _con_registro(sol) else frozenset({"app/registro.tsx", "app/registro.jsx"})
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    if nombre.snake != "sesion":
+        raise AndamioError("En React Native el login no lleva nombre: genera sesion/ y las pantallas /ingresar y /registro.", "Ejemplo: python -m andamio nuevo login")
+    for archivo in ("app/ingresar.tsx", "app/ingresar.jsx", "app/registro.tsx", "app/registro.jsx"):
+        if (raiz / archivo).exists():
+            raise AndamioError(f"Ya hay una pantalla {archivo}: el login usa esa ruta.", "Cambiale el nombre a la tuya y generá el login de nuevo.")
+
+
+LOGIN = Pieza(
+    clave="login",
+    lectura=(
+        ("services/authService.@@ext@@", "pide el token a la API, crea usuarios y pregunta quién ingresó (/api/yo/)"),
+        ("sesion/almacen.@@ext@@", "dónde queda guardado el token: SecureStore (cifrado) en el celular"),
+        ("sesion/sesion.@@ext@@", "la sesión: useSesion() (quién ingresó), ingresar, registrarse y salir"),
+        ("sesion/usePedirIngreso.@@extx@@", "para las pantallas que piden ingresar: si nadie ingresó, a /ingresar"),
+        ("app/ingresar.@@extx@@", "la pantalla para ingresar"),
+        ("app/registro.@@extx@@", "la pantalla para crear una cuenta"),
+        ("components/BotonSesion.@@extx@@", "Ingresar o Salir, para la barra de arriba"),
+    ),
+    titulo="Login",
+    descripcion="ingresar y crear una cuenta con la API (token JWT, guardado cifrado), y pantallas que piden ingresar (--protegido)",
+    ejemplo="",
+    nombre_defecto="sesion",
+    formas=("@@nombre@@/ (pantallas /ingresar y /registro)",),
+    opciones=frozenset({"sin_registro"}),
+    validar_nombre=_validar_login,
+    contexto=_contexto_login,
+    marcadores={
+        **_js.MARCADORES_EXTENSION,
+        "router_ingresar": "lo que la pantalla de ingreso toma de expo-router (Link, solo con registro)",
+        "a_registro": "la dirección de /registro con ?desde= (vacío con --sin-registro)",
+        "pie_ingresar": "el enlace a /registro debajo del formulario (vacío con --sin-registro)",
+    },
+    existe_si=("sesion",),
+    si_no_existe=frozenset({"services/http.ts", "services/http.js"}),
+    omitir=_registro_a_omitir,
+    inserciones=(
+        # Ingresar / Salir en la barra de arriba de todas las pantallas.
+        Insercion(
+            "app/_layout.@@extx@@",
+            "import { BotonSesion } from '@/components/BotonSesion';",
+            marcador="imports",
+            descripcion="import de BotonSesion",
+            ubicacion="arriba, junto a los otros import",
+            comentario="//",
+        ),
+        Insercion(
+            "app/_layout.@@extx@@",
+            "headerRight: () => <BotonSesion />,",
+            marcador="opciones",
+            descripcion="el botón Ingresar / Salir en la barra de arriba",
+            ubicacion="en las opciones del <Stack>: <Stack screenOptions={{ headerRight: () => <BotonSesion /> }} />",
+            comentario="//",
+        ),
+    ),
+    siguiente_paso=[
+        "# Si el proyecto es de antes: npx expo install expo-secure-store",
+        "# La API con el login (Django, FastAPI o Express): python -m andamio nuevo login",
+        "npx expo start",
+        "# Para que una pantalla pida ingresar:",
+        "python -m andamio nuevo pantalla perfil --protegido",
+    ],
+)
+
 TEMA = pieza_tema(
     descripcion="colores claro y oscuro de la app y el hook useTema()",
     contexto=contexto_tema_js,
@@ -124,7 +231,7 @@ STACK = Stack(
     senal="package.json con expo",
     detectar=_js.detectar_dependencias("expo"),
     tipos=_js.TIPOS_CON_RELACIONES,
-    piezas={"pantalla": PANTALLA, "componente": COMPONENTE, "hook": HOOK, "servicio": SERVICIO, "tema": TEMA},
+    piezas={"pantalla": PANTALLA, "componente": COMPONENTE, "hook": HOOK, "servicio": SERVICIO, "login": LOGIN, "tema": TEMA},
     ejemplo_proyecto="mi-app",
     siguiente_paso_proyecto=[
         "cd @@carpeta@@",

@@ -55,7 +55,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
-| React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `tema` |
+| React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `login`, `tema` |
 | Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
 | Next.js full stack (API y base propias) | `next-fullstack` | `recurso`, `crud`, `pagina`, `componente`, `hook`, `servicio`, `tema`, `ui`, `estilo` |
 | Reflex (web solo con Python) | `reflex` | `crud`, `crud-api`, `pagina`, `componente`, `estado`, `servicio`, `tema` |
@@ -77,8 +77,9 @@ los tokens JWT (SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/registro/
 Un recurso generado con `--protegido` deja leer a cualquiera, pero crear, modificar y eliminar
 piden el token (`Authorization: Bearer <token>`). Del lado de React, `nuevo login` arma
 ingresar, crear una cuenta y la sesión (`useSesion()`), y `nuevo pagina Perfil --protegido`
-hace que una página pida ingresar. FastAPI y Express también tienen `nuevo login`, con las mismas
-rutas: el login de React funciona igual con las tres.
+hace que una página pida ingresar; lo mismo en Vue, HTML + JS y React Native (`nuevo pantalla
+perfil --protegido`, con el token guardado cifrado). FastAPI y Express también tienen `nuevo login`,
+con las mismas rutas: el login de cada frontend funciona igual con las tres.
 
 **Django con plantillas (`django-web`):** la otra forma de usar Django, sin frontend aparte:
 el servidor arma las páginas HTML. Trae login, registro y admin. `crud` genera la app con modelo,
@@ -128,8 +129,12 @@ Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
 - `--plural`: indica el plural cuando el automático no sirve (`--plural paises`).
-- `--protegido` (Django y Django con plantillas): crear, modificar y eliminar piden login. En
-  React (`pagina`, `crud`), la página o el formulario piden ingresar (con `nuevo login`).
+- `--protegido`: en un `recurso` de Django, FastAPI o Express, crear, modificar y eliminar
+  piden el token. En Django con plantillas, React y Vue (`pagina`, `crud`), HTML + JS (`pagina`)
+  y React Native (`pantalla`), la página pide ingresar (con `nuevo login`).
+- `--obligatorio` (en `nuevo login`; Django, Django con plantillas, React, Vue y HTML + JS):
+  todo pide ingresar, salvo ingresar y crear la cuenta. `--sin-registro`: el login sin la
+  página para crear una cuenta.
 - `--migrar` (Django, Django con plantillas, Express, Next.js full stack y Reflex): después de generar el recurso, crea
   y aplica la migración (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en
   Express y Next.js, `reflex db` en Reflex).

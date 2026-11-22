@@ -118,3 +118,30 @@ def test_login_de_la_web_en_el_navegador(en_carpeta, monkeypatch):
         finally:
             servidor.shutdown()
         assert resultado.stdout.count("ok - ") == 6, resultado.stdout
+
+
+@pytest.mark.lento
+@requiere_node
+@requiere_playwright
+def test_login_de_react_native_en_el_navegador(en_carpeta, monkeypatch):
+    """React Native en su versión web (react-native-web): login, pantalla --protegido, la
+    sesión guardada al recargar y token vencido."""
+    puerto_web = puerto_libre()
+    origen = f"http://127.0.0.1:{puerto_web}"
+    with api_en_marcha("django", en_carpeta, monkeypatch, [["nota", "texto:str"]], cors=origen, previas=[["login"]]) as url_api:
+        monkeypatch.chdir(en_carpeta)
+        assert main(["crear", "react-native", "app"]) == 0
+        app = en_carpeta / "app"
+        monkeypatch.chdir(app)
+        assert main(["nuevo", "login"]) == 0
+        assert main(["nuevo", "pantalla", "perfil", "--protegido"]) == 0
+        npm_install(app)
+        ejecutar([NPX, "expo", "export", "--platform", "web"], app, env={"EXPO_PUBLIC_API_URL": url_api, "CI": "1"})
+
+        servidor = http.server.ThreadingHTTPServer(("127.0.0.1", puerto_web), functools.partial(_SPA, directory=str(app / "dist")))
+        threading.Thread(target=servidor.serve_forever, daemon=True).start()
+        try:
+            resultado = ejecutar(["node", str(Path(__file__).with_name("login_rn_navegador.js")), origen], app, env={"NO_PROXY": "127.0.0.1,localhost"})
+        finally:
+            servidor.shutdown()
+        assert resultado.stdout.count("ok - ") == 7, resultado.stdout

@@ -36,6 +36,9 @@ def con_piezas(proyecto):
     assert main(["nuevo", "servicio", "pedido", "numero:int", "cliente:fk"]) == 0
     assert main(["nuevo", "pantalla", "editar-pedido", "--datos", "pedido", "--form"]) == 0
     assert main(["nuevo", "pantalla", "pedido", "--datos", "pedido", "--uno"]) == 0
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "pantalla", "perfil", "--protegido"]) == 0
+    assert main(["nuevo", "pantalla", "editar-cliente", "--datos", "cliente", "--form", "--protegido"]) == 0
     return proyecto
 
 
@@ -198,8 +201,80 @@ def test_detecta_react_native_antes_que_react(proyecto):
     assert buscar_proyecto(proyecto / "app")[0].clave == "react-native"
 
 
+def test_login(con_piezas):
+    for archivo in (
+        "services/authService.ts",
+        "sesion/almacen.ts",
+        "sesion/sesion.ts",
+        "sesion/usePedirIngreso.tsx",
+        "sesion/index.ts",
+        "app/ingresar.tsx",
+        "app/registro.tsx",
+        "components/BotonSesion.tsx",
+    ):
+        assert (con_piezas / archivo).is_file(), archivo
+    # El token se guarda cifrado en el celular (y la dependencia ya viene en el proyecto).
+    assert "SecureStore.setItemAsync" in leer(con_piezas / "sesion/almacen.ts")
+    assert "expo-secure-store" in json.loads(leer(con_piezas / "package.json"))["dependencies"]
+    # Ingresar / Salir en la barra de arriba de todas las pantallas.
+    layout = leer(con_piezas / "app/_layout.tsx")
+    assert "import { BotonSesion } from '@/components/BotonSesion';" in layout
+    assert "headerRight: () => <BotonSesion />," in layout
+    assert "<Stack screenOptions={opciones} />" in layout
+    # Los campos tienen nombre para los lectores de pantalla.
+    assert 'accessibilityLabel="Contraseña"' in leer(con_piezas / "app/ingresar.tsx")
+    assert "'/registro'" in leer(con_piezas / "app/ingresar.tsx")
+
+
+def test_pantalla_protegida(con_piezas):
+    perfil = leer(con_piezas / "app/perfil.tsx")
+    assert "import { usePedirIngreso } from '@/sesion';" in perfil
+    assert "if (pedirIngreso) {\n    return pedirIngreso;\n  }" in perfil
+    # Los hooks de la pantalla van antes del return (reglas de los hooks).
+    form = leer(con_piezas / "app/editar-cliente.tsx")
+    pedir, estado, retorno = form.index("usePedirIngreso();"), form.index("useFormulario("), form.index("return pedirIngreso;")
+    assert pedir < estado < retorno
+    assert "usePedirIngreso" not in leer(con_piezas / "app/editar-producto.tsx")
+
+
+def test_pantalla_protegida_sin_login(proyecto, capsys):
+    assert main(["nuevo", "pantalla", "perfil", "--protegido"]) == 1
+    assert "nuevo login" in capsys.readouterr().err
+    assert not (proyecto / "app/perfil.tsx").exists()
+
+
+def test_login_sin_registro_en_js(en_carpeta, monkeypatch):
+    assert main(["crear", "react-native", "app", "--variante", "js"]) == 0
+    monkeypatch.chdir(en_carpeta / "app")
+    assert main(["nuevo", "login", "--sin-registro"]) == 0
+    assert (en_carpeta / "app/app/ingresar.jsx").is_file()
+    assert not (en_carpeta / "app/app/registro.jsx").exists()
+    ingresar = leer(en_carpeta / "app/app/ingresar.jsx")
+    assert "Link" not in ingresar and "Registrate" not in ingresar
+    assert "headerRight: () => <BotonSesion />," in leer(en_carpeta / "app/app/_layout.jsx")
+
+
+def test_login_con_http_viejo(proyecto, capsys):
+    assert main(["nuevo", "servicio", "producto", "nombre:str"]) == 0
+    http = proyecto / "services/http.ts"
+    http.write_text(leer(http).replace("usarToken", "otraCosa"), encoding="utf-8")
+    assert main(["nuevo", "login"]) == 1
+    assert "no manda el token" in capsys.readouterr().err
+    assert not (proyecto / "sesion").exists()
+
+
+def test_login_en_un_proyecto_sin_marcadores_en_el_layout(proyecto, capsys):
+    """Un proyecto de una versión anterior: el botón no se puede agregar solo; dice dónde pegarlo."""
+    layout = proyecto / "app/_layout.tsx"
+    layout.write_text("export default function Layout() {\n  return null;\n}\n", encoding="utf-8")
+    assert main(["nuevo", "login"]) == 0
+    salida = capsys.readouterr().out
+    assert "headerRight: () => <BotonSesion />" in salida
+    assert (proyecto / "sesion/sesion.ts").is_file()
+
+
 def test_menu_pantalla_con_carpeta(proyecto, respuestas, capsys):
-    respuestas(["1", "detalle", "mal!", "(Tabs)", "", "s"])
+    respuestas(["1", "detalle", "n", "mal!", "(Tabs)", "", "s"])
     capsys.readouterr()
     assert main([]) == 0
     salida = capsys.readouterr().out
