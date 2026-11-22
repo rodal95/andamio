@@ -73,7 +73,29 @@ MARCADORES_SERVICIO = {
     **MARCADORES_EXTENSION,
     "campos_ts": "una línea por campo de la interfaz (TypeScript): precio: number;",
     "campos_jsdoc": "una línea por campo del comentario JSDoc (JavaScript): * @property {number} precio",
+    "ejemplo_validacion": "ejemplo de validación para el TODO(logica) del formulario, con un campo propio",
+    "ejemplo_validacion_vue": "el mismo ejemplo, para Vue (datos.value y errores.value)",
 }
+
+
+def ejemplo_validacion(campos, vue: bool = False) -> str:
+    """Un ejemplo de validación (para el TODO(logica)) con un campo del propio formulario:
+    el primero que no sea sí/no. En Vue, datos y errores son ref (datos.value...)."""
+    campo = next((c for c in campos if c.tipo != "bool"), campos[0] if campos else None)
+    if campo is None:
+        return ""
+    datos = "datos.value" if vue else "datos"
+    valor = f"{datos}.{campo.nombre}"
+    if campo.tipo in ("int", "decimal", "float"):
+        condicion, mensaje = f"Number({valor}) <= 0", "Tiene que ser mayor que cero."
+    elif campo.tipo == "bool":
+        condicion, mensaje = f"!{valor}", "Tenés que marcarlo."
+    elif campo.tipo in ("date", "datetime", relaciones.TIPO):
+        condicion, mensaje = f"!{valor}", "Elegí uno."
+    else:
+        condicion, mensaje = f"String({valor}).trim().length < 3", "Escribí al menos 3 letras."
+    errores = f"errores.value = {{ {campo.nombre}: ['{mensaje}'] }};" if vue else f"setErrores({{ {campo.nombre}: ['{mensaje}'] }});"
+    return f"if ({condicion}) {{ {errores} return; }}"
 
 
 def contexto_servicio(sol: Solicitud) -> dict[str, str]:
@@ -87,7 +109,13 @@ def contexto_servicio(sol: Solicitud) -> dict[str, str]:
             # Opcional (?): solo lo devuelve la API de Django, y no se manda al crear o modificar.
             lineas_ts.append(f"{c.nombre}_texto?: string | null; // su texto, como lo muestra la API (solo lectura)")
             lineas_jsdoc.append(f"* @property {{string | null}} [{c.nombre}_texto] su texto, como lo muestra la API (solo lectura)")
-    return {"campos_ts": "\n".join(lineas_ts), "campos_jsdoc": "\n".join(lineas_jsdoc)}
+    return {
+        "campos_ts": "\n".join(lineas_ts),
+        "campos_jsdoc": "\n".join(lineas_jsdoc),
+        # Para el ejemplo del TODO(logica) de los formularios (crud), con un campo propio.
+        "ejemplo_validacion": ejemplo_validacion(sol.campos),
+        "ejemplo_validacion_vue": ejemplo_validacion(sol.campos, vue=True),
+    }
 
 
 def detectar_dependencias(*paquetes: str) -> Callable[[Path], bool]:
@@ -242,7 +270,7 @@ def _consulta(sol: Solicitud, servicio: str, parametros: str) -> list[str]:
     return ([explicacion] if sol.guia else []) + lineas
 
 
-def _formulario(sol: Solicitud, servicio: str, parametros: str, al_guardar: str) -> list[str]:
+def _formulario(sol: Solicitud, servicio: str, parametros: str, al_guardar: str, campos=()) -> list[str]:
     """La llamada a useFormulario y la función enviar() (con la marca para la lógica propia)."""
     lineas = [
         f"const {{ id }} = {parametros};",
@@ -256,7 +284,7 @@ def _formulario(sol: Solicitud, servicio: str, parametros: str, al_guardar: str)
         "async function enviar() {",
         "  // TODO(logica): validaciones del formulario antes de enviar (la API también valida).",
         "  // Ejemplo (sumá setErrores a lo que tomás de useFormulario):",
-        "  // if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }",
+        f"  // {ejemplo_validacion(campos)}",
         "  const guardado = await guardar();",
         f"  if (guardado) {al_guardar};",
         "}",
@@ -445,7 +473,7 @@ def contexto_pagina(sol: Solicitud) -> dict[str, str]:
         imports = ["import { useNavigate, useParams } from 'react-router';"]
         imports += ["import { useConsulta } from '../../hooks/useConsulta';"] if rels else []
         imports += ["import { useFormulario } from '../../hooks/useFormulario';", *_imports_relaciones(rels, "../../services")]
-        consulta = ["const navegar = useNavigate();", *_formulario(sol, servicio, "useParams()", "navegar(-1)"), *_consultas_relaciones(rels)]
+        consulta = ["const navegar = useNavigate();", *_formulario(sol, servicio, "useParams()", "navegar(-1)", campos), *_consultas_relaciones(rels)]
         contenido = _contenido_formulario(campos, rels)
     else:
         imports = (["import { useParams } from 'react-router';"] if modo == "uno" else []) + ["import { useConsulta } from '../../hooks/useConsulta';"]
@@ -565,7 +593,7 @@ def _contexto_pantalla_datos(sol: Solicitud) -> dict[str, str]:
             (["import { useConsulta } from '@/hooks/useConsulta';"] if rels else [])
             + ["import { useFormulario } from '@/hooks/useFormulario';", *_imports_relaciones(rels, "@/services")]
         )
-        consulta = [*_formulario(sol, servicio, "useLocalSearchParams()", "router.back()"), *_consultas_relaciones(rels)]
+        consulta = [*_formulario(sol, servicio, "useLocalSearchParams()", "router.back()", campos), *_consultas_relaciones(rels)]
         contenido = _contenido_formulario_rn(campos, rels)
         componentes = "ActivityIndicator, Button, " + ("Pressable, " if rels else "") + "ScrollView, StyleSheet, Switch, Text, TextInput, View"
         router = "Stack, router, useLocalSearchParams"

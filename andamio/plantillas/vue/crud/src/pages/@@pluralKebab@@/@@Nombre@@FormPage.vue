@@ -30,7 +30,7 @@ onMounted(async () => {
 
 async function guardar() {
   // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
-  // Ejemplo: if (Number(datos.value.precio) <= 0) { errores.value = { precio: ['Tiene que ser mayor que cero.'] }; return; }
+  // Ejemplo: @@ejemplo_validacion_vue@@
   try {
     const guardado = editando
       ? await @@nombreCamel@@Service.actualizar(id, datos.value)

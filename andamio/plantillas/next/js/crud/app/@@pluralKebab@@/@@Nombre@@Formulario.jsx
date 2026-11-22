@@ -58,7 +58,7 @@ export function @@Nombre@@Formulario() {
 
   async function guardar() {
     // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
-    // Ejemplo: if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
+    // Ejemplo: @@ejemplo_validacion@@
     try {
       const guardado = editando
         ? await @@nombreCamel@@Service.actualizar(Number(id), datos)

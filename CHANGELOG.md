@@ -88,6 +88,14 @@ Todos los cambios importantes de andamio. El proyecto usa
   de una página con el mismo componente) generaba dos `ProductoListaPage` en `src/App` y el
   proyecto no compilaba. Ahora andamio lo rechaza y explica por qué.
 
+### Cambiado
+- Formularios (crud de React, Next.js y Vue, y `pagina` / `pantalla` con `--form`): el
+  ejemplo del `TODO(logica)` usa un campo del propio formulario (`titulo`, `monto`...) en
+  lugar de un `precio` que puede no existir.
+- React, Next.js, Vue y React Native: si la API no está en marcha, el error dice "No se pudo
+  conectar con la API (…). ¿Está en marcha?" en lugar del "Failed to fetch" del navegador,
+  como ya hacía la web en HTML.
+
 ## [1.5.0] - 2026-11-20
 
 ### Agregado

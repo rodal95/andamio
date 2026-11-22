@@ -33,7 +33,7 @@ export function @@Nombre@@FormPage() {
   async function enviar() {
     // TODO(logica): validaciones del formulario antes de enviar (la API también valida).
     // Ejemplo (sumá setErrores a lo que tomás de useFormulario):
-    // if (Number(datos.precio) <= 0) { setErrores({ precio: ['Tiene que ser mayor que cero.'] }); return; }
+    // @@ejemplo_validacion@@
     const guardado = await guardar();
     if (guardado) navegar(`/@@pluralKebab@@/${guardado.id}`);
   }

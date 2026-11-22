@@ -69,11 +69,17 @@ function encabezados(datos) {
  * @param {unknown} [datos] lo que se envía como JSON
  */
 async function pedir(metodo, ruta, datos) {
-  const respuesta = await fetch(`${API_URL}${ruta}`, {
-    method: metodo,
-    headers: encabezados(datos),
-    body: datos === undefined ? undefined : JSON.stringify(datos),
-  });
+  let respuesta;
+  try {
+    respuesta = await fetch(`${API_URL}${ruta}`, {
+      method: metodo,
+      headers: encabezados(datos),
+      body: datos === undefined ? undefined : JSON.stringify(datos),
+    });
+  } catch {
+    // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
+    throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);
     throw new ErrorApi(respuesta.status, detalle);

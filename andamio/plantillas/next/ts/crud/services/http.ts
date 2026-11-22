@@ -52,11 +52,17 @@ function encabezados(datos: unknown): Record<string, string> {
 }
 
 async function pedir<T>(metodo: string, ruta: string, datos?: unknown): Promise<T> {
-  const respuesta = await fetch(`${API_URL}${ruta}`, {
-    method: metodo,
-    headers: encabezados(datos),
-    body: datos === undefined ? undefined : JSON.stringify(datos),
-  });
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${API_URL}${ruta}`, {
+      method: metodo,
+      headers: encabezados(datos),
+      body: datos === undefined ? undefined : JSON.stringify(datos),
+    });
+  } catch {
+    // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
+    throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);
     throw new ErrorApi(respuesta.status, detalle);
