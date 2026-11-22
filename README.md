@@ -8,7 +8,7 @@ componentes, pantallas) para que te concentres en la lógica. Funciona con
 **Instalar** (en Windows, en CMD o PowerShell):
 
 ```
-python -m pip install https://github.com/rodal95/andamio/releases/download/v1.5.0/andamio-1.5.0-py3-none-any.whl
+python -m pip install https://github.com/rodal95/andamio/releases/download/v1.6.0/andamio-1.6.0-py3-none-any.whl
 ```
 
 En Mac, escribí `python3` en lugar de `python`. **En Linux es necesario instalarlo con pipx**

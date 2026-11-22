@@ -5,6 +5,8 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+## [1.6.0] - 2026-11-22
+
 ### Agregado
 - `andamio-guia.html` en cada proyecto: una página para abrir en el navegador con el tipo
   de proyecto, cómo ponerlo en marcha, lo que ya se generó (con sus archivos y si sigue
