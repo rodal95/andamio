@@ -62,7 +62,8 @@ async function pedir(metodo, ruta, datos) {
   /** @type {Record<string, string>} */
   const encabezados = {};
   if (datos !== undefined) encabezados['Content-Type'] = 'application/json';
-  if (token) encabezados.Authorization = `Bearer ${token}`;
+  const enviado = token; // el token con el que sale el pedido
+  if (enviado) encabezados.Authorization = `Bearer ${enviado}`;
   let respuesta;
   try {
     respuesta = await fetch(`${API_URL}${ruta}`, {
@@ -74,7 +75,9 @@ async function pedir(metodo, ruta, datos) {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
   }
-  if (respuesta.status === 401 && token) {
+  if (respuesta.status === 401 && enviado && enviado === token) {
+    // Solo si es el mismo token con el que salió el pedido: si mientras tanto se volvió a
+    // ingresar, el token nuevo no se toca.
     // El token venció (dura 60 minutos) o no es válido: se deja de usar y se avisa.
     token = null;
     alVencer?.();

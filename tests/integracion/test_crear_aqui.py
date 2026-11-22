@@ -51,3 +51,13 @@ def test_menu_acepta_el_punto(carpeta, respuestas):
     respuestas(["1", ".", "s"])  # Python + SQLite, en esta carpeta, confirmar
     assert main([]) == 0
     assert (carpeta / "main.py").is_file()
+
+
+def test_avisa_si_queda_dentro_de_otro_proyecto(en_carpeta, capsys, monkeypatch):
+    assert main(["crear", "django", "api"]) == 0
+    front = en_carpeta / "api" / "front"
+    front.mkdir()
+    monkeypatch.chdir(front)
+    capsys.readouterr()
+    assert main(["crear", "react", "."]) == 0
+    assert "Estás dentro de un proyecto Django" in capsys.readouterr().out

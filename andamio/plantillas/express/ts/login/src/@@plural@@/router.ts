@@ -37,7 +37,14 @@ function problemasDeLaPassword(password: string, username: string): string[] {
   if (problemas.length) errores.password = problemas;
   // El mismo formato que los demás errores: {"campo": ["mensaje"]}.
   if (Object.keys(errores).length) throw new ErrorDeValidacion(errores);
-  const usuario = await prisma.usuario.create({ data: { ...datos, passwordHash: hashDe(password) } });
+  const usuario = await prisma.usuario
+    .create({ data: { ...datos, passwordHash: hashDe(password) } })
+    .catch((error: { code?: string }) => {
+      // Dos registros con el mismo nombre al mismo tiempo: los dos pasaron la búsqueda de
+      // arriba, pero la base (username es único) acepta solo el primero (P2002).
+      if (error?.code === 'P2002') throw new ErrorDeValidacion({ username: ['Ya existe un usuario con este nombre.'] });
+      throw error;
+    });
   res.status(201).json(aJson(usuario));
 });
 

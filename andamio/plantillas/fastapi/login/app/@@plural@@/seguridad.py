@@ -40,10 +40,11 @@ def password_correcta(password: str, guardado: str) -> bool:
     try:
         _, iteraciones, sal, clave = guardado.split("$")
         calculada = hashlib.pbkdf2_hmac("sha256", password.encode(), base64.b64decode(sal), int(iteraciones))
-    except ValueError:
+        esperada = base64.b64decode(clave)
+    except ValueError:  # un hash mal guardado (binascii.Error también es ValueError)
         return False
     # compare_digest tarda lo mismo aunque difieran al principio: no da pistas a un atacante.
-    return hmac.compare_digest(calculada, base64.b64decode(clave))
+    return hmac.compare_digest(calculada, esperada)
 
 
 def puede_ingresar(usuario: Usuario | None, password: str) -> TypeGuard[Usuario]:

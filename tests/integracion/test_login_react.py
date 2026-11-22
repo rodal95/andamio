@@ -91,7 +91,7 @@ def test_login_con_un_http_anterior(web, capsys):
     inicio = texto.index("let alVencer")
     fin = texto.index("\n}\n", texto.index("export function alVencerLaSesion")) + 3
     texto = texto[:inicio] + texto[fin:]
-    texto = texto.replace("  if (respuesta.status === 401 && leerToken()) {\n", "  if (false) {\n").replace("    alVencer?.();\n", "")
+    texto = texto.replace("  if (respuesta.status === 401 && enviado && enviado === leerToken()) {\n", "  if (false) {\n").replace("    alVencer?.();\n", "")
     http.write_text(texto, encoding="utf-8")
     capsys.readouterr()
     assert main(["nuevo", "login"]) == 0
@@ -228,4 +228,4 @@ def test_el_http_avisa_cuando_vence_la_sesion(web):
     assert main(["nuevo", "servicio", "producto", "nombre:str"]) == 0
     http = _leer(web / "src/services/http.ts")
     assert "export function alVencerLaSesion(funcion: () => void): void {" in http
-    assert "if (respuesta.status === 401 && leerToken()) {" in http
+    assert "if (respuesta.status === 401 && enviado && enviado === leerToken()) {" in http

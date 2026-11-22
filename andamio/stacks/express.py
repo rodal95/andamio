@@ -380,8 +380,15 @@ MODELO_USUARIO = """model Usuario {
 _CONFIG_LOGIN = """
 // --- Login con JWT (lo agregó: andamio nuevo login) ------------------------------
 // Con esta clave se firman los tokens: si alguien la conoce, puede armar tokens válidos.
-// Va en el .env (que no se sube a git); cambiala en cada instalación.
-export const SECRET_KEY = process.env.SECRET_KEY || 'cambiar-por-una-clave-larga-y-secreta';"""
+// Va en el .env (que no se sube a git); cambiala en cada instalación. Sin ella la API no
+// arranca (como Django): una clave por defecto la conocería cualquiera que lea este código.
+export const SECRET_KEY = process.env.SECRET_KEY ?? '';
+if (!SECRET_KEY) {
+  throw new Error('Falta SECRET_KEY. Copiá el archivo .env.example con el nombre .env y poné una clave larga y al azar.');
+}"""
+
+
+_IMPORT_ROUTER = re.compile(r"""^import\s*\{[^}]*\}\s*from\s*['"]\./([^/'"]+)/router\.[jt]s['"]""", re.MULTILINE)
 
 
 def login_generado(raiz: Path) -> str | None:
@@ -391,12 +398,12 @@ def login_generado(raiz: Path) -> str | None:
             texto = (raiz / archivo).read_text(encoding="utf-8-sig")
         except (OSError, UnicodeDecodeError):
             continue
-        for linea in texto.splitlines():
-            # import { cuentasRouter } from './cuentas/router.ts';  (lo agrega nuevo login)
-            if linea.startswith("import {") and "/router." in linea and "Docs" not in linea:
-                carpeta = linea.split("'./", 1)[1].split("/", 1)[0]
-                if any((raiz / "src" / carpeta / f"seguridad.{ext}").is_file() for ext in ("ts", "js")):
-                    return carpeta
+        # import { cuentasRouter } from './cuentas/router.ts';  (lo agrega nuevo login)
+        # Con comillas simples o dobles (Prettier usa dobles si no se le dice otra cosa).
+        for encontrado in _IMPORT_ROUTER.finditer(texto):
+            carpeta = encontrado.group(1)
+            if any((raiz / "src" / carpeta / f"seguridad.{ext}").is_file() for ext in ("ts", "js")):
+                return carpeta
     return None
 
 

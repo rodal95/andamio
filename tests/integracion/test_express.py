@@ -254,6 +254,17 @@ def test_login_una_sola_vez(proyecto, capsys):
     assert "ya tiene el login" in capsys.readouterr().err
 
 
+def test_login_con_comillas_dobles(proyecto, variante, capsys):
+    """Con app formateado por Prettier (comillas dobles) se sigue encontrando el login."""
+    assert main(["nuevo", "login"]) == 0
+    app = proyecto / f"src/app.{variante}"
+    app.write_text(leer(app).replace("'", '"'), encoding="utf-8")
+    capsys.readouterr()
+    assert main(["nuevo", "login", "acceso"]) == 1
+    assert "ya tiene el login" in capsys.readouterr().err
+    assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 0
+
+
 def test_recurso_protegido(proyecto, variante, capsys):
     assert main(["nuevo", "recurso", "pedido", "total:decimal", "--protegido"]) == 1
     assert "nuevo login" in capsys.readouterr().err

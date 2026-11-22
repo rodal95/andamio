@@ -39,8 +39,9 @@ if (estado.cargando) {
   authService
     .yo()
     .then((usuario) => cambiar({ usuario, cargando: false }))
-    .catch(() => {
-      authService.salir(); // venció o no es válido
+    .catch((error) => {
+      // Se borra si venció o no es válido (401). Si la API no responde o falla, el token se guarda: sirve cuando vuelva.
+      if (error?.estado === 401) authService.salir();
       cambiar({ usuario: null, cargando: false });
     });
 }
@@ -73,6 +74,8 @@ export function salir(): void {
  * ingresar, la persona terminaría en otro sitio (redirección abierta).
  */
 export function aDondeVolver(desde: unknown): string {
-  // Empieza con una sola / (//sitio.com y /\sitio.com son de otro sitio).
-  return typeof desde === 'string' && /^\/(?![/\\])/.test(desde) ? desde : '/';
+  // Empieza con una sola / (//sitio.com y /\sitio.com son de otro sitio) y no tiene
+  // espacios, tabs ni saltos de línea: el navegador los borra y /<tab>/sitio.com
+  // terminaría siendo //sitio.com.
+  return typeof desde === 'string' && /^\/(?![/\\])[^\\\u0000-\u0020\u007f]*$/.test(desde) ? desde : '/';
 }
