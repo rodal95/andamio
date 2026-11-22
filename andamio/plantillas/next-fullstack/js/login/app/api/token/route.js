@@ -1,7 +1,7 @@
 // guía: Ingresar (POST /api/token/): con usuario y contraseña, el token de acceso y el de refresco.
 import { prisma } from '@/lib/db';
 import { leerJson, responder, validar } from '@/lib/errores';
-import { passwordCorrecta } from '@/lib/sesion';
+import { puedeIngresar } from '@/lib/sesion';
 import { cookieDeSesion, crearToken } from '@/lib/tokens';
 import { Credenciales } from '@/lib/usuarios';
 
@@ -12,7 +12,7 @@ export async function POST(request) {
   return responder(async () => {
     const { username, password } = validar(Credenciales, await leerJson(request));
     const usuario = await prisma.usuario.findUnique({ where: { username } });
-    if (!usuario?.activo || !passwordCorrecta(password, usuario.passwordHash)) {
+    if (!puedeIngresar(usuario, password)) {
       return Response.json({ detail: CREDENCIALES_INCORRECTAS }, { status: 401 });
     }
     const access = await crearToken(usuario.id, 'access');

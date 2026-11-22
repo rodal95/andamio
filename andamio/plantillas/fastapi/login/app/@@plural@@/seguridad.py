@@ -13,7 +13,7 @@ import hashlib
 import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, TypeGuard
 
 import jwt
 from fastapi import Depends, HTTPException
@@ -44,6 +44,18 @@ def password_correcta(password: str, guardado: str) -> bool:
         return False
     # compare_digest tarda lo mismo aunque difieran al principio: no da pistas a un atacante.
     return hmac.compare_digest(calculada, base64.b64decode(clave))
+
+
+def puede_ingresar(usuario: Usuario | None, password: str) -> TypeGuard[Usuario]:
+    """Si la contraseña es la del usuario y el usuario está activo.
+
+    Si el usuario no existe, igual calcula un hash (el de lo que escribió): así la respuesta
+    tarda lo mismo y no da pistas de qué usuarios existen. Lo mismo hace Django.
+    """
+    if usuario is None:
+        hash_de(password)  # el mismo trabajo que comprobarla
+        return False
+    return password_correcta(password, usuario.password_hash) and usuario.activo
 
 
 def crear_token(usuario: Usuario, tipo: str) -> str:

@@ -373,4 +373,4 @@ def test_tests_generados_con_login(proyecto):
     assert main(["nuevo", "recurso", "nota", "texto"]) == 0
     resultado = python(proyecto, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-W", "error")
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
-    assert "17 passed" in resultado.stdout
+    assert "18 passed" in resultado.stdout

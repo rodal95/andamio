@@ -73,6 +73,14 @@ test('ingresar con la clave incorrecta', async () => {
   assert.equal(res.cookie, '');
 });
 
+test('un usuario que no existe o desactivado no ingresa', async () => {
+  // guía: Las dos respuestas son iguales (y tardan lo mismo): no dan pistas de qué usuarios existen.
+  assert.equal((await ingresar()).status, 401);
+  await registrar();
+  await prisma.usuario.update({ where: { username: 'ana' }, data: { activo: false } });
+  assert.equal((await ingresar()).status, 401);
+});
+
 test('yo, con el token, con la cookie y sin sesión', async () => {
   await registrar();
   assert.equal((await pedir('GET', '/api/yo/')).status, 401);

@@ -189,7 +189,7 @@ def test_login_de_next_fullstack_en_el_navegador(variante, en_carpeta, monkeypat
     assert main(["nuevo", "recurso", "pedido", *campos, "--migrar"]) == 0
     assert main(["nuevo", "crud", "pedido", *campos]) == 0
     pruebas = ejecutar([NPM, "test"], app)
-    assert "# pass 13" in pruebas.stdout and "# fail 0" in pruebas.stdout, pruebas.stdout[-3000:]
+    assert "# pass 14" in pruebas.stdout and "# fail 0" in pruebas.stdout, pruebas.stdout[-3000:]
     puerto = puerto_libre()
     with _next_en_marcha(app, puerto):
         resultado = ejecutar(["node", str(Path(__file__).with_name("login_fullstack_navegador.js")), f"http://127.0.0.1:{puerto}"], app, env={"NO_PROXY": "127.0.0.1,localhost"})

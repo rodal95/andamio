@@ -35,6 +35,19 @@ export function passwordCorrecta(password: string, guardado: string): boolean {
   return calculada.length === esperada.length && timingSafeEqual(calculada, esperada);
 }
 
+/**
+ * Si puede ingresar: la contraseña es la del usuario y el usuario está activo. Si el usuario
+ * no existe, igual calcula un hash (el de lo que escribió): así la respuesta tarda lo mismo
+ * y no da pistas de qué usuarios existen. Lo mismo hace Django.
+ */
+export function puedeIngresar(usuario: Usuario | null, password: string): usuario is Usuario {
+  if (!usuario) {
+    hashDe(password); // el mismo trabajo que comprobarla
+    return false;
+  }
+  return passwordCorrecta(password, usuario.passwordHash) && usuario.activo;
+}
+
 export function crearToken(usuario: Usuario, tipo: 'access' | 'refresh'): Promise<string> {
   return new SignJWT({ tipo })
     .setProtectedHeader({ alg: 'HS256' })

@@ -16,7 +16,7 @@ from .seguridad import (
     UsuarioActual,
     crear_token,
     hash_de,
-    password_correcta,
+    puede_ingresar,
     usuario_del_token,
 )
 
@@ -60,7 +60,7 @@ def registrarse(datos: Registro, bd: SesionBD):
 def pedir_token(datos: Credenciales, bd: SesionBD):
     """Con usuario y contraseña, devuelve el token de acceso y el de refresco."""
     usuario = bd.exec(select(Usuario).where(Usuario.username == datos.username)).first()
-    if usuario is None or not usuario.activo or not password_correcta(datos.password, usuario.password_hash):
+    if not puede_ingresar(usuario, datos.password):
         raise HTTPException(401, CREDENCIALES_INCORRECTAS)
     return {"access": crear_token(usuario, "access"), "refresh": crear_token(usuario, "refresh")}
 

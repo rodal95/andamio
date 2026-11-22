@@ -46,6 +46,14 @@ test('login con clave incorrecta', async () => {
   assert.equal((await tokens('otra')).status, 401);
 });
 
+test('un usuario que no existe o desactivado no ingresa', async () => {
+  // guía: Las dos respuestas son iguales (y tardan lo mismo): no dan pistas de qué usuarios existen.
+  assert.equal((await tokens()).status, 401);
+  await registrar();
+  await prisma.usuario.update({ where: { username: 'ana' }, data: { activo: false } });
+  assert.equal((await tokens()).status, 401);
+});
+
 test('yo, con y sin token', async () => {
   await registrar();
   assert.equal((await api.get('/api/yo/')).status, 401);

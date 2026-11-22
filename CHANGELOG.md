@@ -9,7 +9,7 @@ Todos los cambios importantes de andamio. El proyecto usa
 - FastAPI: `nuevo login`, con las mismas rutas y respuestas que la API de Django
   (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`): el login de React
   funciona igual con las dos. Usuarios con la contraseña con hash (PBKDF2, como Django),
-  tokens JWT (PyJWT) firmados con la `SECRET_KEY` del `.env`, 6 tests y `http/login.http`.
+  tokens JWT (PyJWT) firmados con la `SECRET_KEY` del `.env`, 7 tests y `http/login.http`.
 - FastAPI: `nuevo recurso ... --protegido`: crear, reemplazar, modificar y eliminar piden el
   token (ver es libre). Los tests entran como un usuario de prueba, y uno controla el 401.
 - Django (API): `nuevo login --obligatorio`: toda la API pide el token
@@ -54,7 +54,7 @@ Todos los cambios importantes de andamio. El proyecto usa
   (`app/api/token`, `token/refresh`, `registro`, `yo` y `salir`, con las mismas respuestas
   que Django, así React o React Native también la usan), el modelo `Usuario`, `lib/sesion`
   (hash PBKDF2 y `pedirSesion`), `lib/tokens` (JWT con `jose`, ahora en el `package.json`),
-  7 tests y `http/login.http`. Las páginas no guardan el token: la API lo deja en una cookie
+  8 tests y `http/login.http`. Las páginas no guardan el token: la API lo deja en una cookie
   **httpOnly** (`SameSite=Lax`; `Secure` con https) y `/api/salir/` la borra. `proxy.ts`
   ahora atiende también las páginas y revisa en el servidor las que piden ingresar
   (`lib/paginasProtegidas`: las de `pagina` y `crud --protegido`, o todas con
@@ -79,7 +79,7 @@ Todos los cambios importantes de andamio. El proyecto usa
 - Express: `nuevo login` (con `--migrar`), el mismo contrato: el modelo `Usuario` en Prisma,
   la contraseña con hash PBKDF2 (de Node, sin dependencias), tokens JWT con `jose` (ahora en
   el `package.json` de los proyectos nuevos; en los anteriores, los pasos dicen cómo
-  instalarlo), 6 tests y `http/login.http`. `recurso --protegido`: el middleware
+  instalarlo), 7 tests y `http/login.http`. `recurso --protegido`: el middleware
   `requiereSesion` en crear, reemplazar, modificar y eliminar; los tests usan el token
   (`usarToken`, nuevo en `tests/api`) y uno controla el 401.
 - React: los proyectos nuevos traen el menú (`Navbar`), el pie (`Footer`) y el `Layout`
@@ -109,6 +109,10 @@ Todos los cambios importantes de andamio. El proyecto usa
   explica en los siguientes pasos.
 
 ### Corregido
+- Login de FastAPI, Express y Next.js full stack: `/api/token/` respondía más rápido si el
+  usuario no existía (no calculaba el hash) o estaba desactivado, y midiendo el tiempo se
+  podía averiguar qué usuarios existen. Ahora `puedeIngresar` / `puede_ingresar` siempre
+  calcula un hash, como Django. Un test nuevo controla el usuario inexistente y el desactivado.
 - Login de la web (HTML y JS), Vue y React Native: `?desde=` (a dónde volver después de
   ingresar) se usaba tal cual, así que un enlace a `ingresar?desde=https://sitio-falso.com`
   llevaba a otro sitio después de ingresar (redirección abierta), y en la web

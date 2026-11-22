@@ -9,7 +9,7 @@ import { Router } from 'express';
 import { prisma } from '../db.ts';
 import { ErrorDeValidacion, validar } from '../errores.ts';
 import { aJson, Credenciales, Refresco, Registro } from './esquema.ts';
-import { crearToken, hashDe, passwordCorrecta, requiereSesion, usuarioDelToken } from './seguridad.ts';
+import { crearToken, hashDe, puedeIngresar, requiereSesion, usuarioDelToken } from './seguridad.ts';
 
 export const @@pluralCamel@@Router = Router();
 
@@ -45,7 +45,7 @@ function problemasDeLaPassword(password: string, username: string): string[] {
 @@pluralCamel@@Router.post('/token/', async (req, res) => {
   const { username, password } = validar(Credenciales, req.body);
   const usuario = await prisma.usuario.findUnique({ where: { username } });
-  if (!usuario?.activo || !passwordCorrecta(password, usuario.passwordHash)) {
+  if (!puedeIngresar(usuario, password)) {
     res.status(401).json({ detail: CREDENCIALES_INCORRECTAS });
     return;
   }

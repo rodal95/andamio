@@ -1,5 +1,8 @@
 """Tests del login con JWT. Ejecutalos con: python -m pytest"""
 
+from app.@@plural@@.modelo import Usuario
+from app.@@plural@@.seguridad import hash_de, puede_ingresar
+
 USUARIO = {"username": "ana", "email": "ana@ejemplo.com", "password": "una-clave-larga-123"}
 
 
@@ -39,6 +42,13 @@ def test_login_devuelve_los_tokens(cliente):
 def test_login_con_clave_incorrecta(cliente):
     registrar(cliente)
     assert tokens(cliente, "otra").status_code == 401
+
+
+def test_un_usuario_que_no_existe_o_desactivado_no_ingresa(cliente):
+    # guía: Las dos respuestas son iguales (y tardan lo mismo): no dan pistas de qué usuarios existen.
+    assert tokens(cliente).status_code == 401
+    desactivado = Usuario(username="ana", password_hash=hash_de("una-clave-larga-123"), activo=False)
+    assert not puede_ingresar(desactivado, "una-clave-larga-123")
 
 
 def test_yo_con_y_sin_token(cliente):

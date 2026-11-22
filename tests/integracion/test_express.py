@@ -293,7 +293,7 @@ def test_el_proyecto_generado_instala_migra_y_pasa_sus_tests(con_recursos, varia
         assert main(["nuevo", "recurso", "marca", "nombre", "--migrar"]) == 0
     assert list((raiz / "prisma/migrations").glob("*/migration.sql"))
     resultado = ejecutar([NPM, "test"], raiz)
-    total = (25 if variante == "js" else 20) + 6 + 6  # + el login + el recurso protegido (con el 401)
+    total = (25 if variante == "js" else 20) + 7 + 6  # + el login + el recurso protegido (con el 401)
     assert f"# pass {total}" in resultado.stdout and "# fail 0" in resultado.stdout, resultado.stdout[-3000:]
     if variante == "ts":
         ejecutar([NPM, "run", "tipos"], raiz)

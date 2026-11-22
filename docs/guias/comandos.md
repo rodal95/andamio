@@ -260,7 +260,7 @@ python -m uvicorn app.main:app --reload     http://127.0.0.1:8000/docs
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int` | `app/productos/` con el modelo (SQLModel, con validación) y el router (CRUD en `/api/productos/`), y 5 tests. Lo registra en `app/main.py`. La tabla se crea al arrancar. |
-| `login` | `nuevo login` | `app/cuentas/`: usuarios (la contraseña con hash PBKDF2, como Django), tokens JWT (PyJWT) y las mismas rutas que la API de Django (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`), con 6 tests y `http/login.http`. La clave que firma los tokens va al `.env`. |
+| `login` | `nuevo login` | `app/cuentas/`: usuarios (la contraseña con hash PBKDF2, como Django), tokens JWT (PyJWT) y las mismas rutas que la API de Django (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`), con 7 tests y `http/login.http`. La clave que firma los tokens va al `.env`. |
 | `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo; crear, reemplazar, modificar y eliminar piden el token (`dependencies=PIDE_LOGIN`); ver es libre. Los tests entran como un usuario de prueba, y uno más controla el 401 sin login. Necesita `nuevo login`. |
 
 Responde igual que Django (mismas rutas, mismos errores en español): las interfaces
@@ -280,7 +280,7 @@ npm run dev                                      http://localhost:8000/docs
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int --migrar` | El modelo en `prisma/schema.prisma`, la validación (Zod, mensajes en español), el router en `src/productos/` y 5 tests. Con `--migrar`, `npx prisma migrate dev`. |
-| `login` | `nuevo login --migrar` | `src/cuentas/`: el modelo `Usuario` (la contraseña con hash PBKDF2 de Node, como Django), tokens JWT (`jose`) y las mismas rutas que la API de Django (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`), con 6 tests y `http/login.http`. La clave que firma los tokens va al `.env`. |
+| `login` | `nuevo login --migrar` | `src/cuentas/`: el modelo `Usuario` (la contraseña con hash PBKDF2 de Node, como Django), tokens JWT (`jose`) y las mismas rutas que la API de Django (`/api/registro/`, `/api/token/`, `/api/token/refresh/`, `/api/yo/`), con 7 tests y `http/login.http`. La clave que firma los tokens va al `.env`. |
 | `recurso --protegido` | `nuevo recurso pedido cliente:str total:decimal --protegido` | Lo mismo; crear, reemplazar, modificar y eliminar pasan por el middleware `requiereSesion` (piden el token); ver es libre. Los tests registran un usuario y usan su token (`usarToken`), y uno más controla el 401. Necesita `nuevo login`. |
 
 ---
@@ -451,7 +451,7 @@ Lo mismo que `next` (incluidos `tema`, `ui` y `estilo`), más la pieza `recurso`
 | Pieza | Comando | Qué genera |
 |---|---|---|
 | `recurso` | `nuevo recurso producto nombre:str precio:decimal stock:int --migrar` | La API en `app/api/productos/` (Route Handlers con Prisma y Zod), con el mismo contrato que las otras APIs, y 5 tests. Con `--protegido`, crear, reemplazar, modificar y eliminar piden login (el token o la cookie; ver es libre) y los tests entran con un usuario. |
-| `login` | `nuevo login --migrar` | La API del login (`app/api/token`, `token/refresh`, `registro`, `yo` y `salir`, con las mismas respuestas que Django), el modelo `Usuario`, `lib/sesion` y `lib/tokens`, 7 tests y `http/login.http`; y las páginas `/ingresar` y `/registro`. La API deja el token en una **cookie httpOnly** (las páginas no lo guardan) y `proxy.ts` revisa en el servidor las páginas que piden ingresar (`lib/paginasProtegidas`: las de `pagina` y `crud --protegido`, o todas con `--obligatorio`). |
+| `login` | `nuevo login --migrar` | La API del login (`app/api/token`, `token/refresh`, `registro`, `yo` y `salir`, con las mismas respuestas que Django), el modelo `Usuario`, `lib/sesion` y `lib/tokens`, 8 tests y `http/login.http`; y las páginas `/ingresar` y `/registro`. La API deja el token en una **cookie httpOnly** (las páginas no lo guardan) y `proxy.ts` revisa en el servidor las páginas que piden ingresar (`lib/paginasProtegidas`: las de `pagina` y `crud --protegido`, o todas con `--obligatorio`). |
 
 ---
 

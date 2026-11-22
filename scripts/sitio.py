@@ -130,7 +130,7 @@ TECNOLOGIAS = {
             },
             "login": {
                 "comando": "nuevo login",
-                "explicacion": "Agrega el login con tokens JWT, con las mismas rutas y respuestas que la API de Django: así el login de React (y de los demás frontends de andamio) funciona igual con las dos. Usuarios en la base (la contraseña se guarda con hash, nunca tal cual), registro, token de acceso y de refresco, el usuario actual y 6 tests. La clave que firma los tokens va al .env. Después, los recursos que generes con --protegido piden el token para crear, modificar y eliminar.",
+                "explicacion": "Agrega el login con tokens JWT, con las mismas rutas y respuestas que la API de Django: así el login de React (y de los demás frontends de andamio) funciona igual con las dos. Usuarios en la base (la contraseña se guarda con hash, nunca tal cual), registro, token de acceso y de refresco, el usuario actual y 7 tests. La clave que firma los tokens va al .env. Después, los recursos que generes con --protegido piden el token para crear, modificar y eliminar.",
                 "uso": "POST /api/registro/        {\"username\", \"email\", \"password\"}  crea un usuario\nPOST /api/token/           {\"username\", \"password\"}  ->  {\"access\", \"refresh\"}\nPOST /api/token/refresh/   {\"refresh\"}  ->  {\"access\"}  (uno nuevo, sin volver a ingresar)\nGET  /api/yo/              el usuario del token\n\nEn cada pedido:  Authorization: Bearer <access>",
                 "uso_lenguaje": "texto",
             },
@@ -156,7 +156,7 @@ TECNOLOGIAS = {
             },
             "login": {
                 "comando": "nuevo login",
-                "explicacion": "Agrega el login con tokens JWT, con las mismas rutas y respuestas que la API de Django: el login de React (y de los demás frontends de andamio) funciona igual. El modelo Usuario (la contraseña con hash PBKDF2, de Node, nunca tal cual), registro, token de acceso y de refresco (con jose), el usuario actual y 6 tests. La clave que firma los tokens va al .env. Después, los recursos que generes con --protegido piden el token para crear, modificar y eliminar (el middleware requiereSesion).",
+                "explicacion": "Agrega el login con tokens JWT, con las mismas rutas y respuestas que la API de Django: el login de React (y de los demás frontends de andamio) funciona igual. El modelo Usuario (la contraseña con hash PBKDF2, de Node, nunca tal cual), registro, token de acceso y de refresco (con jose), el usuario actual y 7 tests. La clave que firma los tokens va al .env. Después, los recursos que generes con --protegido piden el token para crear, modificar y eliminar (el middleware requiereSesion).",
                 "uso": "POST /api/registro/        {\"username\", \"email\", \"password\"}  crea un usuario\nPOST /api/token/           {\"username\", \"password\"}  ->  {\"access\", \"refresh\"}\nPOST /api/token/refresh/   {\"refresh\"}  ->  {\"access\"}  (uno nuevo, sin volver a ingresar)\nGET  /api/yo/              el usuario del token\n\nEn cada pedido:  Authorization: Bearer <access>",
                 "uso_lenguaje": "texto",
             },
@@ -1423,7 +1423,7 @@ DESCRIPCIONES = {
         ("app/api/*/route.*", "La API del recurso: GET (listar, con búsqueda, orden y filtros) y POST (crear) en /api/productos/."),
         ("app/api/*/esquema.*", "Qué datos acepta el recurso (validación con Zod) y cómo se ve cada registro en el JSON."),
         ("tests/api.*", "Ayuda para los tests: llama a las funciones de app/api/ sin levantar el servidor, con otra base (test.db)."),
-        ("tests/login.test.*", "7 tests del login: registro, ingresar (con la cookie), quién soy, renovar y salir. Se ejecutan con npm test."),
+        ("tests/login.test.*", "8 tests del login: registro, ingresar (con la cookie), usuario inexistente o desactivado, quién soy, renovar y salir. Se ejecutan con npm test."),
         ("tests/*.test.*", "5 tests de la API: listar, crear, ver, modificar y eliminar. Se ejecutan con npm test."),
         ("http/login.http", "Peticiones para probar el login a mano: registrarse, pedir el token, quién soy, renovarlo y salir."),
         ("http/*.http", "Peticiones de ejemplo para probar la API a mano (listar, crear, ver, modificar y eliminar), con la extensión REST Client de VS Code."),

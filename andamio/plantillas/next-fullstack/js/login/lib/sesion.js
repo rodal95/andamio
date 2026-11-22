@@ -40,6 +40,22 @@ export function passwordCorrecta(password, guardado) {
 }
 
 /**
+ * Si puede ingresar: la contraseña es la del usuario y el usuario está activo. Si el usuario
+ * no existe, igual calcula un hash (el de lo que escribió): así la respuesta tarda lo mismo
+ * y no da pistas de qué usuarios existen. Lo mismo hace Django.
+ * @param {Usuario | null} usuario
+ * @param {string} password
+ * @returns {usuario is Usuario}
+ */
+export function puedeIngresar(usuario, password) {
+  if (!usuario) {
+    hashDe(password); // el mismo trabajo que comprobarla
+    return false;
+  }
+  return passwordCorrecta(password, usuario.passwordHash) && usuario.activo;
+}
+
+/**
  * El usuario dueño del token, o null si el token no sirve o el usuario no está activo.
  * @param {string | undefined} token
  * @param {TipoDeToken} tipo
