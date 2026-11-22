@@ -187,6 +187,8 @@ def test_react_js_npm_install_y_build(web_js):
         ["pagina", "Catalogo", "--datos", "producto"], ["pagina", "ProductoFicha", "--datos", "producto", "--uno"],
         ["pagina", "ProductoAlta", "--datos", "producto", "--form"],
         ["servicio", "cliente", "nombre"], ["crud", "pedido", "numero:int", "cliente:fk"], ["pagina", "PedidoAlta", "--datos", "pedido", "--form"],
+        ["login"], ["pagina", "Perfil", "--protegido"], ["crud", "factura", "numero:int", "--protegido"],
+        ["servicio", "mensaje", "texto:text", "--solo", "crear"], ["pagina", "Mensaje", "--datos", "mensaje", "--form"],
     ):  # fmt: skip
         assert main(["nuevo", *argumentos]) == 0
     (web_js / "src/pages/PruebaUso.jsx").write_text(APP_JS.replace("function App()", "export function PruebaUso()").replace("export default App;\n", "").replace("./", "../").replace("import { ProductosPage } from '../pages/ProductosPage';\n", "").replace("      <ProductosPage />\n", ""), encoding="utf-8")

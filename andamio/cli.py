@@ -118,11 +118,12 @@ def construir_parser() -> argparse.ArgumentParser:
     nuevo.add_argument("--plural", help="plural del nombre, si el automático no es correcto")
     nuevo.add_argument("--carpeta", "--folder", dest="carpeta", help="subcarpeta de app/ (pantallas de React Native)")
     nuevo.add_argument("--migrar", "--migrate", dest="migrar", action="store_true", help="crea y aplica la migración (Django, Express, Next.js full stack, Reflex)")
-    nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login pueden crear, modificar y eliminar (Django)")
+    nuevo.add_argument("--protegido", "--protected", dest="protegido", action="store_true", help="solo usuarios con login: crear, modificar y eliminar (Django); la página o el formulario (React)")
     nuevo.add_argument("--modo", "--mode", dest="modo", help="modo del tema: auto (sigue al sistema), claro u oscuro")
     nuevo.add_argument("--datos", "--data", dest="datos", help="la página muestra datos de la API con este servicio (React): --datos producto")
     nuevo.add_argument("--uno", "--one", dest="uno", action="store_true", help="con --datos: muestra uno solo, con el id en la ruta")
     nuevo.add_argument("--form", dest="form", action="store_true", help="con --datos: el formulario para crear y editar")
+    nuevo.add_argument("--sin-registro", "--no-register", dest="sin_registro", action="store_true", help="el login sin la página para crear una cuenta (React)")
     nuevo.add_argument("--solo", "--only", dest="solo", help="el servicio solo con estas funciones: --solo crear, --solo listar,obtener")
     nuevo.add_argument("--sin-menu", "--no-menu", dest="sin_menu", action="store_true", help="la entidad sin su menú de consola (Python + SQLite)")
     nuevo.add_argument("--solo-lectura", "--read-only", dest="solo_lectura", action="store_true", help="la API solo lista y muestra; los datos se cargan desde /admin/ (Django)")
@@ -171,7 +172,7 @@ def _ejecutar(args: argparse.Namespace, cwd: Path) -> int:
         stack = acciones.stack_por_clave(args.stack)
         return acciones.crear_proyecto(stack, args.nombre, cwd, simular=args.simular, variante=args.variante, guia=args.guia is not False)
     if args.comando == "nuevo":
-        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno, "form": args.form, "sin_menu": args.sin_menu, "solo_lectura": args.solo_lectura, "solo": args.solo}
+        opciones = {"carpeta": args.carpeta, "migrar": args.migrar, "protegido": args.protegido, "modo": args.modo, "datos": args.datos, "uno": args.uno, "form": args.form, "sin_menu": args.sin_menu, "solo_lectura": args.solo_lectura, "solo": args.solo, "sin_registro": args.sin_registro}
         return acciones.nuevo(cwd, args.pieza, args.nombre, args.campos, args.plural, opciones, args.simular, args.guia)
     if args.comando == "info":
         return acciones.info(cwd)

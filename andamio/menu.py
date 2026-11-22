@@ -129,10 +129,14 @@ def _pedir_nombre(stack: Stack, pieza: Pieza, raiz: Path) -> Nombre:
 
 def _pedir_opciones(pieza: Pieza) -> dict[str, Any]:
     extras: dict[str, Any] = {}
-    if "protegido" in pieza.opciones:
+    if "protegido" in pieza.opciones and pieza.clave == "pagina":
+        extras["protegido"] = consola.confirmar("¿Solo para quien ingresó? (necesita el login: nuevo login)", defecto=False)
+    elif "protegido" in pieza.opciones:
         extras["protegido"] = consola.confirmar(
             "¿Proteger el recurso? (solo usuarios con login pueden crear, modificar y eliminar)", defecto=False
         )
+    if "sin_registro" in pieza.opciones:
+        extras["sin_registro"] = not consola.confirmar("¿También la página para crear una cuenta (/registro)?", defecto=True)
     if "solo_lectura" in pieza.opciones and not extras.get("protegido"):
         extras["solo_lectura"] = consola.confirmar(
             "¿Solo lectura? (la API solo lista y muestra; los datos se cargan desde /admin/)", defecto=False

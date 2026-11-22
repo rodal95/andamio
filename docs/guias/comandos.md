@@ -25,13 +25,14 @@ python -m andamio --help                            la ayuda (también: <comando
 │     --plural <plural>                             el plural, si el automático no sirve
 │     --simular            (--dry-run)              muestra qué crearía o modificaría
 │     --migrar             (--migrate)              crea y aplica la migración
-│     --protegido          (--protected)            crear, modificar y eliminar piden login
+│     --protegido          (--protected)            crear, modificar y eliminar piden login (en React: la página o el formulario)
 │     --carpeta <carpeta>  (--folder)               subcarpeta de app/ (React Native)
 │     --modo auto|claro|oscuro  (--mode)            modo del tema (pieza tema)
 │     --datos <servicio>   (--data)                 la página o pantalla muestra datos de la API (React, React Native)
 │     --uno                (--one)                  con --datos: muestra uno solo, con el id en la ruta
 │     --form                                        con --datos: el formulario para crear y editar
 │     --solo <funciones>   (--only)                 el servicio solo con esas funciones: --solo crear
+│     --sin-registro       (--no-register)          el login de React sin la página para crear una cuenta
 │     --sin-menu           (--no-menu)              la entidad sin su menú de consola (Python + SQLite)
 │     --solo-lectura       (--read-only)            la API solo lista y muestra (Django)
 │     --sin-guia           (--no-guide)             sin los comentarios que explican el código
@@ -53,7 +54,8 @@ Qué opciones acepta cada pieza:
 | Opción | Piezas |
 |---|---|
 | `--migrar` | `recurso` (Django, Express, Next.js full stack), `crud` (Django con plantillas, Reflex) |
-| `--protegido` | `recurso` (Django), `crud` (Django con plantillas) |
+| `--protegido` | `recurso` (Django), `crud` (Django con plantillas, React), `pagina` (React) |
+| `--sin-registro` | `login` (React) |
 | `--carpeta` | `pantalla` (React Native) |
 | `--modo` | `tema` (web, Django con plantillas, Vue, React, Next.js, React Native, Reflex) |
 | `--datos`, `--uno`, `--form` | `pagina` (React), `pantalla` (React Native) |
@@ -105,7 +107,7 @@ lo mismo. Los mensajes de andamio siguen en español.
 | `plantillas exportar` | `templates export` |
 | `configurar` | `configure`, `setup` |
 | `entidad`, `recurso`, `componente`, `pagina`, `pantalla`, `servicio`, `estado`, `tema`, `estilo`, `busqueda`, `accion` | `entity`, `resource`, `component`, `page`, `screen`, `service`, `state`, `theme`, `style`, `search`, `action` |
-| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--solo`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--only`, `--no-menu`, `--read-only`, `--no-guide` |
+| `--simular`, `--variante`, `--migrar`, `--protegido`, `--carpeta`, `--modo`, `--datos`, `--uno`, `--solo`, `--sin-registro`, `--sin-menu`, `--solo-lectura`, `--sin-guia` | `--dry-run`, `--variant`, `--migrate`, `--protected`, `--folder`, `--mode`, `--data`, `--one`, `--only`, `--no-register`, `--no-menu`, `--read-only`, `--no-guide` |
 | `--modo claro`, `--modo oscuro`, `--modo auto` | `--mode light`, `--mode dark`, `--mode auto` |
 
 `crud`, `crud-api`, `login`, `hook`, `composable`, `ui`, `menu`, `info` y `--form` son iguales en los dos idiomas.
@@ -130,7 +132,8 @@ Opciones que sirven en todas las piezas:
 | `--plural paises` | Indica el plural cuando el automático no sirve. |
 | `--sin-guia` | Genera el código sin los comentarios que lo explican (para quien ya lo conoce). Las marcas `TODO(logica)`, que dicen dónde va tu lógica, quedan igual. |
 | `--migrar` | Después de generar, crea y aplica la migración (Django, Django con plantillas, Express, Next.js full stack, Reflex). |
-| `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). |
+| `--protegido` | Crear, modificar y eliminar piden login (Django y Django con plantillas). En React, la página (`pagina`) o el formulario para crear y editar (`crud`) piden ingresar: la ruta va envuelta en `<RutaProtegida>` (necesita `nuevo login`). Eso es para que se vea bien; lo que protege los datos es la API. |
+| `--sin-registro` | El login de React sin la página `/registro` (cuando los usuarios se crean desde `/admin/`). |
 | `--carpeta productos` | Crea la pantalla dentro de una carpeta de `app/` (React Native). |
 | `--datos producto` | La página o pantalla muestra los datos de un servicio que ya generaste, con el hook `useConsulta` (React, React Native). |
 | `--uno` | Con `--datos`: muestra uno solo; su ruta lleva el id (`/producto-detalle/:id` en React, `app/producto/[id]` en React Native). |
@@ -327,6 +330,10 @@ npm run dev                                      http://localhost:5173
 | `hook` | `nuevo hook contador` | `src/hooks/useContador`. |
 | `servicio` | `nuevo servicio producto nombre:str precio:decimal stock:int` | `src/services/productoService` (y `http` y los hooks `useConsulta` y `useFormulario`, si faltan). |
 | `crud` | `nuevo crud producto nombre:str precio:decimal stock:int` | Lista, detalle y formulario en `src/pages/productos/`, el componente `ProductoDetalle`, los hooks `useConsulta` y `useFormulario`, el servicio y las 4 rutas con su enlace. |
+| `crud --protegido` | `nuevo crud pedido total:decimal --protegido` | Lo mismo; las rutas para crear y editar van envueltas en `<RutaProtegida>` (la lista y el detalle son libres, como en Django). Necesita `nuevo login`. |
+| `login` | `nuevo login` | Contra la API de Django con `nuevo login`: `src/services/authService` (pide el token, crea usuarios, `/api/yo/`), `src/sesion/` (`useSesion()`, `ingresar`, `registrarse`, `salir`, `RutaProtegida` y `MenuSesion`), las páginas `/ingresar` y `/registro`, y Ingresar o Salir en el menú. Si la API responde 401 a un pedido con token (venció), la sesión se cierra. |
+| `login --sin-registro` | `nuevo login --sin-registro` | Lo mismo, sin `/registro`. |
+| `pagina --protegido` | `nuevo pagina Perfil --protegido` | La página, con la ruta envuelta en `<RutaProtegida>`: si nadie ingresó, lleva a `/ingresar` y después vuelve. Se combina con `--datos`. |
 | `tema` | `nuevo tema violeta --modo auto` | Las variables CSS del proyecto (colores, letra, bordes, sombras, modo oscuro) y estilos base, en `src/tema.css`, cargado en `src/main`. |
 | `ui` | `nuevo ui tarjetas` | Una parte lista en `src/ui/`: tarjetas, alertas, modal, navbar, badges, tabs, paginacion, cargando, responsive o accesible. |
 | `estilo` | `nuevo estilo catalogo` | `src/estilos/catalogo.css` con la clase `.catalogo` armada con las variables del tema, para tu componente o página. |

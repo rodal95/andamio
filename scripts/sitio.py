@@ -442,6 +442,12 @@ TECNOLOGIAS = {
                 "uso": "/productos              lista           listar()\n/productos/nuevo        agregar         crear()\n/productos/3            detalle         obtener(3), eliminar(3)\n/productos/3/editar     editar          obtener(3), actualizar(3)",
                 "uso_lenguaje": "texto",
             },
+            "login": {
+                "comando": "nuevo login",
+                "explicacion": "Ingresar y crear una cuenta con la API de Django que tiene el login (nuevo login en la API): el servicio que pide el token y lo guarda, la sesión (useSesion(): quién ingresó, compartido por toda la app), las páginas /ingresar y /registro, y Ingresar o Salir en el menú. Si el token vence, la sesión se cierra sola. Después, nuevo pagina Perfil --protegido hace que esa página pida ingresar (RutaProtegida). Ojo: eso es para que se vea bien; lo que protege los datos es la API.",
+                "uso": "import { useSesion, salir } from './sesion';\n\nconst { usuario, cargando } = useSesion();   // usuario: null si nadie ingresó\n\n// En App.tsx (lo hace nuevo pagina Perfil --protegido):\n<Route path=\"/perfil\" element={<RutaProtegida><PerfilPage /></RutaProtegida>} />",
+                "uso_lenguaje": "ts",
+            },
         },
         "extra": [
             ("npm install", "Instala las dependencias (una vez, o cuando cambia package.json)."),
@@ -592,7 +598,7 @@ CAMINO = {
     "vue": ["componente", "pagina", "tema:router", "composable", "servicio", "crud"],
     "fastapi": ["recurso", "tema:rutas"],
     "express": ["recurso", "tema:rutas"],
-    "react": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
+    "react": ["componente", "pagina", "tema:router", "hook", "servicio", "crud", "login"],
     "react-native": ["pantalla", "tema:router", "componente", "hook", "servicio", "tema"],
     "next": ["componente", "pagina", "tema:router", "hook", "servicio", "crud"],
     "next-fullstack": ["recurso", "crud", "componente", "pagina", "tema:router", "hook", "servicio"],
@@ -1353,6 +1359,14 @@ DESCRIPCIONES = {
         ("src/components/*", "El componente: una función que recibe props y devuelve lo que se ve."),
         ("src/pages/*/index.*", "Permite importar las páginas de la carpeta por su nombre."),
         ("src/pages/InicioPage/InicioPage.?sx", "La página de inicio (la ruta /)."),
+        ("src/pages/IngresarPage/IngresarPage.?sx", "El formulario para ingresar (/ingresar): pide el token con usuario y contraseña. Si llegó desde una página protegida, después vuelve ahí."),
+        ("src/pages/RegistroPage/RegistroPage.?sx", "El formulario para crear una cuenta (/registro): controla que la contraseña se repita igual, la crea y ya ingresa."),
+        ("src/sesion/sesion.*", "La sesión: quién ingresó, compartido por toda la app. useSesion() lo lee; ingresar, registrarse y salir lo cambian. Al abrir la app, pregunta a la API si el token guardado sigue sirviendo."),
+        ("src/sesion/RutaProtegida.?sx", "Envuelve una página que pide ingresar: si nadie ingresó, lleva a /ingresar. Es para que se vea bien: lo que protege los datos es la API."),
+        ("src/sesion/MenuSesion.module.css", "Estilos de la parte del menú de la sesión: al final, a la derecha."),
+        ("src/sesion/MenuSesion.?sx", "En el menú: Ingresar y Registrarse, o quién ingresó y Salir."),
+        ("src/sesion/index.*", "Exporta todo lo de la sesión desde un lugar: import { useSesion, RutaProtegida } from './sesion'."),
+        ("src/services/authService.*", "Habla con el login de la API: pide el token (/api/token/) y lo guarda, crea usuarios (/api/registro/) y pregunta quién ingresó (/api/yo/)."),
         ("src/pages/*/*ListaPage.*", "La lista: pide los registros a la API con listar() y enlaza al detalle de cada uno."),
         ("src/pages/*/*DetallePage.*", "El detalle (ruta /…/:id): pide el registro con obtener(id) y lo elimina con eliminar(id)."),
         ("src/pages/*/*FormPage.*", "El formulario para crear y editar: usa crear() o actualizar() y muestra los errores de validación de la API."),
@@ -1411,7 +1425,7 @@ from andamio.acciones import ALIAS_PIEZAS  # noqa: E402
 from andamio.comandos import forma_general  # noqa: E402
 
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
-_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one", "--solo": "--only"}
+_OPCIONES_EN_INGLES = {"--sin-menu": "--no-menu", "--solo-lectura": "--read-only", "--simular": "--dry-run", "--migrar": "--migrate", "--protegido": "--protected", "--carpeta": "--folder", "--modo": "--mode", "--datos": "--data", "--uno": "--one", "--solo": "--only", "--sin-registro": "--no-register"}
 
 # Otro ejemplo de cada pieza, con otros nombres: los nombres y los campos son tuyos.
 _OTRO_NOMBRE = {
@@ -1458,6 +1472,8 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
     for opcion in sorted(pieza.opciones):
         if opcion == "migrar" and "--migrar" not in comando:
             filas.append({"comando": f"{base} --migrar", "descripcion": "Además crea y aplica la migración (la tabla en la base)."})
+        elif opcion == "protegido" and clave == "pagina":
+            filas.append({"comando": "nuevo pagina Perfil --protegido", "descripcion": "La página pide ingresar: la ruta va envuelta en <RutaProtegida> (necesita nuevo login)."})
         elif opcion == "protegido":
             filas.append({"comando": f"{base} --protegido", "descripcion": "Leer es libre; crear, modificar y eliminar piden iniciar sesión."})
         elif opcion == "datos" and clave == "pantalla":
@@ -1474,6 +1490,8 @@ def variantes(clave: str, pieza, comando: str) -> list[dict]:
             filas.append({"comando": "nuevo pagina ProductoLista --datos producto", "descripcion": "Muestra la lista de un servicio que ya generaste (nuevo servicio producto ...): useConsulta(productoService.listar), con cargando y error."})
         elif opcion == "uno":
             filas.append({"comando": "nuevo pagina ProductoDetalle --datos producto --uno", "descripcion": "Muestra uno solo: la ruta lleva el id (/producto-detalle/:id) y usa obtener(id). No va en el menú."})
+        elif opcion == "sin_registro":
+            filas.append({"comando": "nuevo login --sin-registro", "descripcion": "Solo ingresar, sin la página para crear una cuenta (cuando los usuarios se crean desde /admin/)."})
         elif opcion == "solo":
             filas += [
                 {"comando": "nuevo servicio contacto nombre:str email:email mensaje:text --solo crear", "descripcion": "Solo con crear (POST): para un formulario que solo envía, como el de contacto. Sin --solo, trae las cinco funciones."},
@@ -2262,7 +2280,8 @@ def _formas(stack) -> list[dict]:
         general = f"{PROGRAMA} {forma_general(clave, pieza)}"
         filas.append({"forma": general, "ejemplo": f"{PROGRAMA} nuevo {clave} {pieza.ejemplo}".rstrip(), "que": pieza.descripcion[:1].upper() + pieza.descripcion[1:] + "."})
         for opcion in sorted(pieza.opciones):
-            extra = _FORMAS_OPCION.get(opcion)
+            # Una opción puede significar algo distinto en cada pieza (ej.: --protegido en pagina).
+            extra = _FORMAS_OPCION.get((clave, opcion)) or _FORMAS_OPCION.get(opcion)
             if extra:
                 filas.append({"forma": f"{general} {extra[0]}", "ejemplo": extra[1].format(p=PROGRAMA), "que": extra[2]})
     return filas
@@ -2273,6 +2292,9 @@ _FORMAS_OPCION = {
     "uno": ("--datos <servicio> --uno", "{p} nuevo pagina Producto --datos producto --uno", "Uno solo, con el id en la ruta (obtener)."),
     "form": ("--datos <servicio> --form", "{p} nuevo pagina ProductoEditar --datos producto --form", "El formulario para crear y editar (useFormulario)."),
     "protegido": ("--protegido", "{p} nuevo recurso pedido total:decimal --protegido", "Crear, modificar y eliminar piden login (con nuevo login)."),
+    ("pagina", "protegido"): ("--protegido", "{p} nuevo pagina Perfil --protegido", "La página pide ingresar (RutaProtegida; con nuevo login)."),
+    ("crud", "protegido"): ("--protegido", "{p} nuevo crud pedido total:decimal --protegido", "La lista y el detalle son libres; crear y editar piden ingresar (con nuevo login)."),
+    "sin_registro": ("--sin-registro", "{p} nuevo login --sin-registro", "Solo ingresar, sin la página para crear una cuenta."),
     "solo_lectura": ("--solo-lectura", "{p} nuevo recurso categoria nombre:str --solo-lectura", "La API solo lista y muestra; los datos se cargan desde /admin/."),
     "solo": ("--solo <funciones>", "{p} nuevo servicio contacto nombre:str email:email --solo crear", "El servicio solo con esas funciones (ej.: solo crear, para un formulario de contacto)."),
     "migrar": ("--migrar", "{p} nuevo recurso producto nombre:str --migrar", "Además crea y aplica la migración."),

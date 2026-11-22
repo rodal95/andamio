@@ -43,6 +43,16 @@ export function leerToken(): string | null {
   return typeof localStorage === 'undefined' ? null : localStorage.getItem(CLAVE_TOKEN);
 }
 
+let alVencer: (() => void) | null = null;
+
+/**
+ * Qué hacer si la API responde 401 a un pedido que mandó el token (venció o no es válido).
+ * Lo usa la sesión del login de React (src/sesion): la cierra y vuelve a pedir el ingreso.
+ */
+export function alVencerLaSesion(funcion: () => void): void {
+  alVencer = funcion;
+}
+
 function encabezados(datos: unknown): Record<string, string> {
   const resultado: Record<string, string> = {};
   if (datos !== undefined) resultado['Content-Type'] = 'application/json';
@@ -62,6 +72,11 @@ async function pedir<T>(metodo: string, ruta: string, datos?: unknown): Promise<
   } catch {
     // Sin respuesta: la API no está en marcha, la dirección está mal o no hay conexión.
     throw new ErrorApi(0, { detail: `No se pudo conectar con la API (${API_URL}). ¿Está en marcha?` });
+  }
+  if (respuesta.status === 401 && leerToken()) {
+    // El token venció (dura 60 minutos) o no es válido: se borra y se avisa.
+    borrarToken();
+    alVencer?.();
   }
   if (!respuesta.ok) {
     const detalle = await respuesta.json().catch(() => null);

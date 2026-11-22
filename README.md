@@ -53,7 +53,7 @@ en tu proyecto, escribí `python -m andamio info`.
 | FastAPI + SQLModel | `fastapi` | `recurso` |
 | Express + Prisma (TS o JS) | `express` | `recurso` |
 | HTML + CSS + JavaScript (sin instalar nada) | `web` | `pagina`, `componente`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
-| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
+| React + Vite | `react` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `login`, `tema`, `ui`, `estilo` |
 | Vue + Vite | `vue` | `componente`, `pagina`, `composable`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
 | React Native + Expo | `react-native` | `pantalla`, `componente`, `hook`, `servicio`, `tema` |
 | Next.js, frontend que usa una API | `next` | `componente`, `pagina`, `hook`, `servicio`, `crud`, `tema`, `ui`, `estilo` |
@@ -75,7 +75,9 @@ enlace en el menú.
 **Django REST con login:** `python -m andamio nuevo login` agrega el registro de usuarios y
 los tokens JWT (SimpleJWT: `/api/token/`, `/api/token/refresh/`, `/api/registro/`, `/api/yo/`).
 Un recurso generado con `--protegido` deja leer a cualquiera, pero crear, modificar y eliminar
-piden el token (`Authorization: Bearer <token>`).
+piden el token (`Authorization: Bearer <token>`). Del lado de React, `nuevo login` arma
+ingresar, crear una cuenta y la sesión (`useSesion()`), y `nuevo pagina Perfil --protegido`
+hace que una página pida ingresar.
 
 **Django con plantillas (`django-web`):** la otra forma de usar Django, sin frontend aparte:
 el servidor arma las páginas HTML. Trae login, registro y admin. `crud` genera la app con modelo,
@@ -125,7 +127,8 @@ Opciones útiles:
 
 - `--simular`: muestra qué archivos crearía o modificaría, sin tocar nada.
 - `--plural`: indica el plural cuando el automático no sirve (`--plural paises`).
-- `--protegido` (Django y Django con plantillas): crear, modificar y eliminar piden login.
+- `--protegido` (Django y Django con plantillas): crear, modificar y eliminar piden login. En
+  React (`pagina`, `crud`), la página o el formulario piden ingresar (con `nuevo login`).
 - `--migrar` (Django, Django con plantillas, Express, Next.js full stack y Reflex): después de generar el recurso, crea
   y aplica la migración (`makemigrations` y `migrate` en Django, `npx prisma migrate dev` en
   Express y Next.js, `reflex db` en Reflex).

@@ -27,7 +27,8 @@ URL_GUIAS = "https://rodal95.github.io/andamio"
 # Qué hace cada opción de `nuevo` (las que tiene cada pieza).
 _OPCIONES = {
     "migrar": ("--migrar", "además crea y aplica la migración (la tabla en la base)"),
-    "protegido": ("--protegido", "crear, modificar y eliminar piden login (generá antes: nuevo login)"),
+    "protegido": ("--protegido", "solo para quien ingresó: crear, modificar y eliminar en la API; la página o el formulario en React (generá antes: nuevo login)"),
+    "sin_registro": ("--sin-registro", "el login sin la página para crear una cuenta"),
     "solo_lectura": ("--solo-lectura", "la API solo lista y muestra; los datos se cargan desde /admin/"),
     "carpeta": ("--carpeta <carpeta>", "dentro de una carpeta de app/ (es parte de la ruta)"),
     "modo": ("--modo auto|claro|oscuro", "el modo del tema"),

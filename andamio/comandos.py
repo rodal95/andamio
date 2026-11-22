@@ -23,6 +23,7 @@ _OPCIONES_PIEZA = {
     "sin_menu": "--sin-menu",
     "solo_lectura": "--solo-lectura",
     "solo": "--solo <funciones>",
+    "sin_registro": "--sin-registro",
 }
 _PIEZAS_EN_INGLES = {espanol: ingles for ingles, espanol in ALIAS_PIEZAS.items()}
 

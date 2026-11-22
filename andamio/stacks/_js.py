@@ -693,9 +693,32 @@ def usa_relaciones(sol: Solicitud) -> bool:
     return any(c.tipo == relaciones.TIPO for c in campos or [])
 
 
+# --- Rutas protegidas (React, --protegido) -----------------------------------------------
+#
+# La página (o el formulario del crud) va envuelta en <RutaProtegida>, que generó el login.
+
+
+def ruta_protegida(sol: Solicitud, componente: str) -> str:
+    """El element de la ruta: <XPage /> o, con --protegido, <RutaProtegida><XPage /></RutaProtegida>."""
+    if not sol.opciones.get("protegido"):
+        return f"<{componente} />"
+    if not any((sol.raiz / "src" / "sesion" / f"RutaProtegida.{ext}").is_file() for ext in ("tsx", "jsx")):
+        raise AndamioError(
+            "--protegido usa RutaProtegida (src/sesion/), que genera el login, y todavía no está.",
+            f"Generá primero el login: {consola.programa()} nuevo login",
+        )
+    return f"<RutaProtegida><{componente} /></RutaProtegida>"
+
+
+def con_protegido(sol: Solicitud) -> bool:
+    """Insercion.condicion: el import de RutaProtegida en App (una sola vez: no se repite)."""
+    return bool(sol.opciones.get("protegido"))
+
+
 # React (pagina)
 
 MARCADORES_PAGINA = {
+    "elemento_pagina": "el element de la ruta: <XPage />, o envuelto en <RutaProtegida> con --protegido",
     "ruta_pagina": "la ruta de la página: /contacto, o /producto-detalle/:id con --uno",
     "url_pagina": "la dirección para abrirla: /contacto, o /producto-detalle/1 con --uno",
     "datos_imports": "imports del hook y del servicio (vacío sin --datos)",
@@ -753,8 +776,9 @@ _CSS_ENVIO = """
 def contexto_pagina(sol: Solicitud) -> dict[str, str]:
     modo = modo_datos(sol)
     ruta = f"/{sol.nombre.kebab}"
+    elemento = ruta_protegida(sol, f"{sol.nombre.pascal}Page")
     if not modo:
-        return {**dict.fromkeys(_VACIOS_DATOS, ""), "datos_css": "", "ruta_pagina": ruta, "url_pagina": ruta}
+        return {**dict.fromkeys(_VACIOS_DATOS, ""), "datos_css": "", "ruta_pagina": ruta, "url_pagina": ruta, "elemento_pagina": elemento}
 
     datos = sol.opciones["datos"]
     servicio, archivo_servicio, campos = servicio_de_datos(sol, "src/services")
@@ -785,6 +809,7 @@ def contexto_pagina(sol: Solicitud) -> dict[str, str]:
     else:
         previo = _previo_formulario(sol, campos, tipo, ruta_servicio) if modo == "form" else ""
     return {
+        "elemento_pagina": elemento,
         "ruta_pagina": f"{ruta}/:id" if modo == "uno" else ruta,
         "url_pagina": f"{ruta}/1" if modo == "uno" else ruta,
         "datos_imports": "\n".join(imports),
@@ -1201,6 +1226,8 @@ def _contexto_crud(sol: Solicitud) -> dict[str, str]:
         copiar.append(f"{c.nombre}: registro.{c.nombre}{'.slice(0, 16)' if c.tipo == 'datetime' else ''},")
         formulario += _campo_formulario(c, rels)
     contexto.update(
+        # Con --protegido, el formulario (nuevo y editar) pide ingresar; la lista y el detalle, no.
+        elemento_form=ruta_protegida(sol, f"{sol.nombre.pascal}FormPage"),
         campos_detalle="\n".join(detalle),
         valores_vacios="\n".join(vacios),
         campos_copiar="\n".join(copiar),
@@ -1257,6 +1284,7 @@ MARCADORES_CRUD = {
     "valores_vacios": "valores iniciales del formulario: nombre: '',",
     "campos_copiar": "copia un registro de la API a los datos del formulario: nombre: registro.nombre,",
     "campos_formulario": "un <label> con su <input> (según el tipo) y su error, por campo",
+    "elemento_form": "React: el element de las rutas del formulario, envuelto en <RutaProtegida> con --protegido",
     "imports_relaciones": "React: imports de useConsulta y del servicio de cada relación (vacío sin campos :fk)",
     "consultas_relaciones": "React: la lista de cada relación, para elegir en el formulario (vacío sin campos :fk)",
 }

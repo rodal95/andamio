@@ -36,6 +36,12 @@ def con_piezas(proyecto):
     assert main(["nuevo", "crud", "pedido", "numero:int", "cliente:fk"]) == 0
     assert main(["nuevo", "pagina", "PedidoAlta", "--datos", "pedido", "--form"]) == 0
     assert main(["nuevo", "pagina", "PedidoFicha", "--datos", "pedido", "--uno"]) == 0
+    # Login, rutas protegidas y un formulario que solo envía (servicio --solo crear).
+    assert main(["nuevo", "login"]) == 0
+    assert main(["nuevo", "pagina", "Perfil", "--protegido"]) == 0
+    assert main(["nuevo", "crud", "factura", "numero:int", "--protegido"]) == 0
+    assert main(["nuevo", "servicio", "mensaje", "texto:text", "--solo", "crear"]) == 0
+    assert main(["nuevo", "pagina", "Mensaje", "--datos", "mensaje", "--form", "--protegido"]) == 0
     return proyecto
 
 

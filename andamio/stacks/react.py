@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from andamio.estilos import piezas_de_estilos
+from andamio.nucleo import consola
+from andamio.nucleo.errores import AndamioError
+from andamio.nucleo.nombres import Nombre
 from andamio.stacks import _js
-from andamio.stacks.base import Insercion, Pieza, Stack
+from andamio.stacks.base import Insercion, Pieza, Solicitud, Stack
 
 COMPONENTE = Pieza(
     clave="componente",
@@ -63,6 +68,13 @@ def _insercion_app(
 _HOOKS = _js.hooks("src/hooks")  # useConsulta y useFormulario
 
 
+# Con --protegido (pagina o crud): RutaProtegida, que generó el login. Si ya está importado
+# (otra página protegida), no se repite.
+_IMPORT_RUTA_PROTEGIDA = _insercion_app(
+    "import { RutaProtegida } from './sesion';", "imports", "import de RutaProtegida", "arriba, junto a los otros import", "//", _js.con_protegido
+)
+
+
 def _sin_uno(sol) -> bool:
     return not sol.opciones.get("uno")
 
@@ -79,7 +91,7 @@ PAGINA = Pieza(
     descripcion="página con su ruta y su enlace en el menú; con --datos, usa un servicio (lista, --uno o --form)",
     ejemplo="Contacto",
     formas=("@@Nombre@@Page",),
-    opciones=frozenset({"datos", "uno", "form"}),
+    opciones=frozenset({"datos", "uno", "form", "protegido"}),
     normalizar_opcion={"datos": _js.normalizar_datos},
     ajustar_palabras=_js.sin_sufijo("page", "pagina"),
     validar_nombre=_validar_pagina,
@@ -91,11 +103,12 @@ PAGINA = Pieza(
     omitir=_js.hooks_a_omitir("src/hooks", "src/services"),
     inserciones=(
         _insercion_app("import { @@Nombre@@Page } from './pages/@@Nombre@@Page';", "imports", "import", "arriba, junto a los otros import", "//"),
-        _insercion_app('<Route path="@@ruta_pagina@@" element={<@@Nombre@@Page />} />', "rutas", "ruta @@ruta_pagina@@", "dentro de <Routes>", "{/*"),
+        _IMPORT_RUTA_PROTEGIDA,
+        _insercion_app('<Route path="@@ruta_pagina@@" element={@@elemento_pagina@@} />', "rutas", "ruta @@ruta_pagina@@", "dentro de <Routes>", "{/*"),
         # El formulario (--form) también edita: la misma página con el id en la ruta. Salvo
         # que el servicio no tenga obtener o actualizar (--solo crear): entonces solo envía.
         _insercion_app(
-            '<Route path="@@ruta_pagina@@/:id" element={<@@Nombre@@Page />} />',
+            '<Route path="@@ruta_pagina@@/:id" element={@@elemento_pagina@@} />',
             "rutas",
             "ruta @@ruta_pagina@@/:id (editar)",
             "dentro de <Routes>",
@@ -138,6 +151,8 @@ CRUD = Pieza(
     formas=("@@Nombre@@", "ruta /@@pluralKebab@@"),
     usa_campos=True,
     usa_plural=True,
+    # --protegido: nuevo y editar piden ingresar (como en Django: ver es libre).
+    opciones=frozenset({"protegido"}),
     contexto=_js.contexto_crud,
     validar_nombre=_validar_crud,
     marcadores=_js.MARCADORES_CRUD,
@@ -159,11 +174,12 @@ CRUD = Pieza(
             "arriba, junto a los otros import",
             "//",
         ),
+        _IMPORT_RUTA_PROTEGIDA,
         _insercion_app(
             '<Route path="/@@pluralKebab@@" element={<@@Nombre@@ListaPage />} />\n'
-            '<Route path="/@@pluralKebab@@/nuevo" element={<@@Nombre@@FormPage />} />\n'
+            '<Route path="/@@pluralKebab@@/nuevo" element={@@elemento_form@@} />\n'
             '<Route path="/@@pluralKebab@@/:id" element={<@@Nombre@@DetallePage />} />\n'
-            '<Route path="/@@pluralKebab@@/:id/editar" element={<@@Nombre@@FormPage />} />',
+            '<Route path="/@@pluralKebab@@/:id/editar" element={@@elemento_form@@} />',
             "rutas",
             "rutas /@@pluralKebab@@",
             "dentro de <Routes>",
@@ -223,6 +239,130 @@ SERVICIO = Pieza(
     ),
 )
 
+# --- Login (contra la API de Django: python -m andamio nuevo login) ---------------------
+
+
+def _http_avisa_vencimiento(sol: Solicitud) -> bool:
+    """Si src/services/http avisa cuando el token vence (las versiones anteriores, no).
+    Si no existe, se crea ahora (y avisa)."""
+    ext = _js.MARCADORES_VARIANTE[sol.variante or "ts"]["ext"]
+    try:
+        return "alVencerLaSesion" in (sol.raiz / "src" / "services" / f"http.{ext}").read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        return True
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
+def _con_registro(sol: Solicitud) -> bool:
+    return not sol.opciones.get("sin_registro")
+
+
+def _contexto_login(sol: Solicitud) -> dict[str, str]:
+    registro = _con_registro(sol)
+    avisa = _http_avisa_vencimiento(sol)
+    explicacion = (
+        ["// Si la API responde 401 a un pedido con el token (venció), se cierra la sesión: las", "// páginas protegidas llevan a /ingresar."]
+        if sol.guia
+        else []
+    )
+    return {
+        "importar_http": "alVencerLaSesion, leerToken" if avisa else "leerToken",
+        "al_vencer": "\n".join([*explicacion, "alVencerLaSesion(() => cambiar({ usuario: null, cargando: false }));", ""]) if avisa else "",
+        "router_ingresar": "Link, Navigate, useLocation" if registro else "Navigate, useLocation",
+        "pie_ingresar": "\n".join(["<p>", "  ¿No tenés cuenta?{' '}", "  <Link to=\"/registro\" state={{ desde }}>", "    Registrate", "  </Link>", "</p>"])
+        if registro
+        else "",
+        "enlace_registro": '<Link to="/registro">Registrarse</Link>' if registro else "",
+        "y_registrarse": " y Registrarse" if registro else "",
+    }
+
+
+def _validar_login(raiz: Path, nombre: Nombre) -> None:
+    if nombre.snake != "sesion":
+        raise AndamioError(
+            "En React el login no lleva nombre: genera src/sesion/ y las páginas /ingresar y /registro.",
+            f"Ejemplo: {consola.programa()} nuevo login",
+        )
+    _RUTAS_LOGIN(raiz, nombre)
+    _COMPONENTES_LOGIN(raiz, nombre)
+
+
+_RUTAS_LOGIN = _js.validar_ruta_libre(lambda nombre: "/ingresar")
+_COMPONENTES_LOGIN = _js.validar_componentes_libres(lambda nombre: ["IngresarPage", "RegistroPage", "MenuSesion", "RutaProtegida"])
+
+
+def _registro_a_omitir(sol: Solicitud) -> frozenset[str]:
+    if _con_registro(sol):
+        return frozenset()
+    return frozenset(
+        f"src/pages/RegistroPage/{archivo}"
+        for archivo in ("RegistroPage.tsx", "RegistroPage.jsx", "RegistroPage.module.css", "index.ts", "index.js")
+    )
+
+
+def _pasos_login(sol: Solicitud) -> list[str]:
+    pasos = [
+        "# La API de Django con el login (en la carpeta de la API): python -m andamio nuevo login",
+        "npm run dev",
+        "http://localhost:5173/ingresar",
+        "# Para que una página pida ingresar:",
+        "python -m andamio nuevo pagina Perfil --protegido",
+    ]
+    if not _http_avisa_vencimiento(sol):
+        pasos += [
+            "# Tu src/services/http es de una versión anterior: cuando el token vence (60 minutos),",
+            "# las páginas muestran el error 401 en lugar de volver a pedir el ingreso. Para eso, agregale",
+            "# alVencerLaSesion y el control del 401, como en un proyecto nuevo (python -m andamio crear react prueba).",
+        ]
+    return pasos
+
+
+LOGIN = Pieza(
+    clave="login",
+    lectura=(
+        ("src/services/authService.@@ext@@", "pide el token a la API, crea usuarios y pregunta quién ingresó (/api/yo/)"),
+        ("src/sesion/sesion.@@ext@@", "la sesión: useSesion() (quién ingresó), ingresar, registrarse y salir"),
+        ("src/sesion/RutaProtegida.@@extx@@", "si nadie ingresó, lleva a /ingresar (y después vuelve)"),
+        ("src/pages/IngresarPage/IngresarPage.@@extx@@", "el formulario para ingresar"),
+        ("src/pages/RegistroPage/RegistroPage.@@extx@@", "el formulario para crear una cuenta"),
+        ("src/sesion/MenuSesion.@@extx@@", "Ingresar, o quién ingresó y Salir, en el menú"),
+        ("src/services/http.@@ext@@", "guarda el token y lo manda en cada pedido; un 401 cierra la sesión"),
+        ("src/App.@@extx@@", "las rutas /ingresar y /registro, y la sesión en el menú"),
+    ),
+    titulo="Login",
+    descripcion="ingresar y crear una cuenta con la API de Django (token JWT), y rutas protegidas (--protegido)",
+    ejemplo="",
+    nombre_defecto="sesion",
+    formas=("src/@@nombre@@/ (rutas /ingresar y /registro)",),
+    opciones=frozenset({"sin_registro"}),
+    validar_nombre=_validar_login,
+    contexto=_contexto_login,
+    marcadores={
+        **_js.MARCADORES_EXTENSION,
+        "importar_http": "lo que la sesión toma de http: leerToken (y alVencerLaSesion, si http lo tiene)",
+        "al_vencer": "cerrar la sesión cuando la API responde 401 (vacío si http es de una versión anterior)",
+        "router_ingresar": "lo que IngresarPage toma de react-router (Link, solo con registro)",
+        "pie_ingresar": "el enlace a /registro debajo del formulario (vacío con --sin-registro)",
+        "enlace_registro": "Registrarse en el menú (vacío con --sin-registro)",
+        "y_registrarse": "' y Registrarse', para el comentario del menú (vacío con --sin-registro)",
+    },
+    existe_si=("src/sesion",),
+    si_no_existe=frozenset({"src/services/http.ts", "src/services/http.js"}),
+    omitir=_registro_a_omitir,
+    inserciones=(
+        _insercion_app("import { IngresarPage } from './pages/IngresarPage';", "imports", "import de IngresarPage", "arriba, junto a los otros import", "//"),
+        _insercion_app(
+            "import { RegistroPage } from './pages/RegistroPage';", "imports", "import de RegistroPage", "arriba, junto a los otros import", "//", _con_registro
+        ),
+        _insercion_app("import { MenuSesion } from './sesion';", "imports", "import de MenuSesion", "arriba, junto a los otros import", "//"),
+        _insercion_app('<Route path="/ingresar" element={<IngresarPage />} />', "rutas", "ruta /ingresar", "dentro de <Routes>", "{/*"),
+        _insercion_app('<Route path="/registro" element={<RegistroPage />} />', "rutas", "ruta /registro", "dentro de <Routes>", "{/*", _con_registro),
+        _insercion_app("<MenuSesion />", "enlaces", "la sesión en el menú", "dentro de <nav>", "{/*"),
+    ),
+    siguiente_paso=_pasos_login,
+)
+
 ESTILOS = piezas_de_estilos(
     "src",
     lambda ruta: Insercion(
@@ -243,7 +383,7 @@ STACK = Stack(
     senal="package.json con vite y react",
     detectar=_js.detectar_dependencias("vite", "react"),
     tipos=_js.TIPOS_CON_RELACIONES,
-    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD, **ESTILOS},
+    piezas={"componente": COMPONENTE, "pagina": PAGINA, "hook": HOOK, "servicio": SERVICIO, "crud": CRUD, "login": LOGIN, **ESTILOS},
     ejemplo_proyecto="mi-web",
     siguiente_paso_proyecto=["cd @@carpeta@@", "npm install", "npm run dev", "http://localhost:5173"],
     contexto_env=lambda: {},

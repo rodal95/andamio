@@ -5,6 +5,21 @@ Todos los cambios importantes de andamio. El proyecto usa
 
 ## [Sin publicar]
 
+### Agregado
+- React: `nuevo login`, contra la API de Django con `nuevo login`: `src/services/authService`
+  (pide el token y lo guarda, crea usuarios, pregunta quién ingresó en `/api/yo/`),
+  `src/sesion/` (`useSesion()`: quién ingresó, compartido por toda la app sin envolverla en
+  un Provider; `ingresar`, `registrarse` y `salir`; `RutaProtegida` y `MenuSesion`), las
+  páginas `/ingresar` y `/registro` (registrarse también ingresa; después de ingresar se
+  vuelve a la página protegida de la que se venía) e Ingresar, o el usuario y Salir, en el
+  menú. Con `--sin-registro` (`--no-register`), sin `/registro`.
+- React: `--protegido` en `pagina` (la ruta va envuelta en `<RutaProtegida>`) y en `crud`
+  (crear y editar piden ingresar; la lista y el detalle son libres, como en Django). Si no
+  está el login, andamio lo dice antes de escribir nada.
+- React: `http` avisa cuando la API responde 401 a un pedido con token (`alVencerLaSesion`):
+  borra el token y la sesión se cierra. En proyectos con un `http` anterior, el login lo
+  explica en los siguientes pasos.
+
 ## [1.6.0] - 2026-11-22
 
 ### Agregado
